@@ -1,0 +1,1 @@
+-keep,allowobfuscation,allowshrinking class com.application.echo.feature.auth.signup.SignUpViewModel

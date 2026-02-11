@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<lint>
+    <!-- Enable real-time checking for your custom rule -->
+    <issue id="UseechoThemeInsteadOfMaterialTheme" severity="warning" />
+
+    <!-- Ensure lint runs on dependencies -->
+    <issue id="LintBaseline" severity="ignore" />
+
+    <!-- Enable incremental lint (faster real-time checking) -->
+    <issue id="UnusedResources" severity="ignore" />
+</lint>

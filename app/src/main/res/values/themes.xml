@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--  SPLASH THEME  -->
+    <style name="LaunchTheme" parent="Theme.SplashScreen">
+        <item name="postSplashScreenTheme">@style/Theme.Echo</item>
+        <!-- <item name="windowSplashScreenAnimatedIcon">@drawable/splash_screen_avd_anim</item> -->
+        <item name="windowSplashScreenBackground">@color/app_bg</item>
+    </style>
+
+    <!--  MAIN THEME  -->
+    <style name="Theme.Echo" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:textCursorDrawable">@null</item>
+        <item name="android:windowActionBar">false</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowActionModeOverlay">true</item>
+    </style>
+</resources>

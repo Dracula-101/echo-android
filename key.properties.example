@@ -1,0 +1,15 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# Echo Android — key.properties
+# ──────────────────────────────────────────────────────────────────────────────
+# Copy this file to `key.properties` in the project root and fill in
+# the values. This file is required for RELEASE signing.
+#
+#   cp key.properties.example key.properties
+#
+# ──────────────────────────────────────────────────────────────────────────────
+
+# Release keystore configuration
+KEY_ALIAS=YourKeyAlias
+KEY_PASSWORD=your-key-password
+KEYSTORE_PASSWORD=your-keystore-password
+KEYSTORE_FILE=./keystores/release-keystore.jks
