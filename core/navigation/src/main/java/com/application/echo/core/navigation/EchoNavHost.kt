@@ -1,17 +1,16 @@
 package com.application.echo.core.navigation
 
-import androidx.compose.animation.AnimatedContentTransitionScope
-import androidx.compose.animation.EnterTransition
-import androidx.compose.animation.ExitTransition
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
-import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
+import com.application.echo.core.navigation.transition.EchoTransitions
+import com.application.echo.core.navigation.transition.NavEnterTransition
+import com.application.echo.core.navigation.transition.NavExitTransition
 import timber.log.Timber
 
 /**
@@ -20,6 +19,9 @@ import timber.log.Timber
  * It collects [NavigationCommand]s from the injected [Navigator] and translates them
  * into NavController calls. The [Navigator] is also exposed via [LocalNavigator] so
  * child composables can trigger navigation without a NavController reference.
+ *
+ * By default, the host uses the standard horizontal slide + fade transitions from
+ * [EchoTransitions]. Override individual parameters to customise.
  *
  * @param navigator The [Navigator] instance, typically injected via Hilt.
  * @param startDestination The route for the start destination.
@@ -36,14 +38,10 @@ fun EchoNavHost(
     startDestination: Any,
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
-    enterTransition: (AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition) =
-        { EnterTransition.None },
-    exitTransition: (AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition) =
-        { ExitTransition.None },
-    popEnterTransition: (AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition) =
-        enterTransition,
-    popExitTransition: (AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition) =
-        exitTransition,
+    enterTransition: NavEnterTransition = EchoTransitions.slideInFromEnd,
+    exitTransition: NavExitTransition = EchoTransitions.slideOutToStart,
+    popEnterTransition: NavEnterTransition = EchoTransitions.slideInFromStart,
+    popExitTransition: NavExitTransition = EchoTransitions.slideOutToEnd,
     builder: NavGraphBuilder.() -> Unit,
 ) {
     NavigationCommandHandler(navController, navigator)
@@ -74,11 +72,11 @@ private fun NavigationCommandHandler(
         navigator.commands.collect { command ->
             when (command) {
                 is NavigationCommand.NavigateTo -> {
-                    navController.navigate(command.route) {
-                        command.navOptions?.let { options ->
-                            launchSingleTop = options.shouldLaunchSingleTop()
-                            restoreState = options.shouldRestoreState()
-                        }
+                    val navOptions = command.navOptions
+                    if (navOptions != null) {
+                        navController.navigate(command.route, navOptions)
+                    } else {
+                        navController.navigate(command.route)
                     }
                 }
 
@@ -91,7 +89,7 @@ private fun NavigationCommandHandler(
 
                 is NavigationCommand.NavigateBack -> {
                     if (!navController.popBackStack()) {
-                        Timber.d("Navigation: back stack is empty, cannot pop")
+                        Timber.tag(TAG).d("Back stack is empty, cannot pop")
                     }
                 }
 
@@ -112,3 +110,5 @@ private fun NavigationCommandHandler(
         }
     }
 }
+
+private const val TAG = "EchoNav"

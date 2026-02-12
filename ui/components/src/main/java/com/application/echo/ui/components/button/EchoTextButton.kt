@@ -1,36 +1,58 @@
 package com.application.echo.ui.components.button
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material3.Icon
 import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.PreviewLightDark
-import androidx.compose.ui.unit.dp
+import com.application.echo.ui.components.common.EchoVariant
 import com.application.echo.ui.design.theme.EchoTheme
 
+/**
+ * Text-only button — lowest visual weight, used for tertiary actions.
+ *
+ * ```kotlin
+ * EchoTextButton(text = "Skip", onClick = ::skip)
+ * EchoTextButton(text = "Delete", variant = EchoVariant.Error, onClick = ::delete)
+ * ```
+ */
 @Composable
 fun EchoTextButton(
+    text: String,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    onClick: () -> Unit = {},
     enabled: Boolean = true,
-    content: @Composable () -> Unit = {},
+    variant: EchoVariant = EchoVariant.Primary,
+) {
+    EchoTextButton(
+        onClick = onClick,
+        modifier = modifier,
+        enabled = enabled,
+        variant = variant,
+    ) {
+        Text(text = text)
+    }
+}
+
+/**
+ * Text-only button with composable content slot.
+ *
+ * Use the [text] overload when you only need a label.
+ */
+@Composable
+fun EchoTextButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    variant: EchoVariant = EchoVariant.Primary,
+    content: @Composable () -> Unit,
 ) {
     TextButton(
-        modifier = modifier,
         onClick = onClick,
+        modifier = modifier,
         enabled = enabled,
-        colors = EchoTheme.colorScheme.textButtonColors(),
+        colors = EchoTheme.colorScheme.textButtonColors(variant),
         shape = EchoTheme.shapes.button,
         contentPadding = PaddingValues(
             horizontal = EchoTheme.spacing.padding.medium,
@@ -39,31 +61,8 @@ fun EchoTextButton(
         content = {
             ProvideTextStyle(
                 EchoTheme.typography.bodyLarge,
-                content = content
+                content = content,
             )
-        }
+        },
     )
-}
-
-@PreviewLightDark
-@Composable
-private fun PreviewEchoTextButton() {
-    EchoTheme {
-        FlowRow(
-            modifier = Modifier
-                .background(EchoTheme.colorScheme.background.color)
-                .padding(8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            EchoTextButton(
-                modifier = Modifier.border(
-                    1.dp,
-                    EchoTheme.colorScheme.outline.color,
-                    EchoTheme.shapes.button
-                ),
-            ) {
-                Text("Button")
-            }
-        }
-    }
 }

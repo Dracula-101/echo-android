@@ -5,13 +5,15 @@ import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavBackStackEntry
+import androidx.navigation.NavDeepLink
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
+import com.application.echo.core.navigation.transition.EchoTransitionPreset
 import kotlin.reflect.KClass
 
 /**
- * Registers a composable destination with optional transition overrides.
+ * Registers a composable destination with optional transition overrides and deep links.
  *
  * This is a convenience wrapper over [NavGraphBuilder.composable] that applies the standard
  * forward/back navigation transitions used across the app. Feature modules can use this
@@ -21,6 +23,7 @@ import kotlin.reflect.KClass
  * @param exitTransition Custom exit transition override.
  * @param popEnterTransition Custom pop enter transition override.
  * @param popExitTransition Custom pop exit transition override.
+ * @param deepLinks List of [NavDeepLink]s for this destination.
  * @param content The composable content for this destination.
  */
 inline fun <reified T : Any> NavGraphBuilder.echoComposable(
@@ -28,6 +31,7 @@ inline fun <reified T : Any> NavGraphBuilder.echoComposable(
     noinline exitTransition: (AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition?)? = null,
     noinline popEnterTransition: (AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition?)? = enterTransition,
     noinline popExitTransition: (AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition?)? = exitTransition,
+    deepLinks: List<NavDeepLink> = emptyList(),
     noinline content: @Composable (NavBackStackEntry) -> Unit,
 ) {
     composable<T>(
@@ -35,7 +39,37 @@ inline fun <reified T : Any> NavGraphBuilder.echoComposable(
         exitTransition = exitTransition,
         popEnterTransition = popEnterTransition,
         popExitTransition = popExitTransition,
+        deepLinks = deepLinks,
         content = { backStackEntry -> content(backStackEntry) },
+    )
+}
+
+/**
+ * Registers a composable destination with a bundled [EchoTransitionPreset].
+ *
+ * ```kotlin
+ * echoComposable<SettingsRoute>(
+ *     transition = EchoTransitionPreset.SlideHorizontal,
+ * ) { SettingsScreen() }
+ *
+ * echoComposable<ProfileRoute>(
+ *     transition = EchoTransitionPreset.Modal,
+ *     deepLinks = echoDeepLinks { uriPattern("echo://profile/{userId}") },
+ * ) { ProfileScreen() }
+ * ```
+ */
+inline fun <reified T : Any> NavGraphBuilder.echoComposable(
+    transition: EchoTransitionPreset,
+    deepLinks: List<NavDeepLink> = emptyList(),
+    noinline content: @Composable (NavBackStackEntry) -> Unit,
+) {
+    echoComposable<T>(
+        enterTransition = transition.enterTransition,
+        exitTransition = transition.exitTransition,
+        popEnterTransition = transition.popEnterTransition,
+        popExitTransition = transition.popExitTransition,
+        deepLinks = deepLinks,
+        content = content,
     )
 }
 
@@ -57,14 +91,17 @@ inline fun <reified T : Any> NavGraphBuilder.echoComposable(
  * ```
  *
  * @param startDestination The [KClass] of the start destination inside this graph.
+ * @param deepLinks Optional list of deep links for the graph root.
  * @param builder The [NavGraphBuilder] block to declare child destinations.
  */
 inline fun <reified T : Any> NavGraphBuilder.echoNavigation(
     startDestination: KClass<*>,
+    deepLinks: List<NavDeepLink> = emptyList(),
     noinline builder: NavGraphBuilder.() -> Unit,
 ) {
     navigation<T>(
         startDestination = startDestination,
+        deepLinks = deepLinks,
         builder = builder,
     )
 }

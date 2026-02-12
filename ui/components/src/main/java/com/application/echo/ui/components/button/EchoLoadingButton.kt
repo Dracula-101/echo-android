@@ -1,57 +1,78 @@
 package com.application.echo.ui.components.button
 
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import com.application.echo.ui.components.common.EchoVariant
+import com.application.echo.ui.components.common.color
 import com.application.echo.ui.design.theme.EchoTheme
 
+/**
+ * Outlined button that shows a spinner when [loading] is `true`.
+ *
+ * The button is automatically disabled while loading.
+ *
+ * ```kotlin
+ * EchoLoadingButton(
+ *     text = "Sign In",
+ *     loading = isSubmitting,
+ *     onClick = ::login,
+ * )
+ * ```
+ */
 @Composable
 fun EchoLoadingButton(
+    text: String,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    onClick: () -> Unit = {},
-    isLoading: Boolean = true,
+    loading: Boolean = false,
     enabled: Boolean = true,
-    variant: ButtonVariant = ButtonVariant.Primary,
-    content: @Composable () -> Unit = {},
+    variant: EchoVariant = EchoVariant.Primary,
 ) {
-    val buttonTheme = EchoTheme.colorScheme.outlinedButtonColors(variant)
-    EchoOutlinedButton(
+    EchoLoadingButton(
         onClick = onClick,
-        enabled = enabled && !isLoading,
         modifier = modifier,
+        loading = loading,
+        enabled = enabled,
         variant = variant,
-        content = {
-            if (isLoading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(EchoTheme.dimen.icon.small),
-                    strokeWidth = 2.dp,
-                    color = buttonTheme.disabledContentColor,
-                )
-                Spacer(Modifier.size(EchoTheme.spacing.gap.small))
-            }
-            content()
-        },
-    )
+    ) {
+        Text(text = text)
+    }
 }
 
-@PreviewLightDark
+/**
+ * Outlined button with spinner and composable content slot.
+ *
+ * Use the [text] overload when you only need a label.
+ */
 @Composable
-private fun PreviewEchoLoadingButton() {
-    EchoTheme {
-        Surface(
-            modifier = Modifier.padding(10.dp)
-        ) {
-            EchoLoadingButton(isLoading = true) {
-                Text("Click me")
-            }
+fun EchoLoadingButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    loading: Boolean = false,
+    enabled: Boolean = true,
+    variant: EchoVariant = EchoVariant.Primary,
+    content: @Composable () -> Unit,
+) {
+    EchoOutlinedButton(
+        onClick = onClick,
+        enabled = enabled && !loading,
+        modifier = modifier,
+        variant = variant,
+    ) {
+        if (loading) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(EchoTheme.dimen.icon.small),
+                strokeWidth = 2.dp,
+                color = variant.color().copy(alpha = 0.6f),
+            )
+            Spacer(Modifier.width(EchoTheme.spacing.gap.small))
         }
+        content()
     }
 }

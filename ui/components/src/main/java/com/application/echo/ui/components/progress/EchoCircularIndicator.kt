@@ -12,179 +12,112 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.Dp
+import com.application.echo.ui.components.common.EchoVariant
+import com.application.echo.ui.components.common.color
 import com.application.echo.ui.design.theme.EchoTheme
 
+private const val TRACK_ALPHA = 0.2f
+
 /**
- * A circular progress indicator component for the Echo design system.
- * Simple implementation with only color customization, following shadcn UI approach.
+ * Indeterminate circular progress indicator — infinite spinning arc.
  *
- * @param modifier The modifier to be applied to the progress indicator
- * @param color The color of the progress indicator. Defaults to primary stroke color from theme
+ * ```kotlin
+ * EchoCircularProgressIndicator()
+ * EchoCircularProgressIndicator(variant = EchoVariant.Secondary)
+ * ```
  */
 @Composable
 fun EchoCircularProgressIndicator(
     modifier: Modifier = Modifier,
-    color: Color = EchoTheme.colorScheme.primary.color,
+    variant: EchoVariant = EchoVariant.Primary,
+    color: Color = variant.color(),
+    size: Dp = EchoTheme.dimen.icon.medium,
+    strokeWidth: Dp = EchoTheme.dimen.divider.large,
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "progress_rotation")
-
     val rotation by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 360f,
         animationSpec = infiniteRepeatable(
-            animation = tween(
-                durationMillis = 1000,
-                easing = LinearEasing
-            ),
-            repeatMode = RepeatMode.Restart
+            animation = tween(durationMillis = 1000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart,
         ),
-        label = "rotation"
+        label = "rotation",
     )
-    val strokeWidth = EchoTheme.dimen.divider.large
 
-    Canvas(
-        modifier = modifier.size(EchoTheme.dimen.icon.medium)
-    ) {
-        drawCircularProgressIndicator(
-            color = color,
-            rotation = rotation,
-            strokeWidth = strokeWidth,
-        )
+    Canvas(modifier = modifier.size(size)) {
+        drawTrackCircle(color, strokeWidth)
+        drawProgressArc(color, startAngle = rotation - 90f, sweepAngle = 90f, strokeWidth)
     }
 }
 
 /**
- * A circular progress indicator with custom progress value and stroke width.
- * Animates smoothly when progress value changes.
+ * Determinate circular progress indicator — fills from 0 → 100 %.
  *
- * @param progress The progress value between 0.0 and 1.0
- * @param modifier The modifier to be applied to the progress indicator
- * @param color The color of the progress indicator. Defaults to primary stroke color from theme
- * @param strokeWidth The width of the progress stroke
- * @param size The size of the circular progress indicator
+ * ```kotlin
+ * EchoCircularProgressIndicator(progress = { downloadProgress })
+ * ```
  */
 @Composable
 fun EchoCircularProgressIndicator(
     progress: () -> Float,
     modifier: Modifier = Modifier,
-    color: Color = EchoTheme.colorScheme.primary.color,
-    strokeWidth: Dp = EchoTheme.dimen.divider.large,
+    variant: EchoVariant = EchoVariant.Primary,
+    color: Color = variant.color(),
     size: Dp = EchoTheme.dimen.icon.medium,
+    strokeWidth: Dp = EchoTheme.dimen.divider.large,
 ) {
     val animatedProgress by animateFloatAsState(
         targetValue = progress().coerceIn(0f, 1f),
-        animationSpec = tween(
-            durationMillis = 500,
-            easing = LinearEasing
-        ),
-        label = "animated_progress"
+        animationSpec = tween(durationMillis = 500, easing = LinearEasing),
+        label = "animated_progress",
     )
 
-    Canvas(
-        modifier = modifier.size(size)
-    ) {
-        drawDeterminateCircularProgressIndicator(
-            color = color,
-            progress = animatedProgress,
-            strokeWidth = strokeWidth
-        )
+    Canvas(modifier = modifier.size(size)) {
+        drawTrackCircle(color, strokeWidth)
+        if (animatedProgress > 0f) {
+            drawProgressArc(color, startAngle = -90f, sweepAngle = 360f * animatedProgress, strokeWidth)
+        }
     }
 }
 
-private fun DrawScope.drawCircularProgressIndicator(
-    color: Color,
-    rotation: Float,
-    strokeWidth: Dp
-) {
-    val radius = (size.minDimension - strokeWidth.toPx()) / 2
-    val centerX = size.width / 2
-    val centerY = size.height / 2
+// ──────────────── Internal Canvas helpers ────────────────
 
-    // Draw the background circle (track)
+private fun DrawScope.drawTrackCircle(color: Color, strokeWidth: Dp) {
+    val strokePx = strokeWidth.toPx()
+    val radius = (size.minDimension - strokePx) / 2
+    val center = Offset(size.width / 2, size.height / 2)
     drawCircle(
-        color = color.copy(alpha = 0.2f),
+        color = color.copy(alpha = TRACK_ALPHA),
         radius = radius,
-        center = androidx.compose.ui.geometry.Offset(centerX, centerY),
-        style = Stroke(
-            width = strokeWidth.toPx(),
-            cap = StrokeCap.Round
-        )
+        center = center,
+        style = Stroke(width = strokePx, cap = StrokeCap.Round),
     )
+}
 
-    // Calculate the arc parameters
-    val sweepAngle = 90f // Length of the arc
-    val startAngle = rotation - 90f // Starting position (adjusted for top start)
-
-    // Draw the progress arc
+private fun DrawScope.drawProgressArc(
+    color: Color,
+    startAngle: Float,
+    sweepAngle: Float,
+    strokeWidth: Dp,
+) {
+    val strokePx = strokeWidth.toPx()
+    val radius = (size.minDimension - strokePx) / 2
+    val center = Offset(size.width / 2, size.height / 2)
     drawArc(
         color = color,
         startAngle = startAngle,
         sweepAngle = sweepAngle,
         useCenter = false,
-        style = Stroke(
-            width = strokeWidth.toPx(),
-            cap = StrokeCap.Round
-        ),
-        topLeft = androidx.compose.ui.geometry.Offset(
-            centerX - radius,
-            centerY - radius
-        ),
-        size = androidx.compose.ui.geometry.Size(
-            radius * 2,
-            radius * 2
-        )
+        style = Stroke(width = strokePx, cap = StrokeCap.Round),
+        topLeft = Offset(center.x - radius, center.y - radius),
+        size = Size(radius * 2, radius * 2),
     )
-}
-
-private fun DrawScope.drawDeterminateCircularProgressIndicator(
-    color: Color,
-    progress: Float,
-    strokeWidth: Dp
-) {
-    val strokeWidthPx = strokeWidth.toPx()
-    val radius = (size.minDimension - strokeWidthPx) / 2
-    val centerX = size.width / 2
-    val centerY = size.height / 2
-
-    // Draw the background circle (track)
-    drawCircle(
-        color = color.copy(alpha = 0.2f),
-        radius = radius,
-        center = androidx.compose.ui.geometry.Offset(centerX, centerY),
-        style = Stroke(
-            width = strokeWidthPx,
-            cap = StrokeCap.Round
-        )
-    )
-
-    // Calculate the arc parameters for determinate progress
-    val sweepAngle = 360f * progress // Full circle based on progress
-    val startAngle = -90f // Start from top (12 o'clock position)
-
-    // Only draw progress arc if there's actual progress
-    if (progress > 0f) {
-        drawArc(
-            color = color,
-            startAngle = startAngle,
-            sweepAngle = sweepAngle,
-            useCenter = false,
-            style = Stroke(
-                width = strokeWidthPx,
-                cap = StrokeCap.Round
-            ),
-            topLeft = androidx.compose.ui.geometry.Offset(
-                centerX - radius,
-                centerY - radius
-            ),
-            size = androidx.compose.ui.geometry.Size(
-                radius * 2,
-                radius * 2
-            )
-        )
-    }
 }

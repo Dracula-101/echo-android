@@ -8,6 +8,7 @@ import androidx.navigation.NavController
 import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hasRoute
 import kotlinx.coroutines.flow.map
+import timber.log.Timber
 
 /**
  * Returns a lifecycle-aware [State] of the current [NavDestination].
@@ -50,3 +51,46 @@ inline fun <reified T : Any> NavController.isOnBackStack(): Boolean =
 inline fun <reified T> NavBackStackEntry.rememberResult(key: String): State<T?> =
     savedStateHandle.getStateFlow<T?>(key, null)
         .collectAsStateWithLifecycle()
+
+// ──────────────── Debug Extensions ────────────────
+
+/**
+ * Null-safe access to the current route string.
+ * Returns `null` instead of crashing when the back stack is empty.
+ */
+val NavController.currentRouteOrNull: String?
+    get() = currentBackStackEntry?.destination?.route
+
+/**
+ * Number of entries on the back stack (including the current destination).
+ */
+val NavController.backStackDepth: Int
+    get() = currentBackStack.value.size
+
+/**
+ * Logs the full back stack to Timber for debugging.
+ *
+ * Output:
+ * ```
+ * D/EchoNav: ── Back Stack (3 entries) ──
+ * D/EchoNav:  [0] com.example/homeRoute
+ * D/EchoNav:  [1] com.example/profileRoute
+ * D/EchoNav:  [2] com.example/settingsRoute  ← current
+ * D/EchoNav: ────────────────────────────────
+ * ```
+ */
+fun NavController.printBackStack() {
+    val entries = currentBackStack.value
+    val lines = buildString {
+        appendLine("── Back Stack (${entries.size} entries) ──")
+        entries.forEachIndexed { index, entry ->
+            val route = entry.destination.route ?: "?"
+            val marker = if (index == entries.lastIndex) "  ← current" else ""
+            appendLine(" [$index] $route$marker")
+        }
+        append("────────────────────────────────")
+    }
+    Timber.tag(TAG).d(lines)
+}
+
+private const val TAG = "EchoNav"

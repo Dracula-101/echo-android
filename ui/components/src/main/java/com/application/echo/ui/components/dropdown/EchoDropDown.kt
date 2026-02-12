@@ -54,6 +54,29 @@ import com.application.echo.ui.design.theme.EchoTheme
 import kotlin.math.max
 import kotlin.math.min
 
+private const val ANIMATION_DURATION_MS = 120
+private const val SCALE_COLLAPSED = 0.8f
+private const val DISABLED_ALPHA = 0.3f
+private val MAX_MENU_WIDTH = 220.dp
+private val MAX_MENU_HEIGHT = 450.dp
+private val SCROLLBAR_WIDTH = 4.dp
+private val SCROLLBAR_CORNER_RADIUS = 32f
+private val LEADING_ICON_SIZE = 20.dp
+
+/**
+ * Custom dropdown menu with animated scale/fade entry, themed surface, and a scrollable body.
+ *
+ * ```kotlin
+ * EchoDropdownMenu(
+ *     expanded = showMenu,
+ *     onDismissRequest = { showMenu = false },
+ * ) {
+ *     EchoDropdownMenuItem(text = { Text("Edit") }, onClick = ::edit)
+ *     EchoDropdownMenuSeparator()
+ *     EchoDropdownMenuItem(text = { Text("Delete") }, onClick = ::delete)
+ * }
+ * ```
+ */
 @Composable
 fun EchoDropdownMenu(
     expanded: Boolean,
@@ -61,7 +84,7 @@ fun EchoDropdownMenu(
     modifier: Modifier = Modifier,
     offset: DpOffset = DpOffset.Zero,
     properties: PopupProperties = PopupProperties(focusable = true),
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     val expandedState = remember { MutableTransitionState(false) }
     expandedState.targetState = expanded
@@ -75,20 +98,20 @@ fun EchoDropdownMenu(
                 density = density,
                 onPositionCalculated = { parentBounds, menuBounds ->
                     transformOriginState.value = calculateTransformOrigin(parentBounds, menuBounds)
-                }
+                },
             )
         }
 
         Popup(
             onDismissRequest = onDismissRequest,
             popupPositionProvider = popupPositionProvider,
-            properties = properties
+            properties = properties,
         ) {
             DropdownMenuContent(
                 expandedState = expandedState,
                 transformOriginState = transformOriginState,
-                modifier = modifier.widthIn(max = 220.dp),
-                content = content
+                modifier = modifier.widthIn(max = MAX_MENU_WIDTH),
+                content = content,
             )
         }
     }
@@ -99,23 +122,19 @@ private fun DropdownMenuContent(
     expandedState: MutableTransitionState<Boolean>,
     transformOriginState: MutableState<TransformOrigin>,
     modifier: Modifier = Modifier,
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     val transition = rememberTransition(expandedState, "DropdownMenu")
 
     val scale by transition.animateFloat(
-        transitionSpec = { tween(durationMillis = 120) },
-        label = "scale"
-    ) { expanded ->
-        if (expanded) 1f else 0.8f
-    }
+        transitionSpec = { tween(durationMillis = ANIMATION_DURATION_MS) },
+        label = "scale",
+    ) { expanded -> if (expanded) 1f else SCALE_COLLAPSED }
 
     val alpha by transition.animateFloat(
-        transitionSpec = { tween(durationMillis = 120) },
-        label = "alpha"
-    ) { expanded ->
-        if (expanded) 1f else 0f
-    }
+        transitionSpec = { tween(durationMillis = ANIMATION_DURATION_MS) },
+        label = "alpha",
+    ) { expanded -> if (expanded) 1f else 0f }
 
     val scrollState = rememberScrollState()
     val dropdownColors = EchoTheme.colorScheme.dropdownColors()
@@ -129,46 +148,61 @@ private fun DropdownMenuContent(
                 transformOrigin = transformOriginState.value
             }
             .shadow(
-                elevation = 2.dp,
-                shape = EchoTheme.shapes.dropdown
+                elevation = EchoTheme.dimen.border.medium,
+                shape = EchoTheme.shapes.dropdown,
             ),
         shape = EchoTheme.shapes.dropdown,
         color = dropdownColors.background,
         border = BorderStroke(
-            width = 1.dp,
-            color = dropdownColors.border
-        )
+            width = EchoTheme.dimen.divider.small,
+            color = dropdownColors.border,
+        ),
     ) {
         Column(
             modifier = Modifier
                 .width(IntrinsicSize.Max)
-                .heightIn(max = 450.dp)
-                .padding(end = 2.dp)
+                .heightIn(max = MAX_MENU_HEIGHT)
+                .padding(end = EchoTheme.spacing.padding.extraSmall)
                 .verticalColumnScrollbar(
                     scrollState = scrollState,
-                    width = 4.dp,
+                    width = SCROLLBAR_WIDTH,
                     showScrollBarTrack = true,
                     scrollBarTrackColor = dropdownColors.scrollTrack,
                     scrollBarColor = dropdownColors.scrollThumb,
-                    scrollBarCornerRadius = 32f,
+                    scrollBarCornerRadius = SCROLLBAR_CORNER_RADIUS,
                 )
                 .verticalScroll(scrollState),
             content = content,
-            horizontalAlignment = Alignment.Start
+            horizontalAlignment = Alignment.Start,
         )
     }
 }
 
+// ──────────────── Menu Items ────────────────
+
+/**
+ * Single menu item inside an [EchoDropdownMenu].
+ *
+ * @param text Composable slot for the item label.
+ * @param onClick Called when the item is tapped.
+ * @param leading Optional leading icon composable.
+ * @param trailing Optional trailing composable (e.g. shortcut hint or icon).
+ * @param enabled Whether the item is interactive; dimmed when `false`.
+ */
 @Composable
-fun DropdownMenuItem(
+fun EchoDropdownMenuItem(
     text: @Composable () -> Unit,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     leading: @Composable (() -> Unit)? = null,
-    trailingIcon: @Composable (() -> Unit)? = null,
+    trailing: @Composable (() -> Unit)? = null,
     enabled: Boolean = true,
-    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() }
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
 ) {
+    val contentColor = EchoTheme.colorScheme.surface.onColor.let { color ->
+        if (enabled) color else color.copy(alpha = DISABLED_ALPHA)
+    }
+
     Row(
         modifier = modifier
             .clickable(
@@ -177,35 +211,26 @@ fun DropdownMenuItem(
                 interactionSource = interactionSource,
             )
             .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 6.dp)
-            .padding(end = 2.dp),
+            .padding(
+                horizontal = EchoTheme.spacing.padding.small,
+                vertical = EchoTheme.spacing.padding.extraSmall,
+            )
+            .padding(end = EchoTheme.spacing.padding.extraSmall),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement = Arrangement.spacedBy(EchoTheme.spacing.gap.small),
     ) {
         if (leading != null) {
-            CompositionLocalProvider(
-                LocalContentColor provides if (enabled) {
-                    EchoTheme.colorScheme.surface.onColor
-                } else {
-                    EchoTheme.colorScheme.surface.onColor.copy(alpha = 0.3f)
-                }
-            ) {
+            CompositionLocalProvider(LocalContentColor provides contentColor) {
                 Box(
-                    modifier = Modifier.size(20.dp),
-                    contentAlignment = Alignment.Center
+                    modifier = Modifier.size(LEADING_ICON_SIZE),
+                    contentAlignment = Alignment.Center,
                 ) {
                     leading()
                 }
             }
         }
 
-        CompositionLocalProvider(
-            LocalContentColor provides if (enabled) {
-                EchoTheme.colorScheme.surface.onColor
-            } else {
-                EchoTheme.colorScheme.surface.onColor.copy(alpha = 0.3f)
-            }
-        ) {
+        CompositionLocalProvider(LocalContentColor provides contentColor) {
             ProvideTextStyle(EchoTheme.typography.bodyLarge) {
                 Box(modifier = Modifier.weight(1f)) {
                     text()
@@ -213,70 +238,81 @@ fun DropdownMenuItem(
             }
         }
 
-        if (trailingIcon != null) {
-            CompositionLocalProvider(
-                LocalContentColor provides if (enabled) {
-                    EchoTheme.colorScheme.primary.onColor
-                } else {
-                    EchoTheme.colorScheme.primary.onColor.copy(alpha = 0.3f)
-                }
-            ) {
-                trailingIcon()
+        if (trailing != null) {
+            val trailingColor = EchoTheme.colorScheme.primary.onColor.let { color ->
+                if (enabled) color else color.copy(alpha = DISABLED_ALPHA)
+            }
+            CompositionLocalProvider(LocalContentColor provides trailingColor) {
+                trailing()
             }
         }
     }
 }
 
+/**
+ * Section label displayed above a group of menu items.
+ */
 @Composable
-fun DropdownMenuLabel(text: String) {
+fun EchoDropdownMenuLabel(text: String) {
     Text(
         text = text,
         style = EchoTheme.typography.titleLarge,
         fontWeight = FontWeight.ExtraBold,
         modifier = Modifier
-            .padding(horizontal = 8.dp)
-            .padding(top = 8.dp),
+            .padding(horizontal = EchoTheme.spacing.padding.small)
+            .padding(top = EchoTheme.spacing.padding.small),
     )
 }
 
+/**
+ * Horizontal divider separating groups within a dropdown.
+ */
 @Composable
-fun DropdownMenuSeparator() {
+fun EchoDropdownMenuSeparator() {
     HorizontalDivider(
         color = EchoTheme.colorScheme.surface.highest,
-        thickness = 1.dp
+        thickness = EchoTheme.dimen.divider.small,
     )
 }
 
+/**
+ * Trailing shortcut hint text (e.g. "Ctrl+S") for an [EchoDropdownMenuItem].
+ */
 @Composable
-fun DropdownMenuShortcut(
+fun EchoDropdownMenuShortcut(
     text: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Text(
         text = text,
         style = EchoTheme.typography.titleSmall,
         color = EchoTheme.colorScheme.primary.color,
-        modifier = modifier
+        modifier = modifier,
     )
 }
 
+/**
+ * Logical group of dropdown items — adds no visual chrome, only semantic grouping.
+ */
 @Composable
-fun DropdownMenuGroup(
-    content: @Composable ColumnScope.() -> Unit
+fun EchoDropdownMenuGroup(
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     Column(content = content)
 }
 
+// ──────────────── Position Provider ────────────────
+
 private data class DropdownMenuPositionProvider(
     val contentOffset: DpOffset,
     val density: Density,
-    val onPositionCalculated: (IntRect, IntRect) -> Unit = { _, _ -> }
+    val onPositionCalculated: (IntRect, IntRect) -> Unit = { _, _ -> },
 ) : PopupPositionProvider {
     override fun calculatePosition(
         anchorBounds: IntRect,
         windowSize: IntSize,
         layoutDirection: LayoutDirection,
-        popupContentSize: IntSize
+        popupContentSize: IntSize,
     ): IntOffset {
         val contentOffsetX = with(density) { contentOffset.x.roundToPx() }
         val contentOffsetY = with(density) { contentOffset.y.roundToPx() }
@@ -300,7 +336,7 @@ private data class DropdownMenuPositionProvider(
 
         onPositionCalculated(
             anchorBounds,
-            IntRect(x, y, x + popupContentSize.width, y + popupContentSize.height)
+            IntRect(x, y, x + popupContentSize.width, y + popupContentSize.height),
         )
         return IntOffset(x, y)
     }
@@ -308,7 +344,7 @@ private data class DropdownMenuPositionProvider(
 
 private fun calculateTransformOrigin(
     anchorBounds: IntRect,
-    menuBounds: IntRect
+    menuBounds: IntRect,
 ): TransformOrigin {
     val pivotX = when {
         menuBounds.left >= anchorBounds.right -> 0f
@@ -316,10 +352,7 @@ private fun calculateTransformOrigin(
         menuBounds.width == 0 -> 0f
         else -> {
             val intersectionCenter =
-                (max(anchorBounds.left, menuBounds.left) + min(
-                    anchorBounds.right,
-                    menuBounds.right
-                )) / 2
+                (max(anchorBounds.left, menuBounds.left) + min(anchorBounds.right, menuBounds.right)) / 2
             (intersectionCenter - menuBounds.left).toFloat() / menuBounds.width
         }
     }
@@ -329,10 +362,7 @@ private fun calculateTransformOrigin(
         menuBounds.height == 0 -> 0f
         else -> {
             val intersectionCenter =
-                (max(anchorBounds.top, menuBounds.top) + min(
-                    anchorBounds.bottom,
-                    menuBounds.bottom
-                )) / 2
+                (max(anchorBounds.top, menuBounds.top) + min(anchorBounds.bottom, menuBounds.bottom)) / 2
             (intersectionCenter - menuBounds.top).toFloat() / menuBounds.height
         }
     }

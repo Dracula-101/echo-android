@@ -19,16 +19,23 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.application.echo.ui.components.common.EchoVariant
 import com.application.echo.ui.design.theme.EchoTheme
 
 /**
- * A modern switch component that can be used to toggle between two states.
+ * Custom toggle switch with smooth thumb animation.
  *
- * @param checked Function that returns the current checked state
- * @param onCheckedChange Function called when the switch state should change
- * @param modifier Modifier to be applied to the switch
- * @param enabled Whether the switch is enabled for interaction
- * @param interactionSource The MutableInteractionSource representing the stream of interactions
+ * ```kotlin
+ * var darkMode by remember { mutableStateOf(false) }
+ * EchoSwitch(
+ *     checked = { darkMode },
+ *     onCheckedChange = { darkMode = it },
+ * )
+ * ```
+ *
+ * @param checked Lambda returning the current checked state (deferred read).
+ * @param onCheckedChange Called when the user taps the switch.
+ * @param variant Color variant for the checked track/thumb.
  */
 @Composable
 fun EchoSwitch(
@@ -36,14 +43,14 @@ fun EchoSwitch(
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    variant: EchoVariant = EchoVariant.Primary,
     width: Dp = 42.dp,
     height: Dp = 24.dp,
     thumbSize: Dp = 20.dp,
     thumbPadding: Dp = 2.dp,
-    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() }
 ) {
     val isChecked = checked()
-    val colors = EchoTheme.colorScheme.switchColors()
+    val colors = EchoTheme.colorScheme.switchColors(variant)
 
     val trackRadius = height / 2
     val thumbTravel = width - thumbSize - (thumbPadding * 2)
@@ -51,41 +58,41 @@ fun EchoSwitch(
     val thumbOffset by animateFloatAsState(
         targetValue = if (isChecked) (thumbPadding + thumbTravel).value else thumbPadding.value,
         animationSpec = tween(durationMillis = 150),
-        label = "thumb_position"
+        label = "thumb_position",
     )
 
     val trackColor = when {
-        !enabled -> if (isChecked) colors.disabledCheckedTrack else colors.disabledThumb
-        isChecked -> colors.trackPressed
-        else -> colors.track
+        !enabled -> if (isChecked) colors.disabledCheckedTrack else colors.disabledUncheckedTrack
+        isChecked -> colors.checkedTrack
+        else -> colors.uncheckedTrack
     }
 
     val thumbColor = when {
-        !enabled -> if (isChecked) colors.disabledCheckedThumb else colors.disabledTrack
-        isChecked -> colors.thumbPressed
-        else -> colors.thumb
+        !enabled -> if (isChecked) colors.disabledCheckedThumb else colors.disabledUncheckedThumb
+        isChecked -> colors.checkedThumb
+        else -> colors.uncheckedThumb
     }
 
     Box(
         modifier = modifier
             .size(width = width, height = height)
             .clip(RoundedCornerShape(trackRadius))
-            .background(trackColor),
-        contentAlignment = Alignment.CenterStart
+            .background(trackColor)
+            .clickable(
+                enabled = enabled,
+                indication = null,
+                interactionSource = remember { MutableInteractionSource() },
+                role = Role.Switch,
+                onClick = { onCheckedChange(!isChecked) },
+            ),
+        contentAlignment = Alignment.CenterStart,
     ) {
         Box(
             modifier = Modifier
                 .offset(x = thumbOffset.dp)
-                .clickable(
-                    interactionSource = interactionSource,
-                    indication = null,
-                    enabled = enabled,
-                    role = Role.Switch,
-                    onClick = { onCheckedChange(!isChecked) }
-                )
                 .size(thumbSize)
                 .clip(CircleShape)
-                .background(thumbColor)
+                .background(thumbColor),
         )
     }
 }
