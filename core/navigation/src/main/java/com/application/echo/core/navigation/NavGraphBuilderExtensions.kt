@@ -91,17 +91,14 @@ inline fun <reified T : Any> NavGraphBuilder.echoComposable(
  * ```
  *
  * @param startDestination The [KClass] of the start destination inside this graph.
- * @param deepLinks Optional list of deep links for the graph root.
  * @param builder The [NavGraphBuilder] block to declare child destinations.
  */
 inline fun <reified T : Any> NavGraphBuilder.echoNavigation(
     startDestination: KClass<*>,
-    deepLinks: List<NavDeepLink> = emptyList(),
     noinline builder: NavGraphBuilder.() -> Unit,
 ) {
     navigation<T>(
         startDestination = startDestination,
-        deepLinks = deepLinks,
         builder = builder,
     )
 }

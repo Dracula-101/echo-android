@@ -1,6 +1,7 @@
 package com.application.echo.core.navigation.deeplink
 
 import androidx.navigation.NavDeepLink
+import androidx.navigation.NavDeepLinkDslBuilder
 import androidx.navigation.navDeepLink
 
 /**
@@ -45,7 +46,7 @@ class EchoDeepLinkBuilder {
     /**
      * Add a fully custom [NavDeepLink] built via the standard builder.
      */
-    fun custom(builder: NavDeepLink.Builder.() -> Unit) {
+    fun custom(builder: NavDeepLinkDslBuilder.() -> Unit) {
         links += navDeepLink(builder)
     }
 

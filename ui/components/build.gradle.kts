@@ -16,4 +16,7 @@ dependencies {
     // Compose Essentials
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.ui)
+    implementation(libs.androidx.adaptive)
+
+    implementation(libs.kotlinx.collections.immutable)
 }

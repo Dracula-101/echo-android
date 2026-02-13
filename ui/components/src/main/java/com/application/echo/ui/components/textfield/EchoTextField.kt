@@ -28,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.unit.times
 import com.application.echo.ui.design.theme.EchoTheme
 
 private const val BORDER_ANIM_DURATION_MS = 200
@@ -135,7 +136,7 @@ fun EchoTextField(
                         )
                         .padding(
                             horizontal = EchoTheme.spacing.padding.medium,
-                            vertical = EchoTheme.spacing.padding.small,
+                            vertical = 1.2 * EchoTheme.spacing.padding.small,
                         ),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {

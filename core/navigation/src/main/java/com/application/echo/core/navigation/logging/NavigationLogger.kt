@@ -51,12 +51,13 @@ internal class NavigationLogger @Inject constructor() {
     }
 
     private fun routeName(route: Any): String {
-        val name = route::class.simpleName ?: route.toString()
-        // For data classes with params, include the toString
-        return if (route::class.isData && name != route.toString()) {
-            route.toString()
+        val simpleName = route::class.simpleName ?: return route.toString()
+        val fullString = route.toString()
+        // For data classes with params, toString includes field values — prefer that.
+        return if (fullString.startsWith(simpleName) && fullString != simpleName) {
+            fullString
         } else {
-            name
+            simpleName
         }
     }
 

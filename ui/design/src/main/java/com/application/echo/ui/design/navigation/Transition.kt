@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.application.echo.ui.design.navigation
 
 import androidx.compose.animation.AnimatedContentTransitionScope
@@ -24,9 +26,25 @@ private object AnimationSpec {
     val EXIT_EASING = CubicBezierEasing(0.3f, 0.0f, 0.8f, 0.15f)
 }
 
+@Deprecated(
+    message = "Moved to core:navigation. Use EchoTransitions.isForwardNavigation instead.",
+    level = DeprecationLevel.WARNING,
+)
 val AnimatedContentTransitionScope<NavBackStackEntry>.isForwardNavigation: Boolean
     get() = initialState.destination.parent?.id == targetState.destination.parent?.id
 
+/**
+ * @deprecated Transitions have moved to `core:navigation`.
+ * Use [com.application.echo.core.navigation.transition.EchoTransitions] instead.
+ */
+@Deprecated(
+    message = "Moved to core:navigation. Use EchoTransitions instead.",
+    replaceWith = ReplaceWith(
+        expression = "EchoTransitions",
+        imports = ["com.application.echo.core.navigation.transition.EchoTransitions"],
+    ),
+    level = DeprecationLevel.WARNING,
+)
 object Transitions {
 
     val fadeIn: (AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition) = {

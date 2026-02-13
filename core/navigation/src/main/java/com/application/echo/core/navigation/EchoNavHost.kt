@@ -1,5 +1,7 @@
 package com.application.echo.core.navigation
 
+import androidx.compose.foundation.background
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -8,20 +10,21 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
+import com.application.echo.core.navigation.transition.EchoTransitionPreset
 import com.application.echo.core.navigation.transition.EchoTransitions
 import com.application.echo.core.navigation.transition.NavEnterTransition
 import com.application.echo.core.navigation.transition.NavExitTransition
 import timber.log.Timber
 
 /**
- * Echo-flavored wrapper around [NavHost] that wires up the [Navigator] automatically.
+ * Echo wrapper around [NavHost] that wires up the [Navigator] automatically.
  *
  * It collects [NavigationCommand]s from the injected [Navigator] and translates them
  * into NavController calls. The [Navigator] is also exposed via [LocalNavigator] so
  * child composables can trigger navigation without a NavController reference.
  *
- * By default, the host uses the standard horizontal slide + fade transitions from
- * [EchoTransitions]. Override individual parameters to customise.
+ * By default, the host uses [EchoTransitionPreset.SlideHorizontal] transitions.
+ * Override individual parameters or pass a [transition] preset to customise.
  *
  * @param navigator The [Navigator] instance, typically injected via Hilt.
  * @param startDestination The route for the start destination.
@@ -50,14 +53,50 @@ fun EchoNavHost(
         NavHost(
             navController = navController,
             startDestination = startDestination,
-            modifier = modifier,
             enterTransition = enterTransition,
             exitTransition = exitTransition,
             popEnterTransition = popEnterTransition,
             popExitTransition = popExitTransition,
             builder = builder,
+            modifier = modifier.background(MaterialTheme.colorScheme.surface),
         )
     }
+}
+
+/**
+ * Convenience overload that accepts an [EchoTransitionPreset] to set all four
+ * transition directions in one shot.
+ *
+ * ```kotlin
+ * EchoNavHost(
+ *     navigator = navigator,
+ *     startDestination = HomeRoute,
+ *     transition = EchoTransitionPreset.Fade,
+ * ) { ... }
+ * ```
+ *
+ * @param transition The [EchoTransitionPreset] to apply as host defaults.
+ */
+@Composable
+fun EchoNavHost(
+    navigator: Navigator,
+    startDestination: Any,
+    transition: EchoTransitionPreset,
+    modifier: Modifier = Modifier,
+    navController: NavHostController = rememberNavController(),
+    builder: NavGraphBuilder.() -> Unit,
+) {
+    EchoNavHost(
+        navigator = navigator,
+        startDestination = startDestination,
+        modifier = modifier,
+        navController = navController,
+        enterTransition = transition.enterTransition,
+        exitTransition = transition.exitTransition,
+        popEnterTransition = transition.popEnterTransition,
+        popExitTransition = transition.popExitTransition,
+        builder = builder,
+    )
 }
 
 /**
@@ -88,8 +127,10 @@ private fun NavigationCommandHandler(
                 }
 
                 is NavigationCommand.NavigateBack -> {
-                    if (!navController.popBackStack()) {
-                        Timber.tag(TAG).d("Back stack is empty, cannot pop")
+                    if (navController.previousBackStackEntry != null) {
+                        navController.popBackStack()
+                    } else {
+                        Timber.tag(TAG).d("Already at start destination, ignoring back")
                     }
                 }
 

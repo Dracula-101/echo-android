@@ -11,6 +11,7 @@ class AndroidFeatureConventionPlugin : Plugin<Project> {
                 apply("echo.android.hilt")
                 apply("echo.android.library.compose")
                 apply("org.jetbrains.kotlin.plugin.serialization")
+                apply("kotlin-parcelize")
             }
 
             dependencies {
