@@ -1,8 +1,5 @@
 package com.application.echo.core.navigation
 
-import androidx.compose.animation.AnimatedContentTransitionScope
-import androidx.compose.animation.EnterTransition
-import androidx.compose.animation.ExitTransition
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavDeepLink
@@ -10,27 +7,33 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
 import com.application.echo.core.navigation.transition.EchoTransitionPreset
+import com.application.echo.core.navigation.transition.EnterTransitionProvider
+import com.application.echo.core.navigation.transition.ExitTransitionProvider
 import kotlin.reflect.KClass
 
 /**
  * Registers a composable destination with optional transition overrides and deep links.
  *
- * This is a convenience wrapper over [NavGraphBuilder.composable] that applies the standard
- * forward/back navigation transitions used across the app. Feature modules can use this
- * to avoid duplicating transition configuration.
+ * Uses nullable [EnterTransitionProvider] / [ExitTransitionProvider] — returning `null`
+ * defers to the parent [EchoNavHost]'s default transition. This means individual
+ * screens only need to specify transitions they want to override; everything else
+ * falls through to the host.
  *
- * @param enterTransition Custom enter transition override.
- * @param exitTransition Custom exit transition override.
- * @param popEnterTransition Custom pop enter transition override.
- * @param popExitTransition Custom pop exit transition override.
+ * For graph-aware transitions that automatically return `null` on cross-graph
+ * navigation, use providers from [EchoTransitionProviders.Enter] / [Exit].
+ *
+ * @param enterTransition Custom enter transition override (null = use host default).
+ * @param exitTransition Custom exit transition override (null = use host default).
+ * @param popEnterTransition Custom pop enter transition override (null = use host default).
+ * @param popExitTransition Custom pop exit transition override (null = use host default).
  * @param deepLinks List of [NavDeepLink]s for this destination.
  * @param content The composable content for this destination.
  */
 inline fun <reified T : Any> NavGraphBuilder.echoComposable(
-    noinline enterTransition: (AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition?)? = null,
-    noinline exitTransition: (AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition?)? = null,
-    noinline popEnterTransition: (AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition?)? = enterTransition,
-    noinline popExitTransition: (AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition?)? = exitTransition,
+    noinline enterTransition: EnterTransitionProvider = null,
+    noinline exitTransition: ExitTransitionProvider = null,
+    noinline popEnterTransition: EnterTransitionProvider = enterTransition,
+    noinline popExitTransition: ExitTransitionProvider = exitTransition,
     deepLinks: List<NavDeepLink> = emptyList(),
     noinline content: @Composable (NavBackStackEntry) -> Unit,
 ) {
@@ -46,6 +49,9 @@ inline fun <reified T : Any> NavGraphBuilder.echoComposable(
 
 /**
  * Registers a composable destination with a bundled [EchoTransitionPreset].
+ *
+ * The preset's root-level providers are used directly — they always resolve
+ * to a concrete transition for this screen.
  *
  * ```kotlin
  * echoComposable<SettingsRoute>(

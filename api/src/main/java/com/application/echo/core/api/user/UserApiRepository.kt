@@ -5,7 +5,7 @@ import com.application.echo.core.network.result.ApiResult
 /**
  * Public contract for all user-profile operations.
  */
-interface UserRepository {
+interface UserApiRepository {
 
     /**
      * Fetch a user's profile by their ID.

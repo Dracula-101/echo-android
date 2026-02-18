@@ -11,7 +11,7 @@ import retrofit2.http.Path
 /**
  * Retrofit service definition for the User API.
  *
- * Internal — consumers use [UserRepository] instead.
+ * Internal — consumers use [UserApiRepository] instead.
  */
 internal interface UserApiService {
 

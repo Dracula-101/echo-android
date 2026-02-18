@@ -27,7 +27,7 @@ import com.application.echo.ui.design.type.toMaterialTypography
 
 object EchoTheme {
     /**
-     * Retrieves the current [EchoComponentColors].
+     * Retrieves the current [EchoColorScheme].
      */
     val colorScheme: EchoColorScheme
 

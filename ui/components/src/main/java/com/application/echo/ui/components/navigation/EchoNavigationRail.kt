@@ -28,7 +28,7 @@ import com.application.echo.ui.components.navigation.model.NavigationItem
 import kotlinx.collections.immutable.ImmutableList
 
 /**
- * A custom Bitwarden-themed navigation rail.
+ * A custom Echo-themed navigation rail.
  */
 @Composable
 fun EchoNavigationRail(

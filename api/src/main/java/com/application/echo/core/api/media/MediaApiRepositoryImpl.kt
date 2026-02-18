@@ -9,11 +9,11 @@ import java.io.File
 import javax.inject.Inject
 
 /**
- * Default [MediaRepository] backed by [MediaApiService].
+ * Default [MediaApiRepository] backed by [MediaApiService].
  */
-internal class MediaRepositoryImpl @Inject constructor(
+internal class MediaApiRepositoryImpl @Inject constructor(
     private val api: MediaApiService,
-) : MediaRepository {
+) : MediaApiRepository {
 
     override suspend fun uploadMedia(
         file: File,

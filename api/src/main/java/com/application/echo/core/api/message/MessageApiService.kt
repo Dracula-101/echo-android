@@ -12,7 +12,7 @@ import retrofit2.http.Query
 /**
  * Retrofit service definition for the Messages API.
  *
- * Internal — consumers use [MessageRepository] instead.
+ * Internal — consumers use [MessageApiRepository] instead.
  */
 internal interface MessageApiService {
 

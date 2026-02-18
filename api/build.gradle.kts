@@ -11,6 +11,7 @@ android {
 dependencies {
 
     // Project
+    implementation(projects.core.common)
     implementation(projects.core.network)
 
     // Coroutines

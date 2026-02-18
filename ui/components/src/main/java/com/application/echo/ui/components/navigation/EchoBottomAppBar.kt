@@ -9,11 +9,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import com.application.echo.ui.design.theme.EchoTheme
 import com.application.echo.ui.components.navigation.model.NavigationItem
-import com.bitwarden.ui.platform.components.navigation.EchoNavigationBarItem
+import com.application.echoplatform.components.navigation.EchoNavigationBarItem
 import kotlinx.collections.immutable.ImmutableList
 
 /**
- * A custom Bitwarden-themed bottom app bar.
+ * A custom Echo-themed bottom app bar.
  */
 @Composable
 fun EchoBottomAppBar(

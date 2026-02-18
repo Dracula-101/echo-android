@@ -3,6 +3,7 @@ package com.application.echo.ui.components.textfield
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
@@ -26,6 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.times
@@ -70,8 +72,8 @@ fun EchoTextField(
     readOnly: Boolean = false,
     singleLine: Boolean = true,
     maxLines: Int = if (singleLine) 1 else Int.MAX_VALUE,
-    leading: @Composable (() -> Unit)? = null,
-    trailing: @Composable (() -> Unit)? = null,
+    leading: @Composable ((isFocused: Boolean) -> Unit)? = null,
+    trailing: @Composable ((isFocused: Boolean) -> Unit)? = null,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     keyboardActions: KeyboardActions = KeyboardActions.Default,
     visualTransformation: VisualTransformation = VisualTransformation.None,
@@ -134,17 +136,23 @@ fun EchoTextField(
                             ),
                             shape = EchoTheme.shapes.input,
                         )
+                        .background(colors.background.copy(0.5f), EchoTheme.shapes.input)
                         .padding(
                             horizontal = EchoTheme.spacing.padding.medium,
-                            vertical = 1.2 * EchoTheme.spacing.padding.small,
+                            vertical = 1.75 * EchoTheme.spacing.padding.small,
                         ),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     if (leading != null) {
                         CompositionLocalProvider(
-                            LocalContentColor provides colors.placeholder,
-                        ) {
-                            leading()
+                            LocalContentColor provides when {
+                                !enabled -> colors.disabledText
+                                !isFocused -> colors.unfocusedBorder
+                                isError -> colors.errorText
+                                else -> colors.focusedBorder
+                            }
+                        ){
+                            leading(isFocused)
                         }
                         Spacer(Modifier.padding(start = EchoTheme.spacing.gap.small))
                     }
@@ -163,13 +171,18 @@ fun EchoTextField(
                     if (trailing != null) {
                         Spacer(Modifier.padding(end = EchoTheme.spacing.gap.small))
                         CompositionLocalProvider(
-                            LocalContentColor provides colors.placeholder,
+                            LocalContentColor provides when {
+                                !enabled -> colors.disabledText
+                                !isFocused -> colors.unfocusedBorder
+                                isError -> colors.errorText
+                                else -> colors.focusedBorder
+                            }
                         ) {
-                            trailing()
+                            trailing(isFocused)
                         }
                     }
                 }
-            },
+            }
         )
 
         // ── Helper / Error text ──

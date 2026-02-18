@@ -8,7 +8,9 @@ import com.application.echo.core.network.monitor.ConnectivityManagerNetworkMonit
 import com.application.echo.core.network.monitor.NetworkMonitor
 import com.application.echo.core.network.qualifier.Authenticated
 import com.application.echo.core.network.qualifier.Unauthenticated
+import com.google.gson.FieldNamingPolicy
 import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
@@ -31,6 +33,18 @@ internal abstract class NetworkBindsModule {
 @Module
 @InstallIn(SingletonComponent::class)
 internal object NetworkProvidesModule {
+
+    @Provides
+    @Singleton
+    fun provideGson(): Gson {
+        return GsonBuilder()
+            .setDateFormat("yyyy-MM-dd'T'HH:mm:ssZ")
+            .serializeNulls()
+            .setPrettyPrinting()
+            .create()
+    }
+
+
 
     @Provides
     @Singleton

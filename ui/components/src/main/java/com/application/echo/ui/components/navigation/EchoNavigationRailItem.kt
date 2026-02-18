@@ -20,7 +20,7 @@ import com.application.echo.ui.components.badge.NotificationBadge
 import com.application.echo.ui.components.navigation.color.echoNavigationRailItemColors
 
 /**
- * A custom Bitwarden-themed bottom app bar.
+ * A custom Echo-themed bottom app bar.
  *
  * @param labelRes The custom label for the navigation item.
  * @param contentDescriptionRes The custom content description for the navigation item.

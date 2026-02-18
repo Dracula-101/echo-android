@@ -12,7 +12,7 @@ import retrofit2.http.Part
 /**
  * Retrofit service definition for the Media API.
  *
- * Internal — consumers use [MediaRepository] instead.
+ * Internal — consumers use [MediaApiRepository] instead.
  */
 internal interface MediaApiService {
 

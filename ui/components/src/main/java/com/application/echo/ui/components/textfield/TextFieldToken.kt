@@ -33,7 +33,7 @@ internal fun EchoColorScheme.textFieldColors(): TextFieldColors {
         focusedBorder = primary.color,
         unfocusedBorder = outline.color,
         errorBorder = error.color,
-        background = surface.color,
+        background = surface.highest,
         disabledText = surface.onColor.copy(alpha = 0.4f),
         disabledBorder = outline.color.copy(alpha = 0.3f),
         disabledBackground = surface.color.copy(alpha = 0.5f),

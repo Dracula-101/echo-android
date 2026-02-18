@@ -4,14 +4,14 @@ package com.application.echo.core.navigation.transition
  * Bundled set of enter / exit / popEnter / popExit transitions
  * that can be applied as a single unit to `echoComposable` or `EchoNavHost`.
  *
- * ## Usage
+ * ## Two-tier design
  *
- * **As a preset:**
- * ```kotlin
- * echoComposable<SettingsRoute>(
- *     transition = EchoTransitionPreset.SlideHorizontal,
- * ) { SettingsScreen() }
- * ```
+ * Each preset exposes both **root-level** (non-null) and **composable-level**
+ * (nullable, graph-aware) providers via its fields. The preset uses root-level
+ * providers for [EchoNavHost] defaults and composable-level for [echoComposable]
+ * overrides.
+ *
+ * ## Usage
  *
  * **As a host default:**
  * ```kotlin
@@ -22,28 +22,25 @@ package com.application.echo.core.navigation.transition
  * ) { ... }
  * ```
  *
- * **Custom preset via `copy`:**
+ * **Per-screen override:**
  * ```kotlin
- * val customModal = EchoTransitionPreset.Modal.copy(
- *     popEnterTransition = EchoTransitions.fadeIn,
- * )
+ * echoComposable<SettingsRoute>(
+ *     transition = EchoTransitionPreset.SlideHorizontal,
+ * ) { SettingsScreen() }
  * ```
  *
- * **Build from scratch via factory:**
+ * **Custom preset via `copy`:**
  * ```kotlin
- * val slow = EchoTransitionPreset(
- *     enterTransition = EchoTransitions.fade(durationMillis = 600),
- *     exitTransition = EchoTransitions.fadeExit(durationMillis = 600),
- *     popEnterTransition = EchoTransitions.fade(durationMillis = 600),
- *     popExitTransition = EchoTransitions.fadeExit(durationMillis = 600),
+ * val custom = EchoTransitionPreset.Modal.copy(
+ *     popEnterTransition = EchoTransitions.Enter.stay,
  * )
  * ```
  */
 data class EchoTransitionPreset(
-    val enterTransition: NavEnterTransition,
-    val exitTransition: NavExitTransition,
-    val popEnterTransition: NavEnterTransition,
-    val popExitTransition: NavExitTransition,
+    val enterTransition: RootEnterTransitionProvider,
+    val exitTransition: RootExitTransitionProvider,
+    val popEnterTransition: RootEnterTransitionProvider,
+    val popExitTransition: RootExitTransitionProvider,
 ) {
     companion object {
 
@@ -51,15 +48,16 @@ data class EchoTransitionPreset(
 
         /**
          * Standard forward/back horizontal slide with parallax + staggered fade.
+         * RTL-safe via `slideIntoContainer`/`slideOutOfContainer`.
          *
          * Best for peer-level screen pushes (detail, settings, profile, etc.).
          * This is the default for [EchoNavHost].
          */
         val SlideHorizontal = EchoTransitionPreset(
-            enterTransition = EchoTransitions.slideInFromEnd,
-            exitTransition = EchoTransitions.slideOutToStart,
-            popEnterTransition = EchoTransitions.slideInFromStart,
-            popExitTransition = EchoTransitions.slideOutToEnd,
+            enterTransition = EchoTransitions.Enter.slideFromEnd,
+            exitTransition = EchoTransitions.Exit.slideToStart,
+            popEnterTransition = EchoTransitions.Enter.slideFromStart,
+            popExitTransition = EchoTransitions.Exit.slideToEnd,
         )
 
         /**
@@ -69,10 +67,10 @@ data class EchoTransitionPreset(
          * root-level swaps where direction doesn't matter.
          */
         val Fade = EchoTransitionPreset(
-            enterTransition = EchoTransitions.fadeIn,
-            exitTransition = EchoTransitions.fadeOut,
-            popEnterTransition = EchoTransitions.fadePopEnter,
-            popExitTransition = EchoTransitions.fadePopExit,
+            enterTransition = EchoTransitions.Enter.fadeIn,
+            exitTransition = EchoTransitions.Exit.fadeOut,
+            popEnterTransition = EchoTransitions.Enter.fadeIn,
+            popExitTransition = EchoTransitions.Exit.fadeOut,
         )
 
         // ─────────────── Modals / sheets ───────────────
@@ -84,10 +82,10 @@ data class EchoTransitionPreset(
          * giving it a layered, physical feel.
          */
         val Modal = EchoTransitionPreset(
-            enterTransition = EchoTransitions.modalEnter,
-            exitTransition = EchoTransitions.modalPopExit,
-            popEnterTransition = EchoTransitions.modalPopEnter,
-            popExitTransition = EchoTransitions.modalExit,
+            enterTransition = EchoTransitions.Enter.slideFromBottom,
+            exitTransition = EchoTransitions.Exit.modalDim,
+            popEnterTransition = EchoTransitions.Enter.modalRestore,
+            popExitTransition = EchoTransitions.Exit.slideToBottom,
         )
 
         /**
@@ -97,10 +95,10 @@ data class EchoTransitionPreset(
          * Good for compose flows, image viewers, full-screen editors.
          */
         val Vertical = EchoTransitionPreset(
-            enterTransition = EchoTransitions.slideFadeInUp,
-            exitTransition = EchoTransitions.slideFadeOutDown,
-            popEnterTransition = EchoTransitions.slideFadeInDown,
-            popExitTransition = EchoTransitions.slideFadeOutDown,
+            enterTransition = EchoTransitions.Enter.slideFromBottom,
+            exitTransition = EchoTransitions.Exit.slideToBottom,
+            popEnterTransition = EchoTransitions.Enter.slideFromTop,
+            popExitTransition = EchoTransitions.Exit.slideToBottom,
         )
 
         // ─────────────── Material Motion ───────────────
@@ -112,10 +110,10 @@ data class EchoTransitionPreset(
          * where the child conceptually sits "above" the parent.
          */
         val SharedAxisZ = EchoTransitionPreset(
-            enterTransition = EchoTransitions.sharedAxisZEnter,
-            exitTransition = EchoTransitions.sharedAxisZExit,
-            popEnterTransition = EchoTransitions.sharedAxisZPopEnter,
-            popExitTransition = EchoTransitions.sharedAxisZPopExit,
+            enterTransition = EchoTransitions.Enter.scaleUp,
+            exitTransition = EchoTransitions.Exit.scaleDown,
+            popEnterTransition = EchoTransitions.Enter.scaleUp,
+            popExitTransition = EchoTransitions.Exit.scaleDown,
         )
 
         /**
@@ -125,10 +123,10 @@ data class EchoTransitionPreset(
          * or any sequential content on the same level.
          */
         val SharedAxisX = EchoTransitionPreset(
-            enterTransition = EchoTransitions.sharedAxisXEnter,
-            exitTransition = EchoTransitions.sharedAxisXExit,
-            popEnterTransition = EchoTransitions.sharedAxisXPopEnter,
-            popExitTransition = EchoTransitions.sharedAxisXPopExit,
+            enterTransition = EchoTransitions.Enter.sharedAxisX,
+            exitTransition = EchoTransitions.Exit.sharedAxisX,
+            popEnterTransition = EchoTransitions.Enter.sharedAxisXPop,
+            popExitTransition = EchoTransitions.Exit.sharedAxisXPop,
         )
 
         /**
@@ -138,10 +136,10 @@ data class EchoTransitionPreset(
          * list-to-detail in vertical lists, stepper UIs.
          */
         val SharedAxisY = EchoTransitionPreset(
-            enterTransition = EchoTransitions.sharedAxisYEnter,
-            exitTransition = EchoTransitions.sharedAxisYExit,
-            popEnterTransition = EchoTransitions.sharedAxisYPopEnter,
-            popExitTransition = EchoTransitions.sharedAxisYPopExit,
+            enterTransition = EchoTransitions.Enter.sharedAxisY,
+            exitTransition = EchoTransitions.Exit.sharedAxisY,
+            popEnterTransition = EchoTransitions.Enter.sharedAxisYPop,
+            popExitTransition = EchoTransitions.Exit.sharedAxisYPop,
         )
 
         // ─────────────── Scale ───────────────
@@ -153,10 +151,10 @@ data class EchoTransitionPreset(
          * or any screen that feels like it "pops" into view.
          */
         val Scale = EchoTransitionPreset(
-            enterTransition = EchoTransitions.scaleIn,
-            exitTransition = EchoTransitions.scaleOut,
-            popEnterTransition = EchoTransitions.scalePopEnter,
-            popExitTransition = EchoTransitions.scalePopExit,
+            enterTransition = EchoTransitions.Enter.popScale,
+            exitTransition = EchoTransitions.Exit.scaleUp,
+            popEnterTransition = EchoTransitions.Enter.popScale,
+            popExitTransition = EchoTransitions.Exit.popScale,
         )
 
         /**
@@ -166,10 +164,25 @@ data class EchoTransitionPreset(
          * or any transition that feels like an element is "opening up."
          */
         val Expand = EchoTransitionPreset(
-            enterTransition = EchoTransitions.expandIn,
-            exitTransition = EchoTransitions.shrinkOut,
-            popEnterTransition = EchoTransitions.expandPopEnter,
-            popExitTransition = EchoTransitions.shrinkPopExit,
+            enterTransition = EchoTransitions.Enter.expand,
+            exitTransition = EchoTransitions.Exit.shrink,
+            popEnterTransition = EchoTransitions.Enter.expandRestore,
+            popExitTransition = EchoTransitions.Exit.shrink,
+        )
+
+        // ─────────────── Push ───────────────
+
+        /**
+         * Push-style: new screen slides in while old screen stays in place.
+         *
+         * Feels like a card being pushed on top of a stack —
+         * the background doesn't move, only the foreground animates.
+         */
+        val Push = EchoTransitionPreset(
+            enterTransition = EchoTransitions.Enter.slideFromEnd,
+            exitTransition = EchoTransitions.Exit.stay,
+            popEnterTransition = EchoTransitions.Enter.stay,
+            popExitTransition = EchoTransitions.Exit.slideToEnd,
         )
 
         // ─────────────── Utility ───────────────
@@ -181,10 +194,10 @@ data class EchoTransitionPreset(
          * own internal animations and don't want nav transitions.
          */
         val None = EchoTransitionPreset(
-            enterTransition = EchoTransitions.none,
-            exitTransition = EchoTransitions.noneExit,
-            popEnterTransition = EchoTransitions.none,
-            popExitTransition = EchoTransitions.noneExit,
+            enterTransition = EchoTransitions.Enter.none,
+            exitTransition = EchoTransitions.Exit.none,
+            popEnterTransition = EchoTransitions.Enter.none,
+            popExitTransition = EchoTransitions.Exit.none,
         )
     }
 }

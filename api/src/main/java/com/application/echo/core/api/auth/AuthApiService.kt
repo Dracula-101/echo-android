@@ -10,7 +10,7 @@ import retrofit2.http.POST
 /**
  * Retrofit service definition for the Auth API.
  *
- * Internal — consumers use [AuthRepository] instead.
+ * Internal — consumers use [AuthApiRepository] instead.
  */
 internal interface AuthApiService {
 

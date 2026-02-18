@@ -1,4 +1,4 @@
-package com.bitwarden.ui.platform.model
+package com.application.echoplatform.model
 
 /**
  * Enum representing the window size classes currently supported by the app.
@@ -6,4 +6,5 @@ package com.bitwarden.ui.platform.model
 enum class WindowSize {
     Compact,
     Medium,
+    Expanded
 }

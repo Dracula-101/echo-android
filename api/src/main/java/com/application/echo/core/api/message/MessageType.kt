@@ -3,7 +3,7 @@ package com.application.echo.core.api.message
 /**
  * Type-safe message content types.
  *
- * Used with [MessageRepository.sendMessage] instead of raw strings.
+ * Used with [MessageApiRepository.sendMessage] instead of raw strings.
  *
  * ```kotlin
  * messageRepo.sendMessage(
@@ -26,7 +26,7 @@ object MessageType {
 /**
  * Type-safe conversation types.
  *
- * Used with [MessageRepository.createConversation] instead of raw strings.
+ * Used with [MessageApiRepository.createConversation] instead of raw strings.
  *
  * ```kotlin
  * messageRepo.createConversation(

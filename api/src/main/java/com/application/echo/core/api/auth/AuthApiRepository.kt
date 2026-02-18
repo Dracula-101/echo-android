@@ -9,7 +9,7 @@ import com.application.echo.core.network.result.ApiResult
  * [ApiResult.Success] or [ApiResult.Failure]. No Retrofit or OkHttp
  * types leak into the consuming layer.
  */
-interface AuthRepository {
+interface AuthApiRepository {
 
     /**
      * Authenticate with email + password.

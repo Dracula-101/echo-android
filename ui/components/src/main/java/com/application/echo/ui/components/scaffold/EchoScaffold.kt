@@ -48,7 +48,7 @@ import com.application.echo.ui.components.scrim.EchoAnimatedScrim
 import com.application.echo.ui.design.theme.EchoTheme
 import com.application.echo.ui.util.rememberWindowSize
 import com.application.echo.ui.util.toDp
-import com.bitwarden.ui.platform.model.WindowSize
+import com.application.echoplatform.model.WindowSize
 
 /**
  * Direct passthrough to [Scaffold] but contains a few specific override values. Everything is

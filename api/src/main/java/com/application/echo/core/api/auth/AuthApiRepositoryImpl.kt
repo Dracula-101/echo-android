@@ -5,11 +5,11 @@ import com.application.echo.core.network.result.toApiResult
 import javax.inject.Inject
 
 /**
- * Default [AuthRepository] backed by [AuthApiService].
+ * Default [AuthApiRepository] backed by [AuthApiService].
  */
-internal class AuthRepositoryImpl @Inject constructor(
+internal class AuthApiRepositoryImpl @Inject constructor(
     private val api: AuthApiService,
-) : AuthRepository {
+) : AuthApiRepository {
 
     override suspend fun login(
         email: String,

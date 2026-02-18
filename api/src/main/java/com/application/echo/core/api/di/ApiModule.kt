@@ -1,21 +1,25 @@
 package com.application.echo.core.api.di
 
+import android.content.SharedPreferences
+import com.application.echo.core.api.auth.AuthApiRepository
 import com.application.echo.core.api.auth.AuthApiService
-import com.application.echo.core.api.auth.AuthRepository
-import com.application.echo.core.api.auth.AuthRepositoryImpl
+import com.application.echo.core.api.auth.AuthApiRepositoryImpl
 import com.application.echo.core.api.health.HealthRepository
 import com.application.echo.core.api.health.HealthRepositoryImpl
+import com.application.echo.core.api.manager.AuthTokenManager
+import com.application.echo.core.api.manager.AuthTokenManagerImpl
 import com.application.echo.core.api.media.MediaApiService
-import com.application.echo.core.api.media.MediaRepository
-import com.application.echo.core.api.media.MediaRepositoryImpl
+import com.application.echo.core.api.media.MediaApiRepository
+import com.application.echo.core.api.media.MediaApiRepositoryImpl
 import com.application.echo.core.api.message.MessageApiService
-import com.application.echo.core.api.message.MessageRepository
-import com.application.echo.core.api.message.MessageRepositoryImpl
+import com.application.echo.core.api.message.MessageApiRepository
+import com.application.echo.core.api.message.MessageApiRepositoryImpl
 import com.application.echo.core.api.session.SessionHeaderInterceptor
 import com.application.echo.core.api.session.SessionProvider
 import com.application.echo.core.api.user.UserApiService
-import com.application.echo.core.api.user.UserRepository
-import com.application.echo.core.api.user.UserRepositoryImpl
+import com.application.echo.core.api.user.UserApiRepository
+import com.application.echo.core.api.user.UserApiRepositoryImpl
+import com.application.echo.core.common.annotations.UnencryptedPreferences
 import com.application.echo.core.network.client.EchoHttpClient
 import dagger.Binds
 import dagger.Module
@@ -36,26 +40,26 @@ internal abstract class ApiBindsModule {
     @Binds
     @Singleton
     abstract fun bindAuthRepository(
-        impl: AuthRepositoryImpl,
-    ): AuthRepository
+        impl: AuthApiRepositoryImpl,
+    ): AuthApiRepository
 
     @Binds
     @Singleton
     abstract fun bindUserRepository(
-        impl: UserRepositoryImpl,
-    ): UserRepository
+        impl: UserApiRepositoryImpl,
+    ): UserApiRepository
 
     @Binds
     @Singleton
     abstract fun bindMediaRepository(
-        impl: MediaRepositoryImpl,
-    ): MediaRepository
+        impl: MediaApiRepositoryImpl,
+    ): MediaApiRepository
 
     @Binds
     @Singleton
     abstract fun bindMessageRepository(
-        impl: MessageRepositoryImpl,
-    ): MessageRepository
+        impl: MessageApiRepositoryImpl,
+    ): MessageApiRepository
 
     @Binds
     @Singleton
@@ -71,6 +75,17 @@ internal abstract class ApiBindsModule {
 @Module
 @InstallIn(SingletonComponent::class)
 internal object ApiProvidesModule {
+
+    /**
+     * Auth token manager — responsible for storing and retrieving the current
+     */
+    @Provides
+    @Singleton
+    fun provideAuthTokenManager(
+        @UnencryptedPreferences sharedPreferences: SharedPreferences,
+    ): AuthTokenManager = AuthTokenManagerImpl(
+        sharedPreferences = sharedPreferences,
+    )
 
     /**
      * Auth endpoints are public (login, register, refresh) — use [EchoHttpClient.unauthenticated].

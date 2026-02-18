@@ -19,4 +19,5 @@ dependencies {
     implementation(libs.androidx.adaptive)
 
     implementation(libs.kotlinx.collections.immutable)
+    implementation(libs.androidx.compose.material3.windowSizeClass)
 }

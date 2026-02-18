@@ -18,11 +18,11 @@ internal class AuthInterceptor(
 
     override fun intercept(chain: Interceptor.Chain): Response {
         val original = chain.request()
-        val token = tokenProvider.getLatestAuthToken()
+        val tokenData = tokenProvider.getLatestAuthTokenData()
 
-        val request = if (token != null) {
+        val request = if (tokenData != null) {
             original.newBuilder()
-                .header(HeaderConstants.AUTHORIZATION, "${HeaderConstants.BEARER} $token")
+                .header(HeaderConstants.AUTHORIZATION, "${HeaderConstants.BEARER} ${tokenData.accessToken}")
                 .build()
         } else {
             Timber.d("No auth token available, proceeding without Authorization header")

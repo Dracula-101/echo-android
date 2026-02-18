@@ -5,7 +5,7 @@ import com.application.echo.core.network.result.ApiResult
 /**
  * Public contract for all messaging operations (messages + conversations).
  */
-interface MessageRepository {
+interface MessageApiRepository {
 
     // ── Messages ──
 

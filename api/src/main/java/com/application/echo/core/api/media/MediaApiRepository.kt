@@ -6,7 +6,7 @@ import java.io.File
 /**
  * Public contract for media upload operations.
  */
-interface MediaRepository {
+interface MediaApiRepository {
 
     /**
      * Upload a generic media file.

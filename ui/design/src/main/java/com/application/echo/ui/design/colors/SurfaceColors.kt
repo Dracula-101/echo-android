@@ -15,8 +15,6 @@ import androidx.compose.ui.graphics.Color
  * @property high The high elevation surface color.
  * @property low The low elevation surface color.
  * @property lowest The lowest elevation surface color.
- * @property shades Pre-computed shade values for the surface color.
- * @property alphas Pre-computed alpha values for the surface color.
  */
 data class SurfaceColors(
     val color: Color,

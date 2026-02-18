@@ -5,11 +5,11 @@ import com.application.echo.core.network.result.toApiResult
 import javax.inject.Inject
 
 /**
- * Default [MessageRepository] backed by [MessageApiService].
+ * Default [MessageApiRepository] backed by [MessageApiService].
  */
-internal class MessageRepositoryImpl @Inject constructor(
+internal class MessageApiRepositoryImpl @Inject constructor(
     private val api: MessageApiService,
-) : MessageRepository {
+) : MessageApiRepository {
 
     // ── Messages ──
 

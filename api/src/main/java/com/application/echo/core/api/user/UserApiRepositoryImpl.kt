@@ -5,11 +5,11 @@ import com.application.echo.core.network.result.toApiResult
 import javax.inject.Inject
 
 /**
- * Default [UserRepository] backed by [UserApiService].
+ * Default [UserApiRepository] backed by [UserApiService].
  */
-internal class UserRepositoryImpl @Inject constructor(
+internal class UserApiRepositoryImpl @Inject constructor(
     private val api: UserApiService,
-) : UserRepository {
+) : UserApiRepository {
 
     override suspend fun getProfile(
         userId: String,

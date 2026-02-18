@@ -4,7 +4,7 @@ import androidx.compose.material3.adaptive.WindowAdaptiveInfo
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import com.bitwarden.ui.platform.model.WindowSize
+import com.application.echoplatform.model.WindowSize
 
 /**
  * Remembers the [WindowSize] class for the window corresponding to the current window metrics.

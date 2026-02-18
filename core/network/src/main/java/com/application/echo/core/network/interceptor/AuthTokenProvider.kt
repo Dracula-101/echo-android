@@ -1,5 +1,7 @@
 package com.application.echo.core.network.interceptor
 
+import com.application.echo.core.network.model.TokenData
+
 /**
  * Contract for supplying the current authentication token.
  *
@@ -13,5 +15,5 @@ interface AuthTokenProvider {
     /**
      * Returns the latest valid auth token, or `null` if not authenticated.
      */
-    fun getLatestAuthToken(): String?
+    fun getLatestAuthTokenData(): TokenData?
 }

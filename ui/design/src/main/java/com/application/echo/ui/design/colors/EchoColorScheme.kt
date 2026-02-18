@@ -35,7 +35,6 @@ data class EchoColorScheme(
     val outline: OutlineColors,
     val scrim: ScrimColors,
     val inverse: InverseColors,
-    val shades: ColorShadesData,
 )
 
 fun EchoColorScheme.toMaterialColorScheme(): androidx.compose.material3.ColorScheme {
@@ -51,8 +50,6 @@ fun EchoColorScheme.toMaterialColorScheme(): androidx.compose.material3.ColorSch
         secondaryContainer = this.secondary.container,
         onSecondaryContainer = this.secondary.onContainer,
 
-        // For tertiary, you might need to add these to your EchoColorScheme
-        // or use fallback colors. Here I'm using primary colors as fallback
         tertiary = this.primary.color, // Fallback - add tertiary to EchoColorScheme
         onTertiary = this.primary.onColor,
         tertiaryContainer = this.primary.container,
@@ -101,7 +98,7 @@ fun EchoColorScheme.toMaterialColorScheme(): androidx.compose.material3.ColorSch
         onSecondaryFixedVariant = this.secondary.onColor, // Fallback
 
         tertiaryFixed = this.primary.color, // Fallback
-        tertiaryFixedDim = this.primary.dim,
+        tertiaryFixedDim = this.primary.dim, // You might want to add dim to PrimaryColors
         onTertiaryFixed = this.primary.onColor,
         onTertiaryFixedVariant = this.primary.onColor // Fallback
     )

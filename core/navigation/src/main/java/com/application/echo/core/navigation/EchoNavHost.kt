@@ -12,8 +12,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
 import com.application.echo.core.navigation.transition.EchoTransitionPreset
 import com.application.echo.core.navigation.transition.EchoTransitions
-import com.application.echo.core.navigation.transition.NavEnterTransition
-import com.application.echo.core.navigation.transition.NavExitTransition
+import com.application.echo.core.navigation.transition.RootEnterTransitionProvider
+import com.application.echo.core.navigation.transition.RootExitTransitionProvider
 import timber.log.Timber
 
 /**
@@ -23,8 +23,10 @@ import timber.log.Timber
  * into NavController calls. The [Navigator] is also exposed via [LocalNavigator] so
  * child composables can trigger navigation without a NavController reference.
  *
- * By default, the host uses [EchoTransitionPreset.SlideHorizontal] transitions.
- * Override individual parameters or pass a [transition] preset to customise.
+ * Uses [RootEnterTransitionProvider] / [RootExitTransitionProvider] (non-null) since
+ * the host is the final fallback — it must always resolve to a concrete transition.
+ * Individual composable destinations can use nullable providers that return `null`
+ * to defer back to these host defaults.
  *
  * @param navigator The [Navigator] instance, typically injected via Hilt.
  * @param startDestination The route for the start destination.
@@ -41,10 +43,10 @@ fun EchoNavHost(
     startDestination: Any,
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
-    enterTransition: NavEnterTransition = EchoTransitions.slideInFromEnd,
-    exitTransition: NavExitTransition = EchoTransitions.slideOutToStart,
-    popEnterTransition: NavEnterTransition = EchoTransitions.slideInFromStart,
-    popExitTransition: NavExitTransition = EchoTransitions.slideOutToEnd,
+    enterTransition: RootEnterTransitionProvider = EchoTransitions.Enter.slideFromEnd,
+    exitTransition: RootExitTransitionProvider = EchoTransitions.Exit.slideToStart,
+    popEnterTransition: RootEnterTransitionProvider = EchoTransitions.Enter.slideFromStart,
+    popExitTransition: RootExitTransitionProvider = EchoTransitions.Exit.slideToEnd,
     builder: NavGraphBuilder.() -> Unit,
 ) {
     NavigationCommandHandler(navController, navigator)
