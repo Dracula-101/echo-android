@@ -8,6 +8,7 @@
 /.idea/navEditor.xml
 /.idea/assetWizardSettings.xml
 /.idea/firebender
+/.claude
 .DS_Store
 .kotlin
 /build
