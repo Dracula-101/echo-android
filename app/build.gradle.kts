@@ -60,6 +60,7 @@ dependencies {
     implementation(projects.ui.design)
     implementation(projects.ui.components)
 
+    implementation(projects.api)
     implementation(projects.feature.auth)
 
     implementation(libs.androidx.core.splashscreen)
@@ -70,6 +71,8 @@ dependencies {
     implementation(libs.hilt.ext.work)
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlinx.serialization.json)
+
+    implementation(libs.timber)
 
     ksp(libs.hilt.ext.compiler)
 }

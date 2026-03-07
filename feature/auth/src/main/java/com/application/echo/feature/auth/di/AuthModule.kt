@@ -2,11 +2,14 @@ package com.application.echo.feature.auth.di
 
 import android.content.SharedPreferences
 import com.application.echo.core.api.auth.AuthApiRepository
+import com.application.echo.core.api.manager.AuthTokenManager
 import com.application.echo.core.common.annotations.UnencryptedPreferences
 import com.application.echo.feature.auth.datasource.disk.AuthDiskSource
 import com.application.echo.feature.auth.datasource.disk.AuthDiskSourceImpl
 import com.application.echo.feature.auth.datasource.network.AuthNetworkSource
 import com.application.echo.feature.auth.datasource.network.AuthNetworkSourceImpl
+import com.application.echo.feature.auth.repository.AuthRepository
+import com.application.echo.feature.auth.repository.AuthRepositoryImpl
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -22,21 +25,29 @@ object AuthModule {
     @Singleton
     fun provideAuthDiskSource(
         @UnencryptedPreferences sharedPreferences: SharedPreferences,
-        json: Json
-    ): AuthDiskSource {
-        return AuthDiskSourceImpl(
-            sharedPreferences = sharedPreferences,
-            json = json
-        )
-    }
+        json: Json,
+    ): AuthDiskSource = AuthDiskSourceImpl(
+        sharedPreferences = sharedPreferences,
+        json = json,
+    )
 
     @Provides
     @Singleton
     fun provideAuthNetworkSource(
-        authApi: AuthApiRepository
-    ): AuthNetworkSource {
-        return AuthNetworkSourceImpl(
-            api = authApi
-        )
-    }
+        authApi: AuthApiRepository,
+    ): AuthNetworkSource = AuthNetworkSourceImpl(
+        api = authApi,
+    )
+
+    @Provides
+    @Singleton
+    fun provideAuthRepository(
+        networkSource: AuthNetworkSource,
+        diskSource: AuthDiskSource,
+        tokenManager: AuthTokenManager,
+    ): AuthRepository = AuthRepositoryImpl(
+        networkSource = networkSource,
+        diskSource = diskSource,
+        tokenManager = tokenManager,
+    )
 }

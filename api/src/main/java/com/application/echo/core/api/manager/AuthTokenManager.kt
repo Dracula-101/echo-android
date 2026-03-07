@@ -4,12 +4,13 @@ import com.application.echo.core.network.interceptor.AuthTokenProvider
 import com.application.echo.core.network.model.TokenData
 import kotlinx.coroutines.flow.Flow
 
-interface AuthTokenManager: AuthTokenProvider {
+interface AuthTokenManager : AuthTokenProvider {
 
     val isTokenValid: Boolean
 
     val tokenDataFlow: Flow<TokenData?>
 
-    fun clearTokenData()
+    fun storeTokenData(accessToken: String, refreshToken: String, expiresIn: Long)
 
+    fun clearTokenData()
 }

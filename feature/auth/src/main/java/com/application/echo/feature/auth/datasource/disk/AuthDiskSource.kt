@@ -9,5 +9,7 @@ interface AuthDiskSource {
 
     val userStateFlow: Flow<UserState>
 
+    var sessionId: String?
 
+    var sessionToken: String?
 }

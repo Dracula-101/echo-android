@@ -21,6 +21,7 @@ import com.application.echo.core.api.user.UserApiRepository
 import com.application.echo.core.api.user.UserApiRepositoryImpl
 import com.application.echo.core.common.annotations.UnencryptedPreferences
 import com.application.echo.core.network.client.EchoHttpClient
+import com.application.echo.core.network.interceptor.AuthTokenProvider
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
@@ -78,6 +79,7 @@ internal object ApiProvidesModule {
 
     /**
      * Auth token manager — responsible for storing and retrieving the current
+     * access/refresh tokens from disk.
      */
     @Provides
     @Singleton
@@ -86,6 +88,16 @@ internal object ApiProvidesModule {
     ): AuthTokenManager = AuthTokenManagerImpl(
         sharedPreferences = sharedPreferences,
     )
+
+    /**
+     * Bridge so the network module's [AuthInterceptor] can read the current
+     * Bearer token without depending on the API module directly.
+     */
+    @Provides
+    @Singleton
+    fun provideAuthTokenProvider(
+        manager: AuthTokenManager,
+    ): AuthTokenProvider = manager
 
     /**
      * Auth endpoints are public (login, register, refresh) — use [EchoHttpClient.unauthenticated].

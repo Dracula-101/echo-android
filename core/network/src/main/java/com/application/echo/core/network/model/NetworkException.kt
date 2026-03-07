@@ -24,7 +24,7 @@ sealed class NetworkException {
     data class Http(
         override val throwable: HttpException,
         val message: String,
-        val errors: List<ApiError>? = null,
+        val error: ApiError? = null,
     ) : NetworkException() {
 
         /** The HTTP status code. */
@@ -39,7 +39,7 @@ sealed class NetworkException {
         }
 
         /** A single display-friendly error message. */
-        val errorMessage: String get() = errors?.firstOrNull()?.message ?: message
+        val errorMessage: String get() = error?.message ?: message
 
         /** `true` when the response is a 422 validation error. */
         val isValidationError: Boolean get() = statusCode.isValidationError
@@ -52,13 +52,6 @@ sealed class NetworkException {
 
         /** `true` when the response is a 429 rate-limit error. */
         val isRateLimited: Boolean get() = statusCode.isTooManyRequests
-
-        /** Groups validation errors by their [ApiError.field]. */
-        val validationErrorsByField: Map<String, List<ApiError>>
-            get() = errors
-                ?.filter { it.field != null }
-                ?.groupBy { it.field!! }
-                ?: emptyMap()
     }
 
     // ──────────────── Network / Connectivity ────────────────

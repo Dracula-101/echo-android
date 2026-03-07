@@ -12,6 +12,8 @@ import kotlinx.coroutines.flow.onSubscription
 import kotlinx.serialization.encodeToString
 
 private const val USER_STATE_KEY = "user_state"
+private const val SESSION_ID_KEY = "session_id"
+private const val SESSION_TOKEN_KEY = "session_token"
 
 class AuthDiskSourceImpl @Inject constructor(
     sharedPreferences: SharedPreferences,
@@ -35,6 +37,15 @@ class AuthDiskSourceImpl @Inject constructor(
     override val userStateFlow: Flow<UserState>
         get() = _userStateFlow.onSubscription { emit(userState) }
 
+    override var sessionId: String?
+        get() = getString(SESSION_ID_KEY)
+        set(value) {
+            putString(SESSION_ID_KEY, value)
+        }
 
-
+    override var sessionToken: String?
+        get() = getString(SESSION_TOKEN_KEY)
+        set(value) {
+            putString(SESSION_TOKEN_KEY, value)
+        }
 }

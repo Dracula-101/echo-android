@@ -29,7 +29,7 @@ sealed class NetworkResponse<out T> {
      * The request failed — either server-side, network-level, or parse-level.
      */
     data class Error(
-        val meta: Meta,
+        val meta: Meta?,
         val error: NetworkException,
     ) : NetworkResponse<Nothing>()
 }

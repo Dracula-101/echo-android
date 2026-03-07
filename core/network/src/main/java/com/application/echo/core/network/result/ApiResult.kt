@@ -1,5 +1,6 @@
 package com.application.echo.core.network.result
 
+import com.application.echo.core.network.model.ApiError
 import com.application.echo.core.network.model.NetworkException
 import com.application.echo.core.network.model.NetworkResponse
 

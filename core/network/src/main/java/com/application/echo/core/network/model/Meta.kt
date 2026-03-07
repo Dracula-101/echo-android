@@ -1,5 +1,7 @@
 package com.application.echo.core.network.model
 
+import com.google.gson.annotations.SerializedName
+
 /**
  * Standard API response metadata.
  *
@@ -7,7 +9,8 @@ package com.application.echo.core.network.model
  * with these fields, regardless of success or failure.
  */
 data class Meta(
-    val success: Boolean,
+    @SerializedName("status_code")
     val statusCode: Int,
+    @SerializedName("timestamp")
     val timestamp: String,
 )

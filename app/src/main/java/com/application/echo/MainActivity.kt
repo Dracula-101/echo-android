@@ -28,9 +28,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
-
         super.onCreate(savedInstanceState)
-
         analytics.trackEvent(AnalyticsEvent.AppEvent.opened("launcher"))
 
         enableEdgeToEdge()

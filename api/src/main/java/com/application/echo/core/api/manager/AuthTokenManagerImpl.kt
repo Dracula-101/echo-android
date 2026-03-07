@@ -65,6 +65,19 @@ class AuthTokenManagerImpl @Inject constructor(
         }
     }
 
+    override fun storeTokenData(accessToken: String, refreshToken: String, expiresIn: Long) {
+        this.accessToken = accessToken
+        this.refreshToken = refreshToken
+        this.expiresIn = expiresIn
+        _tokenDataFlow.tryEmit(
+            TokenData(
+                accessToken = accessToken,
+                refreshToken = refreshToken,
+                expiresIn = expiresIn,
+            ),
+        )
+    }
+
     override fun clearTokenData() {
         accessToken = null
         refreshToken = null

@@ -1,18 +1,18 @@
 package com.application.echo.core.network.model
 
-/**
- * Represents a single error detail returned by the API.
- *
- * May be a top-level error or a field-level validation error.
- *
- * @property code Machine-readable error code (e.g. "EMAIL_TAKEN", "INVALID_FORMAT").
- * @property field The request field this error relates to, or `null` for general errors.
- * @property message Human-readable description suitable for display.
- * @property detail Optional extended description for debugging.
- */
+import com.google.gson.annotations.SerializedName
+
 data class ApiError(
+    @SerializedName("code")
     val code: String,
-    val field: String? = null,
+    @SerializedName("description")
+    val description: String,
+    @SerializedName("fields")
+    val fields: List<ApiValidationErrorField>? = null,
+    @SerializedName("inner_error")
+    val innerError: String? = null,
+    @SerializedName("message")
     val message: String,
-    val detail: String? = null,
+    @SerializedName("type")
+    val type: String,
 )
