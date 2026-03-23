@@ -1,14 +1,28 @@
 package com.application.echo.feature.auth.repository
 
+import com.application.echo.core.api.auth.AuthError
 import com.application.echo.core.api.auth.AuthLoginResult
 import com.application.echo.core.api.auth.AuthRegisterResult
 import com.application.echo.core.api.auth.SessionInfo
+import com.application.echo.core.api.auth.fold
 import com.application.echo.core.api.auth.onSuccess
 import com.application.echo.core.api.manager.AuthTokenManager
+import com.application.echo.core.common.annotations.AppDispatcher
+import com.application.echo.core.common.model.AppDispatchers
 import com.application.echo.feature.auth.datasource.disk.AuthDiskSource
 import com.application.echo.feature.auth.datasource.network.AuthNetworkSource
+import com.application.echo.feature.auth.model.AuthState
 import com.application.echo.feature.auth.model.UserState
-import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import timber.log.Timber
 import javax.inject.Inject
 
 private const val DEFAULT_TOKEN_LIFETIME_SECONDS = 86_400L // 24 hours
@@ -17,53 +31,160 @@ class AuthRepositoryImpl @Inject constructor(
     private val networkSource: AuthNetworkSource,
     private val diskSource: AuthDiskSource,
     private val tokenManager: AuthTokenManager,
+    @AppDispatcher(AppDispatchers.IO) ioDispatcher: CoroutineDispatcher,
 ) : AuthRepository {
 
-    override val userStateFlow: Flow<UserState>
-        get() = diskSource.userStateFlow
+    private val scope = CoroutineScope(SupervisorJob() + ioDispatcher)
+
+    /** Guards all session-mutating operations (login, register, refresh, logout). */
+    private val sessionMutex = Mutex()
+
+    private val _authStateFlow = MutableStateFlow<AuthState>(AuthState.Initializing)
+    override val authStateFlow: StateFlow<AuthState> = _authStateFlow.asStateFlow()
+
+    override val userStateFlow: StateFlow<UserState> =
+        MutableStateFlow(diskSource.userState)
+
+    init {
+        scope.launch { restoreSession() }
+    }
+
+    // ── Public API ───────────────────────────────────────────────────
 
     override suspend fun login(
         email: String,
         password: String,
-    ): AuthLoginResult {
+    ): AuthLoginResult = sessionMutex.withLock {
         val result = networkSource.login(email, password)
         result.onSuccess { response ->
             persistSession(response.session, response.user.id, response.user.email)
+            emitAuthenticated()
         }
-        return result
+        result
     }
 
     override suspend fun register(
         email: String,
         password: String,
         acceptTerms: Boolean,
-    ): AuthRegisterResult {
+    ): AuthRegisterResult = sessionMutex.withLock {
         val result = networkSource.register(email, password, acceptTerms)
         result.onSuccess { response ->
             persistSession(response.session, response.user.id, response.user.email)
+            emitAuthenticated()
         }
-        return result
+        result
     }
 
     override fun logout() {
+        clearSession()
+        _authStateFlow.value = AuthState.Unauthenticated(AuthState.Unauthenticated.Reason.LoggedOut)
+    }
+
+    // ── Session Restoration ──────────────────────────────────────────
+
+    /**
+     * Called once at init. Checks for a persisted session and tries to
+     * ensure we have a valid access token before declaring auth state.
+     */
+    private suspend fun restoreSession() = sessionMutex.withLock {
+        val storedUser = diskSource.userState
+        if (storedUser == UserState.Empty) {
+            Timber.d("No stored session — unauthenticated")
+            _authStateFlow.value = AuthState.Unauthenticated()
+            return
+        }
+
+        // Token still valid — go straight to authenticated.
+        if (tokenManager.isTokenValid) {
+            Timber.d("Stored session with valid token — authenticated")
+            emitAuthenticated()
+            return
+        }
+
+        // Token expired — try refreshing.
+        val tokenData = tokenManager.getLatestAuthTokenData()
+        if (tokenData == null) {
+            Timber.w("Stored user but no token data — clearing stale session")
+            clearSession()
+            _authStateFlow.value = AuthState.Unauthenticated(AuthState.Unauthenticated.Reason.SessionExpired)
+            return
+        }
+
+        Timber.d("Access token expired — attempting refresh")
+        networkSource.refreshToken(tokenData.refreshToken).fold(
+            onSuccess = { response ->
+                storeTokens(response.accessToken, response.refreshToken)
+                Timber.d("Token refreshed — authenticated")
+                emitAuthenticated()
+            },
+            onError = { error ->
+                handleRefreshError(error)
+            },
+        )
+    }
+
+    // ── Refresh Error Handling ────────────────────────────────────────
+
+    /**
+     * Only logs out on terminal auth errors. Transient failures (network,
+     * timeout, server errors) leave the session intact so the next API
+     * call or app foreground can retry.
+     */
+    private fun handleRefreshError(error: AuthError) {
+        when (error) {
+            // Terminal — the refresh token itself is rejected. Session is dead.
+            is AuthError.InvalidRefreshToken,
+            is AuthError.RefreshTokenExpired,
+            is AuthError.SessionExpired,
+            is AuthError.SessionNotFound,
+            is AuthError.AccountLocked,
+            is AuthError.AccountDisabled,
+            -> {
+                Timber.e("Token refresh permanently failed (%s) — logging out", error.code)
+                clearSession()
+                _authStateFlow.value = AuthState.Unauthenticated(
+                    AuthState.Unauthenticated.Reason.SessionExpired,
+                )
+            }
+            // Transient — network issue, server down, etc. Keep the session
+            // so the user isn't logged out just because they're offline.
+            else -> {
+                Timber.w("Token refresh failed transiently (%s) — keeping session", error.code)
+                emitAuthenticated()
+            }
+        }
+    }
+
+    // ── Session Persistence ──────────────────────────────────────────
+
+    private fun persistSession(session: SessionInfo, userId: String, email: String) {
+        storeTokens(session.accessToken, session.refreshToken)
+        diskSource.sessionId = session.sessionId
+        diskSource.sessionToken = session.sessionToken
+        diskSource.userState = UserState(userId = userId, email = email)
+    }
+
+    private fun storeTokens(accessToken: String, refreshToken: String) {
+        val expiresAt = (System.currentTimeMillis() / 1_000) + DEFAULT_TOKEN_LIFETIME_SECONDS
+        tokenManager.storeTokenData(
+            accessToken = accessToken,
+            refreshToken = refreshToken,
+            expiresIn = expiresAt,
+        )
+    }
+
+    private fun clearSession() {
         tokenManager.clearTokenData()
         diskSource.sessionId = null
         diskSource.sessionToken = null
         diskSource.userState = UserState.Empty
+        (userStateFlow as MutableStateFlow).value = UserState.Empty
     }
 
-    private fun persistSession(session: SessionInfo, userId: String, email: String) {
-        val expiresAt = (System.currentTimeMillis() / 1_000) + DEFAULT_TOKEN_LIFETIME_SECONDS
-        tokenManager.storeTokenData(
-            accessToken = session.accessToken,
-            refreshToken = session.refreshToken,
-            expiresIn = expiresAt,
-        )
-        diskSource.sessionId = session.sessionId
-        diskSource.sessionToken = session.sessionToken
-        diskSource.userState = UserState(
-            userId = userId,
-            email = email,
-        )
+    private fun emitAuthenticated() {
+        val user = diskSource.userState
+        (userStateFlow as MutableStateFlow).value = user
+        _authStateFlow.value = AuthState.Authenticated(user)
     }
 }

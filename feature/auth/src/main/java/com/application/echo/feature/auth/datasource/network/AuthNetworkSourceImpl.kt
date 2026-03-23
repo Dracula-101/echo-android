@@ -2,6 +2,7 @@ package com.application.echo.feature.auth.datasource.network
 
 import com.application.echo.core.api.auth.AuthApiRepository
 import com.application.echo.core.api.auth.AuthLoginResult
+import com.application.echo.core.api.auth.AuthRefreshResult
 import com.application.echo.core.api.auth.AuthRegisterResult
 import javax.inject.Inject
 
@@ -25,5 +26,11 @@ class AuthNetworkSourceImpl @Inject constructor(
         email = email,
         password = password,
         acceptTerms = acceptTerms,
+    )
+
+    override suspend fun refreshToken(
+        refreshToken: String,
+    ): AuthRefreshResult = api.refreshToken(
+        refreshToken = refreshToken,
     )
 }

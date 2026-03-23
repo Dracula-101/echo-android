@@ -3,7 +3,9 @@ package com.application.echo.feature.auth.di
 import android.content.SharedPreferences
 import com.application.echo.core.api.auth.AuthApiRepository
 import com.application.echo.core.api.manager.AuthTokenManager
+import com.application.echo.core.common.annotations.AppDispatcher
 import com.application.echo.core.common.annotations.UnencryptedPreferences
+import com.application.echo.core.common.model.AppDispatchers
 import com.application.echo.feature.auth.datasource.disk.AuthDiskSource
 import com.application.echo.feature.auth.datasource.disk.AuthDiskSourceImpl
 import com.application.echo.feature.auth.datasource.network.AuthNetworkSource
@@ -14,6 +16,7 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.serialization.json.Json
 import javax.inject.Singleton
 
@@ -45,9 +48,11 @@ object AuthModule {
         networkSource: AuthNetworkSource,
         diskSource: AuthDiskSource,
         tokenManager: AuthTokenManager,
+        @AppDispatcher(AppDispatchers.IO) ioDispatcher: CoroutineDispatcher,
     ): AuthRepository = AuthRepositoryImpl(
         networkSource = networkSource,
         diskSource = diskSource,
         tokenManager = tokenManager,
+        ioDispatcher = ioDispatcher,
     )
 }

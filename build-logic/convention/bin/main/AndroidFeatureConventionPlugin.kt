@@ -17,8 +17,12 @@ class AndroidFeatureConventionPlugin : Plugin<Project> {
             dependencies {
                 add("implementation", project(":core:common"))
                 add("implementation", project(":core:navigation"))
+                add("implementation", project(":core:network"))
+
                 add("implementation", project(":ui:design"))
                 add("implementation", project(":ui:components"))
+
+                add("implementation", project(":api"))
 
                 add("implementation", libs.findLibrary("androidx.hilt.navigation.compose").get())
                 add("implementation", libs.findLibrary("androidx.lifecycle.runtimeCompose").get())
@@ -27,6 +31,9 @@ class AndroidFeatureConventionPlugin : Plugin<Project> {
                 add("implementation", libs.findLibrary("kotlinx.serialization.json").get())
                 add("implementation", libs.findLibrary("kotlinx.coroutines.android").get())
                 add("implementation", libs.findLibrary("timber").get())
+
+                add("implementation", libs.findLibrary("androidx-compose-material-icons-core").get())
+                add("implementation", libs.findLibrary("androidx-compose-material-icons-extended").get())
             }
         }
     }

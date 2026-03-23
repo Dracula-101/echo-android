@@ -1,6 +1,7 @@
 package com.application.echo.feature.auth.datasource.network
 
 import com.application.echo.core.api.auth.AuthLoginResult
+import com.application.echo.core.api.auth.AuthRefreshResult
 import com.application.echo.core.api.auth.AuthRegisterResult
 
 interface AuthNetworkSource {
@@ -12,4 +13,6 @@ interface AuthNetworkSource {
         password: String,
         acceptTerms: Boolean,
     ): AuthRegisterResult
+
+    suspend fun refreshToken(refreshToken: String): AuthRefreshResult
 }
