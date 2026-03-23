@@ -52,6 +52,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.application.echo.ui.components.adaptive.AdaptiveLayout
 import com.application.echo.ui.components.button.EchoFilledButton
 import com.application.echo.ui.components.scaffold.EchoScaffold
+import com.application.echo.ui.components.snackbar.EchoSnackbarHost
+import com.application.echo.ui.components.snackbar.rememberEchoSnackbarState
 import com.application.echo.ui.components.textfield.EchoTextField
 import com.application.echo.ui.design.R
 import com.application.echo.ui.design.theme.EchoTheme
@@ -64,21 +66,31 @@ import kotlinx.coroutines.flow.collectLatest
 @Composable
 fun LoginScreen(
     onNavigateToRegisterScreen: () -> Unit,
-    onLoginSuccess: () -> Unit,
     viewModel: LoginViewModel = hiltViewModel(),
 ) {
     val state by viewModel.stateFlow.collectAsStateWithLifecycle()
+    val snackbarState = rememberEchoSnackbarState()
 
     LaunchedEffect(Unit) {
         viewModel.eventFlow.collectLatest { event ->
             when (event) {
-                is LoginEvent.LoginSuccess -> onLoginSuccess()
-                is LoginEvent.ShowSnackbar -> Unit
+                is LoginEvent.ShowSnackbar -> snackbarState.show(
+                    message = event.message,
+                    code = event.code,
+                    detail = event.detail,
+                    type = event.type,
+                )
             }
         }
     }
 
-    EchoScaffold {
+    EchoScaffold(
+        snackbarHost = {
+            EchoSnackbarHost(
+                state = snackbarState,
+            )
+        }
+    ) {
         LoginContent(
             state = state,
             onAction = viewModel::trySendAction,
@@ -229,14 +241,14 @@ private fun LoginForm(
             modifier = modifier,
         )
         Spacer(modifier = modifier.size(EchoTheme.spacing.padding.medium))
-        if (state.generalError != null) {
-            Text(
-                text = state.generalError,
-                style = EchoTheme.typography.bodyMedium,
-                color = EchoTheme.colorScheme.secondary.color,
-                modifier = modifier.padding(bottom = EchoTheme.spacing.padding.small),
-            )
-        }
+//        if (state.generalError != null) {
+//            Text(
+//                text = state.generalError,
+//                style = EchoTheme.typography.bodyMedium,
+//                color = EchoTheme.colorScheme.secondary.color,
+//                modifier = modifier.padding(bottom = EchoTheme.spacing.padding.small),
+//            )
+//        }
         EchoFilledButton(
             onClick = {
                 focusManager.clearFocus()

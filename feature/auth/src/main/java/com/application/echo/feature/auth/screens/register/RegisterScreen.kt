@@ -147,199 +147,185 @@ private fun RegisterForm(
 ) {
     val focusManager = LocalFocusManager.current
 
-    LazyColumn {
-        item {
-            EchoTextField(
-                value = state.email,
-                label = "Email",
-                onValueChange = { onAction(RegisterAction.OnEmailChanged(it)) },
-                placeholder = "Enter your email",
-                isError = state.emailError != null,
-                errorText = state.emailError,
-                enabled = !state.isLoading,
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Email,
-                    imeAction = ImeAction.Next,
-                ),
-                leading = { _ ->
-                    Icon(
-                        Icons.Default.MailOutline,
-                        contentDescription = "Email Icon",
-                    )
-                },
-                modifier = modifier,
-            )
-            Spacer(modifier = modifier.size(EchoTheme.spacing.padding.medium))
-        }
-        item {
-            EchoTextField(
-                value = state.password,
-                label = "Password",
-                onValueChange = { onAction(RegisterAction.OnPasswordChanged(it)) },
-                placeholder = "Enter password",
-                isError = state.passwordError != null,
-                errorText = state.passwordError,
-                enabled = !state.isLoading,
-                visualTransformation = if (state.isPasswordVisible) {
-                    VisualTransformation.None
-                } else {
-                    PasswordVisualTransformation()
-                },
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Password,
-                    imeAction = ImeAction.Next,
-                ),
-                leading = { _ ->
-                    Icon(
-                        Icons.Default.Password,
-                        contentDescription = "Password Icon",
-                    )
-                },
-                trailing = { _ ->
-                    IconButton(onClick = { onAction(RegisterAction.OnTogglePasswordVisibility) }) {
-                        Icon(
-                            imageVector = if (state.isPasswordVisible) {
-                                Icons.Default.VisibilityOff
-                            } else {
-                                Icons.Default.RemoveRedEye
-                            },
-                            contentDescription = if (state.isPasswordVisible) {
-                                "Hide Password"
-                            } else {
-                                "Show Password"
-                            },
-                        )
-                    }
-                },
-                modifier = modifier,
-            )
-            Spacer(modifier = modifier.size(EchoTheme.spacing.padding.medium))
-        }
-        item {
-            EchoTextField(
-                value = state.confirmPassword,
-                label = "Confirm Password",
-                onValueChange = { onAction(RegisterAction.OnConfirmPasswordChanged(it)) },
-                placeholder = "Confirm your password",
-                isError = state.confirmPasswordError != null,
-                errorText = state.confirmPasswordError,
-                enabled = !state.isLoading,
-                visualTransformation = if (state.isConfirmPasswordVisible) {
-                    VisualTransformation.None
-                } else {
-                    PasswordVisualTransformation()
-                },
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Password,
-                    imeAction = ImeAction.Done,
-                ),
-                keyboardActions = KeyboardActions(
-                    onDone = {
-                        focusManager.clearFocus()
-                        onAction(RegisterAction.OnRegisterClicked)
-                    },
-                ),
-                leading = { _ ->
-                    Icon(
-                        Icons.Default.Password,
-                        contentDescription = "Password Icon",
-                    )
-                },
-                trailing = { _ ->
-                    IconButton(onClick = { onAction(RegisterAction.OnToggleConfirmPasswordVisibility) }) {
-                        Icon(
-                            imageVector = if (state.isConfirmPasswordVisible) {
-                                Icons.Default.VisibilityOff
-                            } else {
-                                Icons.Default.RemoveRedEye
-                            },
-                            contentDescription = if (state.isConfirmPasswordVisible) {
-                                "Hide Password"
-                            } else {
-                                "Show Password"
-                            },
-                        )
-                    }
-                },
-                modifier = modifier,
-            )
-            Spacer(modifier = modifier.size(EchoTheme.spacing.padding.large))
-        }
-        if (state.generalError != null) {
-            item {
-                Text(
-                    text = state.generalError,
-                    style = EchoTheme.typography.bodyMedium,
-                    color = EchoTheme.colorScheme.error.color,
-                    modifier = modifier.padding(bottom = EchoTheme.spacing.padding.medium),
+    Column {
+        EchoTextField(
+            value = state.email,
+            label = "Email",
+            onValueChange = { onAction(RegisterAction.OnEmailChanged(it)) },
+            placeholder = "Enter your email",
+            isError = state.emailError != null,
+            errorText = state.emailError,
+            enabled = !state.isLoading,
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Email,
+                imeAction = ImeAction.Next,
+            ),
+            leading = { _ ->
+                Icon(
+                    Icons.Default.MailOutline,
+                    contentDescription = "Email Icon",
                 )
-            }
-        }
-        item {
-            EchoFilledButton(
-                onClick = {
+            },
+            modifier = modifier,
+        )
+        Spacer(modifier = modifier.size(EchoTheme.spacing.padding.medium))
+        EchoTextField(
+            value = state.password,
+            label = "Password",
+            onValueChange = { onAction(RegisterAction.OnPasswordChanged(it)) },
+            placeholder = "Enter password",
+            isError = state.passwordError != null,
+            errorText = state.passwordError,
+            enabled = !state.isLoading,
+            visualTransformation = if (state.isPasswordVisible) {
+                VisualTransformation.None
+            } else {
+                PasswordVisualTransformation()
+            },
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Password,
+                imeAction = ImeAction.Next,
+            ),
+            leading = { _ ->
+                Icon(
+                    Icons.Default.Password,
+                    contentDescription = "Password Icon",
+                )
+            },
+            trailing = { _ ->
+                Icon(
+                    imageVector = if (state.isPasswordVisible) {
+                        Icons.Default.VisibilityOff
+                    } else {
+                        Icons.Default.RemoveRedEye
+                    },
+                    contentDescription = if (state.isPasswordVisible) {
+                        "Hide Password"
+                    } else {
+                        "Show Password"
+                    },
+                    modifier = Modifier.clickable { onAction(RegisterAction.OnTogglePasswordVisibility) },
+                )
+            },
+            modifier = modifier,
+        )
+        Spacer(modifier = modifier.size(EchoTheme.spacing.padding.medium))
+        EchoTextField(
+            value = state.confirmPassword,
+            label = "Confirm Password",
+            placeholder = "Confirm your password",
+            isError = state.confirmPasswordError != null,
+            onValueChange = { onAction(RegisterAction.OnConfirmPasswordChanged(it)) },
+            errorText = state.confirmPasswordError,
+            enabled = !state.isLoading,
+            visualTransformation = if (state.isConfirmPasswordVisible) {
+                VisualTransformation.None
+            } else {
+                PasswordVisualTransformation()
+            },
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Password,
+                imeAction = ImeAction.Done,
+            ),
+            keyboardActions = KeyboardActions(
+                onDone = {
                     focusManager.clearFocus()
                     onAction(RegisterAction.OnRegisterClicked)
                 },
-                enabled = !state.isLoading,
-                modifier = modifier.fillMaxWidth(),
-            ) {
-                if (state.isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(EchoTheme.dimen.icon.small),
-                        strokeWidth = 2.dp,
-                        color = EchoTheme.colorScheme.primary.onColor,
-                    )
-                    Spacer(Modifier.size(EchoTheme.spacing.gap.small))
-                }
-                Text(
-                    "Register",
-                    style = EchoTheme.typography.titleLarge,
+            ),
+            leading = { _ ->
+                Icon(
+                    Icons.Default.Password,
+                    contentDescription = "Password Icon",
                 )
-                if (!state.isLoading) {
-                    Spacer(Modifier.size(EchoTheme.spacing.gap.small))
-                    Icon(
-                        Icons.AutoMirrored.Filled.ArrowForward,
-                        contentDescription = "Register Icon",
-                        tint = EchoTheme.colorScheme.primary.onColor,
-                    )
-                }
-            }
-            HorizontalDivider(
-                modifier = modifier
-                    .padding(vertical = EchoTheme.spacing.padding.large),
+            },
+            trailing = { _ ->
+                Icon(
+                    imageVector = if (state.isConfirmPasswordVisible) {
+                        Icons.Default.VisibilityOff
+                    } else {
+                        Icons.Default.RemoveRedEye
+                    },
+                    contentDescription = if (state.isConfirmPasswordVisible) {
+                        "Hide Password"
+                    } else {
+                        "Show Password"
+                    },
+                    modifier = Modifier.clickable { onAction(RegisterAction.OnToggleConfirmPasswordVisibility) },
+                )
+            },
+            modifier = modifier,
+        )
+        Spacer(modifier = modifier.size(EchoTheme.spacing.padding.large))
+        if (state.generalError != null) {
+            Text(
+                text = state.generalError,
+                style = EchoTheme.typography.bodyMedium,
+                color = EchoTheme.colorScheme.error.color,
+                modifier = modifier.padding(bottom = EchoTheme.spacing.padding.medium),
             )
         }
-        item {
-            Column(
-                modifier = modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-            ) {
-                Text(
-                    buildAnnotatedString {
-                        append("Already have an account? ")
-                        val loginText = "Login"
-                        append(loginText)
-                        addStyle(
-                            style = EchoTheme.typography.bodyLarge.toSpanStyle().copy(
-                                color = EchoTheme.colorScheme.primary.color,
-                            ),
-                            start = length - loginText.length,
-                            end = length,
-                        )
-                    },
-                    style = EchoTheme.typography.bodyLarge,
-                    color = EchoTheme.colorScheme.inverse.surface,
-                    modifier = modifier
-                        .clip(EchoTheme.shapes.snackbar)
-                        .clickable { onNavigateToLoginScreen() }
-                        .padding(
-                            vertical = EchoTheme.spacing.padding.extraSmall,
-                            horizontal = EchoTheme.spacing.padding.small,
-                        ),
+        EchoFilledButton(
+            onClick = {
+                focusManager.clearFocus()
+                onAction(RegisterAction.OnRegisterClicked)
+            },
+            enabled = !state.isLoading,
+            modifier = modifier.fillMaxWidth(),
+        ) {
+            if (state.isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(EchoTheme.dimen.icon.small),
+                    strokeWidth = 2.dp,
+                    color = EchoTheme.colorScheme.primary.onColor,
+                )
+                Spacer(Modifier.size(EchoTheme.spacing.gap.small))
+            }
+            Text(
+                "Register",
+                style = EchoTheme.typography.titleLarge,
+            )
+            if (!state.isLoading) {
+                Spacer(Modifier.size(EchoTheme.spacing.gap.small))
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowForward,
+                    contentDescription = "Register Icon",
+                    tint = EchoTheme.colorScheme.primary.onColor,
                 )
             }
+        }
+        HorizontalDivider(
+            modifier = modifier
+                .padding(vertical = EchoTheme.spacing.padding.large),
+        )
+        Column(
+            modifier = modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Text(
+                buildAnnotatedString {
+                    append("Already have an account? ")
+                    val loginText = "Login"
+                    append(loginText)
+                    addStyle(
+                        style = EchoTheme.typography.bodyLarge.toSpanStyle().copy(
+                            color = EchoTheme.colorScheme.primary.color,
+                        ),
+                        start = length - loginText.length,
+                        end = length,
+                    )
+                },
+                style = EchoTheme.typography.bodyLarge,
+                color = EchoTheme.colorScheme.inverse.surface,
+                modifier = modifier
+                    .clip(EchoTheme.shapes.snackbar)
+                    .clickable { onNavigateToLoginScreen() }
+                    .padding(
+                        vertical = EchoTheme.spacing.padding.extraSmall,
+                        horizontal = EchoTheme.spacing.padding.small,
+                    ),
+            )
         }
     }
 }

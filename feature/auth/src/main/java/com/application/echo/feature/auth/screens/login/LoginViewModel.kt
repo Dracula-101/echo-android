@@ -4,10 +4,11 @@ import android.os.Parcelable
 import android.util.Patterns
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
+import com.application.echo.core.api.auth.AuthError
+import com.application.echo.core.api.auth.fold
 import com.application.echo.core.common.platform.base.BaseViewModel
-import com.application.echo.core.network.model.NetworkException
-import com.application.echo.core.network.result.fold
 import com.application.echo.feature.auth.repository.AuthRepository
+import com.application.echo.ui.components.snackbar.EchoSnackbarType
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import kotlinx.parcelize.Parcelize
@@ -29,7 +30,6 @@ class LoginViewModel @Inject constructor(
                     state.copy(
                         email = action.email,
                         emailError = null,
-                        generalError = null,
                     )
                 }
             }
@@ -39,7 +39,6 @@ class LoginViewModel @Inject constructor(
                     state.copy(
                         password = action.password,
                         passwordError = null,
-                        generalError = null,
                     )
                 }
             }
@@ -62,7 +61,7 @@ class LoginViewModel @Inject constructor(
             return
         }
 
-        setState { state.copy(isLoading = true, generalError = null) }
+        setState { state.copy(isLoading = true) }
         viewModelScope.launch {
             authRepository.login(
                 email = state.email.trim(),
@@ -70,29 +69,27 @@ class LoginViewModel @Inject constructor(
             ).fold(
                 onSuccess = {
                     setState { state.copy(isLoading = false) }
-                    sendEvent(LoginEvent.LoginSuccess)
                 },
-                onFailure = { exception ->
-                    Timber.e(exception.throwable, "Login failed")
+                onError = { error ->
+                    Timber.e("Login failed: %s", error.code)
                     setState { state.copy(isLoading = false) }
-                    when(exception) {
-                        is NetworkException.Http -> {
-                            setState { state.copy(generalError = exception.error?.code) }
-                        }
-                        is NetworkException.Network -> {
-                            setState { state.copy(generalError = "Network error. Please check your connection.") }
-                        }
-
-                        is NetworkException.Serialization -> {
-                            setState { state.copy(generalError = "Unexpected response from server. Please try again later.") }
-                        }
-                        is NetworkException.Timeout -> {
-                            setState { state.copy(generalError = "Request timed out. Please try again.") }
-                        }
-                        is NetworkException.Unknown -> {
-                            setState { state.copy(generalError = "An unexpected error occurred. Please try again.") }
-                        }
+                    val errorMessage = when (error) {
+                        is AuthError.InvalidCredentials -> "Invalid email or password."
+                        is AuthError.UserNotFound -> "No account found with this email."
+                        is AuthError.AccountLocked -> "Your account has been locked."
+                        is AuthError.AccountDisabled -> "Your account has been disabled."
+                        is AuthError.TooManyFailedAttempts -> "Too many failed attempts. Please try again later."
+                        is AuthError.NetworkError -> "Network error. Please check your connection."
+                        is AuthError.ValidationFailed -> error.fields.joinToString("\n") { it.message }
+                        is AuthError.Unknown -> "An unexpected error occurred."
+                        else -> "Login failed. Please try again."
                     }
+                    sendEvent(LoginEvent.ShowSnackbar(
+                        message = errorMessage,
+                        detail = error.message,
+                        code = error.code,
+                        type = EchoSnackbarType.ERROR,
+                    ))
                     savedStateHandle[KEY_STATE] = state
                 },
             )
@@ -120,21 +117,19 @@ class LoginViewModel @Inject constructor(
 
 @Parcelize
 data class LoginState(
-    val email: String = "pratikpujari1000@gmail.com",
-    val password: String = "123456",
+    val email: String = "pratik.test@gmail.com",
+    val password: String = "12345678",
     val isPasswordVisible: Boolean = false,
     val isLoading: Boolean = false,
     val emailError: String? = null,
     val passwordError: String? = null,
-    val generalError: String? = null,
 ) : Parcelable {
     val hasFieldErrors: Boolean
         get() = emailError != null || passwordError != null
 }
 
 sealed interface LoginEvent {
-    data object LoginSuccess : LoginEvent
-    data class ShowSnackbar(val message: String) : LoginEvent
+    data class ShowSnackbar(val message: String, val detail: String, val code: String, val type: EchoSnackbarType) : LoginEvent
 }
 
 sealed interface LoginAction {

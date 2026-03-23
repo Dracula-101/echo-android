@@ -1,9 +1,8 @@
 package com.application.echo.feature.auth.datasource.network
 
 import com.application.echo.core.api.auth.AuthApiRepository
-import com.application.echo.core.api.auth.LoginResponse
-import com.application.echo.core.api.auth.RegisterResponse
-import com.application.echo.core.network.result.ApiResult
+import com.application.echo.core.api.auth.AuthLoginResult
+import com.application.echo.core.api.auth.AuthRegisterResult
 import javax.inject.Inject
 
 class AuthNetworkSourceImpl @Inject constructor(
@@ -13,7 +12,7 @@ class AuthNetworkSourceImpl @Inject constructor(
     override suspend fun login(
         email: String,
         password: String,
-    ): ApiResult<LoginResponse> = api.login(
+    ): AuthLoginResult = api.login(
         email = email,
         password = password,
     )
@@ -22,7 +21,7 @@ class AuthNetworkSourceImpl @Inject constructor(
         email: String,
         password: String,
         acceptTerms: Boolean,
-    ): ApiResult<RegisterResponse> = api.register(
+    ): AuthRegisterResult = api.register(
         email = email,
         password = password,
         acceptTerms = acceptTerms,

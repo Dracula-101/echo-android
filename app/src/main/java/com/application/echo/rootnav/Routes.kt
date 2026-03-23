@@ -8,3 +8,6 @@ data object LoginScreen
 
 @Serializable
 data object RegisterScreen
+
+@Serializable
+data object HomeScreen

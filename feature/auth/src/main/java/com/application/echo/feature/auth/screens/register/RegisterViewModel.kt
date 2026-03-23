@@ -4,8 +4,9 @@ import android.os.Parcelable
 import android.util.Patterns
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
+import com.application.echo.core.api.auth.AuthError
+import com.application.echo.core.api.auth.fold
 import com.application.echo.core.common.platform.base.BaseViewModel
-import com.application.echo.core.network.result.fold
 import com.application.echo.feature.auth.repository.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
@@ -84,13 +85,17 @@ class RegisterViewModel @Inject constructor(
                     setState { state.copy(isLoading = false) }
                     sendEvent(RegisterEvent.RegisterSuccess)
                 },
-                onFailure = { exception ->
-                    setState {
-                        state.copy(
-                            isLoading = false,
-                            generalError = exception.throwable.message,
-                        )
+                onError = { error ->
+                    setState { state.copy(isLoading = false) }
+                    val errorMessage = when (error) {
+                        is AuthError.EmailExists -> "An account with this email already exists."
+                        is AuthError.InvalidEmail -> "Please enter a valid email address."
+                        is AuthError.WeakPassword -> error.constraints ?: "Password is too weak."
+                        is AuthError.TermsNotAccepted -> "You must accept the terms to register."
+                        is AuthError.NetworkError -> "Network error. Please check your connection."
+                        else -> error.message
                     }
+                    setState { state.copy(generalError = errorMessage) }
                     savedStateHandle[KEY_STATE] = state
                 },
             )
