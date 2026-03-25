@@ -45,6 +45,3 @@ include(":core:websocket")
 // ----------------- UI -----------------
 include(":ui:components")
 include(":ui:design")
-
-// ----------------- Features -----------------
-include(":feature:auth")

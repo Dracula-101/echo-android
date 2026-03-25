@@ -1,6 +1,6 @@
 package com.application.echo.core.api.di;
 
-import com.application.echo.core.api.user.UserApiService;
+import com.application.echo.core.api.profile.ProfileApiService;
 import com.application.echo.core.network.client.EchoHttpClient;
 import dagger.internal.DaggerGenerated;
 import dagger.internal.Factory;
@@ -26,7 +26,7 @@ import javax.annotation.processing.Generated;
     "deprecation",
     "nullness:initialization.field.uninitialized"
 })
-public final class ApiProvidesModule_ProvideUserApiServiceFactory implements Factory<UserApiService> {
+public final class ApiProvidesModule_ProvideUserApiServiceFactory implements Factory<ProfileApiService> {
   private final Provider<EchoHttpClient> clientProvider;
 
   public ApiProvidesModule_ProvideUserApiServiceFactory(Provider<EchoHttpClient> clientProvider) {
@@ -34,7 +34,7 @@ public final class ApiProvidesModule_ProvideUserApiServiceFactory implements Fac
   }
 
   @Override
-  public UserApiService get() {
+  public ProfileApiService get() {
     return provideUserApiService(clientProvider.get());
   }
 
@@ -43,7 +43,7 @@ public final class ApiProvidesModule_ProvideUserApiServiceFactory implements Fac
     return new ApiProvidesModule_ProvideUserApiServiceFactory(clientProvider);
   }
 
-  public static UserApiService provideUserApiService(EchoHttpClient client) {
+  public static ProfileApiService provideUserApiService(EchoHttpClient client) {
     return Preconditions.checkNotNullFromProvides(ApiProvidesModule.INSTANCE.provideUserApiService(client));
   }
 }

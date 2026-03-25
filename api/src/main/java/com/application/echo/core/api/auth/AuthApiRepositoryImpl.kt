@@ -1,5 +1,6 @@
 package com.application.echo.core.api.auth
 
+import com.application.echo.core.network.result.ApiResult
 import com.application.echo.core.network.result.toApiResult
 import javax.inject.Inject
 
@@ -18,32 +19,32 @@ internal class AuthApiRepositoryImpl @Inject constructor(
         password: String,
         fcmToken: String?,
         apnsToken: String?,
-    ): AuthLoginResult = api.login(
+    ): ApiResult<LoginResponse> = api.login(
         request = LoginRequest(
             email = email,
             password = password,
             fcmToken = fcmToken,
             apnsToken = apnsToken,
         ),
-    ).toApiResult().toAuthResult()
+    ).toApiResult()
 
     override suspend fun register(
         email: String,
         password: String,
         acceptTerms: Boolean,
-    ): AuthRegisterResult = api.register(
+    ): ApiResult<RegisterResponse> = api.register(
         request = RegisterRequest(
             email = email,
             password = password,
             acceptTerms = acceptTerms,
         ),
-    ).toApiResult().toAuthResult()
+    ).toApiResult()
 
     override suspend fun refreshToken(
         refreshToken: String,
-    ): AuthRefreshResult = api.refreshToken(
+    ): ApiResult<RefreshTokenResponse>  = api.refreshToken(
         request = RefreshTokenRequest(
             refreshToken = refreshToken,
         ),
-    ).toApiResult().toAuthResult()
+    ).toApiResult()
 }

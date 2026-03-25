@@ -4,7 +4,7 @@ import android.content.Context
 import android.provider.Settings
 import com.application.echo.core.api.session.DeviceInfo
 import com.application.echo.core.api.session.SessionProvider
-import com.application.echo.feature.auth.datasource.disk.AuthDiskSource
+import com.application.echo.features.auth.datasource.disk.AuthDiskSource
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

@@ -11,8 +11,7 @@ import com.application.echo.core.analytics.AnalyticsEvent
 import com.application.echo.core.analytics.LocalAnalytics
 import com.application.echo.core.navigation.LocalNavigator
 import com.application.echo.core.navigation.Navigator
-import com.application.echo.feature.auth.screens.login.LoginScreen
-import com.application.echo.rootnav.RootNavScreen
+import com.application.echo.presentation.rootnav.RootNavScreen
 import com.application.echo.ui.design.theme.EchoTheme
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject

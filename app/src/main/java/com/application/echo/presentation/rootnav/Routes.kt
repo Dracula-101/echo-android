@@ -1,0 +1,13 @@
+package com.application.echo.presentation.rootnav
+
+import kotlinx.serialization.Serializable
+
+
+@Serializable
+data object LoginScreen
+
+@Serializable
+data object RegisterScreen
+
+@Serializable
+data object HomeScreen

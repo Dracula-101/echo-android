@@ -8,6 +8,7 @@ plugins {
     alias(libs.plugins.echo.android.hilt)
     alias(libs.plugins.echo.android.room)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.kotlin.parcelize)
 }
 
 val secretPropertiesFile = rootProject.file("secrets.properties")
@@ -61,7 +62,6 @@ dependencies {
     implementation(projects.ui.components)
 
     implementation(projects.api)
-    implementation(projects.feature.auth)
 
     implementation(libs.androidx.core.splashscreen)
     implementation(libs.accompanist.permissions)

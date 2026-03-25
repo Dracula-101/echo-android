@@ -4,7 +4,7 @@ import com.application.echo.core.api.auth.AuthApiService
 import com.application.echo.core.api.common.HealthResponse
 import com.application.echo.core.api.media.MediaApiService
 import com.application.echo.core.api.message.MessageApiService
-import com.application.echo.core.api.user.UserApiService
+import com.application.echo.core.api.profile.ProfileApiService
 import com.application.echo.core.network.result.ApiResult
 import com.application.echo.core.network.result.toApiResult
 import kotlinx.coroutines.async
@@ -16,7 +16,7 @@ import javax.inject.Inject
  */
 internal class HealthRepositoryImpl @Inject constructor(
     private val authApi: AuthApiService,
-    private val userApi: UserApiService,
+    private val userApi: ProfileApiService,
     private val mediaApi: MediaApiService,
     private val messageApi: MessageApiService,
 ) : HealthRepository {

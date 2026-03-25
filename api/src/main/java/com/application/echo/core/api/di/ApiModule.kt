@@ -16,9 +16,9 @@ import com.application.echo.core.api.message.MessageApiRepository
 import com.application.echo.core.api.message.MessageApiRepositoryImpl
 import com.application.echo.core.api.session.SessionHeaderInterceptor
 import com.application.echo.core.api.session.SessionProvider
-import com.application.echo.core.api.user.UserApiService
-import com.application.echo.core.api.user.UserApiRepository
-import com.application.echo.core.api.user.UserApiRepositoryImpl
+import com.application.echo.core.api.profile.ProfileApiService
+import com.application.echo.core.api.profile.ProfileApiRepository
+import com.application.echo.core.api.profile.ProfileApiRepositoryImpl
 import com.application.echo.core.common.annotations.UnencryptedPreferences
 import com.application.echo.core.network.client.EchoHttpClient
 import com.application.echo.core.network.interceptor.AuthTokenProvider
@@ -47,8 +47,8 @@ internal abstract class ApiBindsModule {
     @Binds
     @Singleton
     abstract fun bindUserRepository(
-        impl: UserApiRepositoryImpl,
-    ): UserApiRepository
+        impl: ProfileApiRepositoryImpl,
+    ): ProfileApiRepository
 
     @Binds
     @Singleton
@@ -115,7 +115,7 @@ internal object ApiProvidesModule {
     @Singleton
     fun provideUserApiService(
         client: EchoHttpClient,
-    ): UserApiService = client.authenticated.create(UserApiService::class.java)
+    ): ProfileApiService = client.authenticated.create(ProfileApiService::class.java)
 
     /**
      * Media endpoints require a Bearer token — use [EchoHttpClient.authenticated].

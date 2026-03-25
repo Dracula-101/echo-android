@@ -60,10 +60,14 @@ data class LoginResponse(
  * Response `data` for `POST /auth/register`.
  */
 data class RegisterResponse(
-    @SerializedName("user")
-    val user: AuthUser,
-    @SerializedName("session")
-    val session: SessionInfo,
+    @SerializedName("email")
+    val email: String,
+    @SerializedName("email_verification_sent")
+    val emailVerificationSent: Boolean,
+    @SerializedName("requires_email_verification")
+    val requiresEmailVerification: Boolean,
+    @SerializedName("user_id")
+    val userId: String,
 )
 
 /**

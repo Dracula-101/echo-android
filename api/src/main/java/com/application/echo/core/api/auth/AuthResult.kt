@@ -27,15 +27,6 @@ sealed interface AuthResult<out T> {
     data class Error(val error: AuthError) : AuthResult<Nothing>
 }
 
-/** Login operation result. */
-typealias AuthLoginResult = AuthResult<LoginResponse>
-
-/** Registration operation result. */
-typealias AuthRegisterResult = AuthResult<RegisterResponse>
-
-/** Token refresh operation result. */
-typealias AuthRefreshResult = AuthResult<RefreshTokenResponse>
-
 // ── Helpers ──────────────────────────────────────────────────────────
 
 val <T> AuthResult<T>.isSuccess: Boolean

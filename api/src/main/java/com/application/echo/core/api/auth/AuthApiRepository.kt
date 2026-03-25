@@ -1,5 +1,7 @@
 package com.application.echo.core.api.auth
 
+import com.application.echo.core.network.result.ApiResult
+
 /**
  * Public contract for all authentication operations.
  *
@@ -21,7 +23,7 @@ interface AuthApiRepository {
         password: String,
         fcmToken: String? = null,
         apnsToken: String? = null,
-    ): AuthLoginResult
+    ): ApiResult<LoginResponse>
 
     /**
      * Register a new account.
@@ -33,12 +35,12 @@ interface AuthApiRepository {
         email: String,
         password: String,
         acceptTerms: Boolean,
-    ): AuthRegisterResult
+    ): ApiResult<RegisterResponse>
 
     /**
      * Exchange a refresh token for a new access + refresh token pair.
      */
     suspend fun refreshToken(
         refreshToken: String,
-    ): AuthRefreshResult
+    ): ApiResult<RefreshTokenResponse>
 }

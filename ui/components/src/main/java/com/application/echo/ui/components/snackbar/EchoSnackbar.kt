@@ -48,6 +48,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.plus
+import com.application.echo.ui.components.BuildConfig
 import com.application.echo.ui.design.colors.EchoColorScheme
 import com.application.echo.ui.design.theme.EchoTheme
 import kotlinx.coroutines.launch
@@ -94,6 +95,7 @@ internal fun EchoSnackbar(
     onDismiss: () -> Unit,
     onSwipeDismiss: () -> Unit,
     modifier: Modifier = Modifier,
+    showDebugInfo: Boolean = BuildConfig.DEBUG,
 ) {
     val colors  = data.type.cardColors(EchoTheme.colorScheme)
     val typo    = EchoTheme.typography
@@ -142,6 +144,7 @@ internal fun EchoSnackbar(
         Row(
             modifier          = Modifier.fillMaxWidth().padding(EchoTheme.spacing.padding.small),
             verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(EchoTheme.spacing.gap.small),
         ) {
             Box(
                 modifier         = Modifier
@@ -158,11 +161,14 @@ internal fun EchoSnackbar(
             }
 
             Column {
-                Row {
+                Row (
+                    modifier       = Modifier.fillMaxWidth(),
+                    verticalAlignment     = Alignment.CenterVertically,
+                ){
                     Text(
                         text  = data.message,
                         color = colors.content,
-                        style = typo.titleSmall,
+                        style = typo.bodyMedium,
                         modifier = Modifier.weight(1f),
                     )
 
@@ -184,10 +190,10 @@ internal fun EchoSnackbar(
                     Text(
                         buildAnnotatedString {
                             if (data.detail != null) {
-                                pushStyle(typo.bodyMedium.toSpanStyle().copy(color = colors.muted))
+                                pushStyle(typo.bodySmall.toSpanStyle().copy(color = colors.muted))
                                 append(data.detail)
                             }
-                            if (data.code != null) {
+                            if (data.code != null && showDebugInfo) {
                                 pushStyle(typo.labelMedium.toSpanStyle().copy(color = colors.accent, fontWeight = FontWeight.ExtraBold))
                                 append(" [${data.code}]")
                             }
