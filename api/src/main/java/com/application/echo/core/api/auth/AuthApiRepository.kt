@@ -5,8 +5,8 @@ import com.application.echo.core.network.result.ApiResult
 /**
  * Public contract for all authentication operations.
  *
- * All methods return [AuthResult] — a sealed interface that is either
- * [AuthResult.Success] carrying the response DTO, or [AuthResult.Error]
+ * All methods return [com.application.echo.features.auth.model.AuthResult] — a sealed interface that is either
+ * [com.application.echo.features.auth.model.AuthResult.Success] carrying the response DTO, or [com.application.echo.features.auth.model.AuthResult.Error]
  * carrying a typed [AuthError]. No Retrofit, OkHttp, or generic
  * network types leak into the consuming layer.
  */

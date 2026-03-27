@@ -2,6 +2,8 @@ package com.application.echo.presentation.rootnav
 
 import kotlinx.serialization.Serializable
 
+@Serializable
+data object SplashScreen
 
 @Serializable
 data object LoginScreen

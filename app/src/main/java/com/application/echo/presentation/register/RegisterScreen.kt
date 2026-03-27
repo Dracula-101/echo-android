@@ -55,7 +55,6 @@ import kotlinx.coroutines.flow.collectLatest
 @Composable
 fun RegisterScreen(
     onNavigateToLoginScreen: () -> Unit,
-    onRegisterSuccess: () -> Unit,
     viewModel: RegisterViewModel = hiltViewModel(),
 ) {
     val state by viewModel.stateFlow.collectAsStateWithLifecycle()

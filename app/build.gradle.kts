@@ -71,7 +71,7 @@ dependencies {
     implementation(libs.hilt.ext.work)
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlinx.serialization.json)
-
+    implementation(libs.firebase.messaging)
     implementation(libs.timber)
 
     ksp(libs.hilt.ext.compiler)

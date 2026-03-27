@@ -88,6 +88,7 @@ firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.r
 firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics" }
 firebase-crashlytics = { group = "com.google.firebase", name = "firebase-crashlytics-ndk" }
 firebase-performance = { group = "com.google.firebase", name = "firebase-perf" }
+firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging" }
 
 #====================<HILT>============================
 hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }

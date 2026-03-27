@@ -15,8 +15,10 @@ import com.application.echo.core.navigation.Navigator
 import com.application.echo.core.navigation.echoComposable
 import com.application.echo.core.navigation.transition.EchoTransitionPreset
 import com.application.echo.features.auth.model.AuthState
+import com.application.echo.presentation.home.HomeScreen
 import com.application.echo.presentation.login.LoginScreen
 import com.application.echo.presentation.register.RegisterScreen
+import com.application.echo.presentation.splash.SplashScreen
 import com.application.echo.ui.components.scaffold.EchoScaffold
 import kotlinx.coroutines.flow.collectLatest
 
@@ -53,9 +55,11 @@ fun RootNavScreen(
 
     EchoNavHost(
         navigator = navigator,
-        startDestination = if (state.value.userLoggedIn) HomeScreen else LoginScreen,
-        transition = EchoTransitionPreset.SlideHorizontal,
+        startDestination = SplashScreen,
     ) {
+        echoComposable<SplashScreen> {
+            SplashScreen()
+        }
         echoComposable<LoginScreen> {
             LoginScreen(
                 onNavigateToRegisterScreen = {
@@ -70,21 +74,12 @@ fun RootNavScreen(
                 onNavigateToLoginScreen = {
                     navigator.navigateBackTo(LoginScreen)
                 },
-                onRegisterSuccess = {
-                },
             )
         }
         echoComposable<HomeScreen>(
-            transition = EchoTransitionPreset.SlideHorizontal,
+            transition = EchoTransitionPreset.Fade,
         ) {
-            EchoScaffold {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(text = "Welcome to the Home Screen!")
-                }
-            }
+            HomeScreen()
         }
     }
 }

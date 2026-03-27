@@ -1,4 +1,5 @@
 import com.android.build.api.dsl.ApplicationExtension
+import com.android.tools.r8.internal.pl
 import com.application.echo.BuildType
 import com.application.echo.DEBUG
 import com.application.echo.DEVELOPMENT
@@ -19,22 +20,22 @@ class AndroidApplicationFirebaseConventionPlugin : Plugin<Project> {
 
     companion object {
         private const val GOOGLE_SERVICES_PLUGIN = "com.google.gms.google-services"
+
         private const val CRASHLYTICS_PLUGIN = "com.google.firebase.crashlytics"
         private const val PERFORMANCE_PLUGIN = "com.google.firebase.firebase-perf"
 
-        private val FIREBASE_TASK_PATTERNS = listOf("GoogleServices", "Crashlytics", "FirebasePerf")
+        private val FIREBASE_TASK_PATTERNS = listOf("Crashlytics", "FirebasePerf")
     }
 
     override fun apply(target: Project) {
         with(target) {
-            val isProductionRelease = isProductionReleaseBuild()
+            configureAndroidExtension()
+            applyGoogleServicePlugins()
 
-            // Apply Firebase plugins only for productionRelease builds
+            val isProductionRelease = isProductionReleaseBuild()
             if (isProductionRelease) {
                 applyFirebasePlugins()
             }
-
-            configureAndroidExtension()
             configureFirebaseDependencies(isProductionRelease)
         }
     }
@@ -54,9 +55,14 @@ class AndroidApplicationFirebaseConventionPlugin : Plugin<Project> {
         }
     }
 
-    private fun Project.applyFirebasePlugins() {
+    private fun Project.applyGoogleServicePlugins() {
         with(pluginManager) {
             apply(GOOGLE_SERVICES_PLUGIN)
+        }
+    }
+
+    private fun Project.applyFirebasePlugins() {
+        with(pluginManager) {
             apply(CRASHLYTICS_PLUGIN)
             apply(PERFORMANCE_PLUGIN)
         }
@@ -122,20 +128,23 @@ class AndroidApplicationFirebaseConventionPlugin : Plugin<Project> {
     }
 
     private fun Project.configureFirebaseDependencies(isProductionRelease: Boolean) {
+        // BOM must be available for all variants so versionless Firebase
+        // libs (e.g. firebase-messaging) can resolve in every build.
+        dependencies {
+            add("implementation", platform(libs.findLibrary("firebase.bom").get()))
+        }
+
         afterEvaluate {
             if (isProductionRelease) {
-                addFirebaseDependencies()
+                addProductionFirebaseDependencies()
             } else {
                 disableFirebaseTasks()
             }
         }
     }
 
-    private fun Project.addFirebaseDependencies() {
+    private fun Project.addProductionFirebaseDependencies() {
         dependencies {
-            add("implementation", platform(libs.findLibrary("firebase.bom").get()))
-
-            // Add Firebase dependencies only for productionRelease
             add("productionReleaseImplementation", libs.findLibrary("firebase.analytics").get())
             add("productionReleaseImplementation", libs.findLibrary("firebase.crashlytics").get())
             add("productionReleaseImplementation", libs.findLibrary("firebase.performance").get())

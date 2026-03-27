@@ -38,10 +38,7 @@ internal fun BuildType.isPerformanceMonitoringEnabled(): Boolean = when (this) {
     BuildType.RELEASE -> true
 }
 
-internal fun BuildType.isFirebaseEnabled(): Boolean = when (this) {
-    BuildType.DEBUG -> false
-    BuildType.RELEASE -> true
-}
+internal fun BuildType.isFirebaseEnabled(): Boolean = true
 
 internal fun Flavor.applicationIdSuffix(): String? = when (this) {
     Flavor.DEVELOPMENT -> ".dev"
@@ -51,11 +48,6 @@ internal fun Flavor.applicationIdSuffix(): String? = when (this) {
 internal fun Flavor.versionNameSuffix(): String? = when (this) {
     Flavor.DEVELOPMENT -> "-dev"
     Flavor.PRODUCTION -> null
-}
-
-internal fun Flavor.apiBaseUrl(): String = when (this) {
-    Flavor.DEVELOPMENT -> "https://api-dev.application.echo.com/"
-    Flavor.PRODUCTION -> "https://api.application.echo.com/"
 }
 
 internal fun Flavor.webBaseUrl(): String = when (this) {
@@ -80,7 +72,4 @@ internal fun Flavor.appName(): String = when (this) {
 
 internal fun Flavor.appIcon(): String = "@mipmap/ic_launcher"
 
-internal fun Flavor.isFirebaseEnabled(): Boolean = when (this) {
-    Flavor.DEVELOPMENT -> false
-    Flavor.PRODUCTION -> true
-}
+internal fun Flavor.isFirebaseEnabled() = true

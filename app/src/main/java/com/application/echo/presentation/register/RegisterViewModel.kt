@@ -5,8 +5,7 @@ import android.util.Patterns
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.application.echo.core.api.auth.AuthError
-import com.application.echo.core.api.auth.fold
-import com.application.echo.core.api.auth.onError
+import com.application.echo.features.auth.model.onError
 import com.application.echo.core.common.platform.base.BaseViewModel
 import com.application.echo.features.auth.repository.AuthRepository
 import com.application.echo.ui.components.snackbar.EchoSnackbarType

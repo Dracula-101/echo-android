@@ -10,7 +10,7 @@ interface ProfileApiRepository {
     /**
      * Fetch a user's profile by their ID.
      */
-    suspend fun getProfile(userId: String): ApiResult<ProfileResponse>
+    suspend fun getProfile(userId: String): ApiResult<GetProfileResponse>
 
     /**
      * Create (or update) a user profile.
@@ -22,5 +22,5 @@ interface ProfileApiRepository {
         lastName: String,
         avatarUrl: String? = null,
         fcmToken: String? = null,
-    ): ApiResult<ProfileResponse>
+    ): ApiResult<CreateProfileResponse>
 }

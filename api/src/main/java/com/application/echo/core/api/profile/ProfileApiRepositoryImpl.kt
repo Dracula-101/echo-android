@@ -13,7 +13,7 @@ internal class ProfileApiRepositoryImpl @Inject constructor(
 
     override suspend fun getProfile(
         userId: String,
-    ): ApiResult<ProfileResponse> = api.getProfile(
+    ): ApiResult<GetProfileResponse> = api.getProfile(
         userId = userId,
     ).toApiResult()
 
@@ -24,7 +24,7 @@ internal class ProfileApiRepositoryImpl @Inject constructor(
         lastName: String,
         avatarUrl: String?,
         fcmToken: String?,
-    ): ApiResult<ProfileResponse> = api.createProfile(
+    ): ApiResult<CreateProfileResponse> = api.createProfile(
         request = CreateProfileRequest(
             userId = userId,
             displayName = displayName,

@@ -7,7 +7,7 @@ import javax.inject.Inject
 /**
  * Default [AuthApiRepository] backed by [AuthApiService].
  *
- * Converts raw [NetworkResponse] → [ApiResult] → [AuthResult],
+ * Converts raw [NetworkResponse] → [ApiResult] → [com.application.echo.features.auth.model.AuthResult],
  * mapping network-level errors to typed [AuthError] subtypes.
  */
 internal class AuthApiRepositoryImpl @Inject constructor(

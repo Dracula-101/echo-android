@@ -18,12 +18,12 @@ internal interface ProfileApiService {
     @GET(ApiConstants.USERS_PROFILE_BY_ID)
     suspend fun getProfile(
         @Path("user_id") userId: String,
-    ): NetworkResponse<ProfileResponse>
+    ): NetworkResponse<GetProfileResponse>
 
     @POST(ApiConstants.USERS_PROFILE)
     suspend fun createProfile(
         @Body request: CreateProfileRequest,
-    ): NetworkResponse<ProfileResponse>
+    ): NetworkResponse<CreateProfileResponse>
 
     @GET(ApiConstants.USERS_HEALTH)
     suspend fun health(): NetworkResponse<HealthResponse>

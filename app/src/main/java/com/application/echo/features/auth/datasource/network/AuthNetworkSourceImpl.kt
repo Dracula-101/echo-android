@@ -1,11 +1,11 @@
 package com.application.echo.features.auth.datasource.network
 
 import com.application.echo.core.api.auth.AuthApiRepository
-import com.application.echo.core.api.auth.AuthResult
+import com.application.echo.features.auth.model.AuthResult
 import com.application.echo.core.api.auth.LoginResponse
 import com.application.echo.core.api.auth.RefreshTokenResponse
 import com.application.echo.core.api.auth.RegisterResponse
-import com.application.echo.core.api.auth.toAuthResult
+import com.application.echo.features.auth.model.toAuthResult
 import javax.inject.Inject
 
 class AuthNetworkSourceImpl @Inject constructor(

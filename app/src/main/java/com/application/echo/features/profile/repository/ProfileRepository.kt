@@ -1,4 +1,9 @@
 package com.application.echo.features.profile.repository
 
-class ProfileRepository {
+import com.application.echo.features.auth.datasource.disk.AuthDiskSource
+import kotlinx.coroutines.flow.Flow
+import javax.inject.Inject
+
+
+interface ProfileRepository {
 }

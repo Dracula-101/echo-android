@@ -7,9 +7,9 @@ import kotlin.collections.orEmpty
 
 
 /**
- * Domain-specific error hierarchy for all authentication operations.
+ * Domain-specific error hierarchy for all profile operations.
  *
- * Each subtype maps to a backend error code from the auth service.
+ * Each subtype maps to a backend error code from the profile service.
  * The [fromApiError] factory converts raw [ApiError] codes into the
  * appropriate sealed subtype, enabling exhaustive `when` handling
  * without string comparisons.
@@ -19,137 +19,40 @@ sealed class ProfileError(
     open val message: String,
 ) {
 
-    // ── Authentication ──────────────────────────────────────────────
+    // ── User ─────────────────────────────────────────────────
 
-    data class InvalidCredentials(
-        override val message: String,
-        val attemptsRemaining: Int? = null,
-    ) : ProfileError("AUTH_INVALID_CREDENTIALS", message)
+    data class UserNotFound(override val message: String) : ProfileError("USER_NOT_FOUND", message)
+    data class UserAlreadyExists(override val message: String) : ProfileError("USER_ALREADY_EXISTS", message)
+    data class InvalidUserId(override val message: String) : ProfileError("INVALID_USER_ID", message)
+    data class InvalidUserData(override val message: String) : ProfileError("INVALID_USER_DATA", message)
+    data class UsernameUnavailable(override val message: String) : ProfileError("USERNAME_UNAVAILABLE", message)
 
-    data class UserNotFound(
-        override val message: String,
-    ) : ProfileError("AUTH_USER_NOT_FOUND", message)
+    // ── Profile ──────────────────────────────────────────────
 
-    data class AccountLocked(
-        override val message: String,
-    ) : ProfileError("AUTH_ACCOUNT_LOCKED", message)
+    data class ProfileNotFound(override val message: String) : ProfileError("PROFILE_NOT_FOUND", message)
+    data class InvalidProfileData(override val message: String) : ProfileError("INVALID_PROFILE_DATA", message)
+    data class ProfileUpdateFailed(override val message: String) : ProfileError("PROFILE_UPDATE_FAILED", message)
 
-    data class AccountDisabled(
-        override val message: String,
-    ) : ProfileError("AUTH_ACCOUNT_DISABLED", message)
+    // ── Search ───────────────────────────────────────────────
 
-    data class PasswordExpired(
-        override val message: String,
-    ) : ProfileError("AUTH_PASSWORD_EXPIRED", message)
+    data class SearchFailed(override val message: String) : ProfileError("SEARCH_FAILED", message)
+    data class InvalidSearchQuery(override val message: String) : ProfileError("INVALID_SEARCH_QUERY", message)
 
-    data class TwoFactorRequired(
-        override val message: String,
-    ) : ProfileError("AUTH_2FA_REQUIRED", message)
+    // ── Database ─────────────────────────────────────────────
 
-    data class InvalidTwoFactorCode(
-        override val message: String,
-    ) : ProfileError("AUTH_INVALID_2FA_CODE", message)
+    data class DatabaseError(override val message: String) : ProfileError("DATABASE_ERROR", message)
+    data class DatabaseConnectionError(override val message: String) : ProfileError("DATABASE_CONNECTION_ERROR", message)
 
-    data class EmailVerificationFailed(
-        override val message: String,
-    ) : ProfileError("AUTH_EMAIL_VERIFY_FAILED", message)
+    // ── Cache ────────────────────────────────────────────────
 
-    data class PhoneVerificationFailed(
-        override val message: String,
-    ) : ProfileError("AUTH_PHONE_VERIFY_FAILED", message)
+    data class CacheError(override val message: String) : ProfileError("CACHE_ERROR", message)
 
-    // ── Token ────────────────────────────────────────────────────────
+    // ── General ──────────────────────────────────────────────
 
-    data class InvalidToken(
-        override val message: String,
-    ) : ProfileError("AUTH_INVALID_TOKEN", message)
-
-    data class TokenGenerationFailed(
-        override val message: String,
-    ) : ProfileError("AUTH_TOKEN_GEN_FAILED", message)
-
-    data class TokenValidationFailed(
-        override val message: String,
-    ) : ProfileError("AUTH_TOKEN_VALIDATE_FAILED", message)
-
-    data class InvalidRefreshToken(
-        override val message: String,
-    ) : ProfileError("AUTH_INVALID_REFRESH_TOKEN", message)
-
-    data class RefreshTokenExpired(
-        override val message: String,
-    ) : ProfileError("AUTH_REFRESH_TOKEN_EXPIRED", message)
-
-    // ── Registration ─────────────────────────────────────────────────
-
-    data class EmailExists(
-        override val message: String,
-        val email: String? = null,
-    ) : ProfileError("AUTH_EMAIL_EXISTS", message)
-
-    data class InvalidEmail(
-        override val message: String,
-    ) : ProfileError("AUTH_INVALID_EMAIL", message)
-
-    data class InvalidPhone(
-        override val message: String,
-    ) : ProfileError("AUTH_INVALID_PHONE", message)
-
-    data class WeakPassword(
-        override val message: String,
-        val constraints: String? = null,
-    ) : ProfileError("AUTH_PASSWORD_WEAK", message)
-
-    data class TermsNotAccepted(
-        override val message: String,
-    ) : ProfileError("AUTH_TERMS_NOT_ACCEPTED", message)
-
-    data class PasswordHashFailed(
-        override val message: String,
-    ) : ProfileError("AUTH_PASSWORD_HASH_FAILED", message)
-
-    // ── Session ──────────────────────────────────────────────────────
-
-    data class SessionNotFound(
-        override val message: String,
-    ) : ProfileError("AUTH_SESSION_NOT_FOUND", message)
-
-    data class SessionExpired(
-        override val message: String,
-    ) : ProfileError("AUTH_SESSION_EXPIRED", message)
-
-    data class SessionCreateFailed(
-        override val message: String,
-    ) : ProfileError("AUTH_SESSION_CREATE_FAILED", message)
-
-    data class SessionUpdateFailed(
-        override val message: String,
-    ) : ProfileError("AUTH_SESSION_UPDATE_FAILED", message)
-
-    // ── Security ─────────────────────────────────────────────────────
-
-    data class TooManyFailedAttempts(
-        override val message: String,
-        val retryAfterSeconds: Long? = null,
-    ) : ProfileError("AUTH_TOO_MANY_FAILED_ATTEMPTS", message)
-
-    data class SuspiciousActivity(
-        override val message: String,
-    ) : ProfileError("AUTH_SUSPICIOUS_ACTIVITY", message)
-
-    data class IpBlocked(
-        override val message: String,
-    ) : ProfileError("AUTH_IP_BLOCKED", message)
-
-    data class DeviceNotTrusted(
-        override val message: String,
-    ) : ProfileError("AUTH_DEVICE_NOT_TRUSTED", message)
-
-    // ── Database ─────────────────────────────────────────────────────
-
-    data class DatabaseError(
-        override val message: String,
-    ) : ProfileError("AUTH_DATABASE_ERROR", message)
+    data class InternalError(override val message: String) : ProfileError("INTERNAL_ERROR", message)
+    data class InvalidRequest(override val message: String) : ProfileError("INVALID_REQUEST", message)
+    data class Unauthorized(override val message: String) : ProfileError("UNAUTHORIZED", message)
+    data class Forbidden(override val message: String) : ProfileError("FORBIDDEN", message)
 
     // ── Validation (field-level errors from the server) ──────────────
 
@@ -181,49 +84,34 @@ sealed class ProfileError(
          * typed [ProfileError]. Falls back to [Unknown] for unrecognized codes.
          */
         fun fromApiError(apiError: ApiError): ProfileError = when (apiError.code) {
-            // Authentication
-            "AUTH_INVALID_CREDENTIALS" -> InvalidCredentials(apiError.message)
-            "AUTH_USER_NOT_FOUND" -> UserNotFound(apiError.message)
-            "AUTH_ACCOUNT_LOCKED" -> AccountLocked(apiError.message)
-            "AUTH_ACCOUNT_DISABLED" -> AccountDisabled(apiError.message)
-            "AUTH_PASSWORD_EXPIRED" -> PasswordExpired(apiError.message)
-            "AUTH_2FA_REQUIRED" -> TwoFactorRequired(apiError.message)
-            "AUTH_INVALID_2FA_CODE" -> InvalidTwoFactorCode(apiError.message)
-            "AUTH_EMAIL_VERIFY_FAILED" -> EmailVerificationFailed(apiError.message)
-            "AUTH_PHONE_VERIFY_FAILED" -> PhoneVerificationFailed(apiError.message)
+            // User
+            "USER_NOT_FOUND" -> UserNotFound(apiError.message)
+            "USER_ALREADY_EXISTS" -> UserAlreadyExists(apiError.message)
+            "INVALID_USER_ID" -> InvalidUserId(apiError.message)
+            "INVALID_USER_DATA" -> InvalidUserData(apiError.message)
+            "USERNAME_UNAVAILABLE" -> UsernameUnavailable(apiError.message)
 
-            // Token
-            "AUTH_INVALID_TOKEN" -> InvalidToken(apiError.message)
-            "AUTH_TOKEN_GEN_FAILED" -> TokenGenerationFailed(apiError.message)
-            "AUTH_TOKEN_VALIDATE_FAILED" -> TokenValidationFailed(apiError.message)
-            "AUTH_INVALID_REFRESH_TOKEN" -> InvalidRefreshToken(apiError.message)
-            "AUTH_REFRESH_TOKEN_EXPIRED" -> RefreshTokenExpired(apiError.message)
+            // Profile
+            "PROFILE_NOT_FOUND" -> ProfileNotFound(apiError.message)
+            "INVALID_PROFILE_DATA" -> InvalidProfileData(apiError.message)
+            "PROFILE_UPDATE_FAILED" -> ProfileUpdateFailed(apiError.message)
 
-            // Registration
-            "AUTH_EMAIL_EXISTS" -> EmailExists(apiError.message)
-            "AUTH_INVALID_EMAIL" -> InvalidEmail(apiError.message)
-            "AUTH_INVALID_PHONE" -> InvalidPhone(apiError.message)
-            "AUTH_PASSWORD_WEAK" -> WeakPassword(
-                message = apiError.message,
-                constraints = apiError.fields?.firstOrNull()?.constraints,
-            )
-            "AUTH_TERMS_NOT_ACCEPTED" -> TermsNotAccepted(apiError.message)
-            "AUTH_PASSWORD_HASH_FAILED" -> PasswordHashFailed(apiError.message)
-
-            // Session
-            "AUTH_SESSION_NOT_FOUND" -> SessionNotFound(apiError.message)
-            "AUTH_SESSION_EXPIRED" -> SessionExpired(apiError.message)
-            "AUTH_SESSION_CREATE_FAILED" -> SessionCreateFailed(apiError.message)
-            "AUTH_SESSION_UPDATE_FAILED" -> SessionUpdateFailed(apiError.message)
-
-            // Security
-            "AUTH_TOO_MANY_FAILED_ATTEMPTS" -> TooManyFailedAttempts(apiError.message)
-            "AUTH_SUSPICIOUS_ACTIVITY" -> SuspiciousActivity(apiError.message)
-            "AUTH_IP_BLOCKED" -> IpBlocked(apiError.message)
-            "AUTH_DEVICE_NOT_TRUSTED" -> DeviceNotTrusted(apiError.message)
+            // Search
+            "SEARCH_FAILED" -> SearchFailed(apiError.message)
+            "INVALID_SEARCH_QUERY" -> InvalidSearchQuery(apiError.message)
 
             // Database
-            "AUTH_DATABASE_ERROR" -> DatabaseError(apiError.message)
+            "DATABASE_ERROR" -> DatabaseError(apiError.message)
+            "DATABASE_CONNECTION_ERROR" -> DatabaseConnectionError(apiError.message)
+
+            // Cache
+            "CACHE_ERROR" -> CacheError(apiError.message)
+
+            // General
+            "INTERNAL_ERROR" -> InternalError(apiError.message)
+            "INVALID_REQUEST" -> InvalidRequest(apiError.message)
+            "UNAUTHORIZED" -> Unauthorized(apiError.message)
+            "FORBIDDEN" -> Forbidden(apiError.message)
 
             // Validation (shared code)
             "VALIDATION_FAILED", "VALIDATION_ERROR" -> ValidationFailed(
