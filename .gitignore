@@ -1,6 +1,26 @@
+# Built artifacts
 *.iml
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+*.hprof
+
+# Gradle
 .gradle
-/local.properties
+.kotlin
+build/
+
+# Local config
+local.properties
+secrets.properties
+key.properties
+
+# Keystores (release only — debug keystore is safe to track)
+keystores/release-keystore.jks
+
+# IDE
 /.idea/caches
 /.idea/libraries
 /.idea/modules.xml
@@ -8,16 +28,17 @@
 /.idea/navEditor.xml
 /.idea/assetWizardSettings.xml
 /.idea/firebender
+
+# Claude Code
 /.claude
-.DS_Store
-.kotlin
-/build
-/captures
+
+# Native
 .externalNativeBuild
 .cxx
-local.properties
-secrets.properties
-*.hprof
 
-keystores/release-keystore.jks
-key.properties
+# OS
+.DS_Store
+Thumbs.db
+
+# Captures / profiling
+/captures
