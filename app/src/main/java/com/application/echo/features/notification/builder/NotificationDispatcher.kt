@@ -1,6 +1,5 @@
 package com.application.echo.features.notification.builder
 
-import android.graphics.Bitmap
 import androidx.core.app.NotificationManagerCompat
 import com.application.echo.features.notification.model.NotificationData
 import com.application.echo.features.notification.model.NotificationPayload
@@ -9,38 +8,33 @@ import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/**
- * Central dispatcher that takes a [NotificationPayload], builds the
- * appropriate [android.app.Notification], and posts it.
- *
- * Filtering logic lives here — e.g. don't show typing indicators,
- * don't show notifications for the conversation the user is viewing.
- */
 @Singleton
 class NotificationDispatcher @Inject constructor(
     private val factory: NotificationFactory,
     private val notificationManager: NotificationManagerCompat,
     private val activeConversationTracker: ActiveConversationTracker,
+    private val imageLoader: NotificationImageLoader,
 ) {
 
-    fun dispatch(payload: NotificationPayload, avatar: Bitmap? = null) {
+    fun dispatch(payload: NotificationPayload) {
         when (payload) {
-            is NotificationPayload.Data -> dispatchData(payload.data, avatar)
+            is NotificationPayload.Data -> dispatchData(payload.data)
             is NotificationPayload.Display -> dispatchDisplay(payload)
         }
     }
 
-    private fun dispatchData(data: NotificationData, avatar: Bitmap?) {
-        // Suppress notifications for types that shouldn't produce a heads-up.
+    private fun dispatchData(data: NotificationData) {
         if (data.type == NotificationType.TYPING_INDICATOR) return
 
-        // Suppress if the user is already viewing this conversation.
         if (activeConversationTracker.isActive(data.conversationId)) {
             Timber.d("Suppressing notification — user is viewing conversation %s", data.conversationId)
             return
         }
 
-        val notification = factory.build(data, avatar)
+        val avatar = imageLoader.loadCircularAvatar(data.senderAvatarUrl)
+        val picture = imageLoader.loadImage(data.imageUrl)
+
+        val notification = factory.build(data, avatar, picture)
         val notificationId = NotificationFactory.notificationId(data)
 
         try {
@@ -66,7 +60,8 @@ class NotificationDispatcher @Inject constructor(
             threadKey = null,
             timestamp = System.currentTimeMillis(),
         )
-        val notification = factory.build(data)
+        val picture = imageLoader.loadImage(payload.imageUrl)
+        val notification = factory.build(data, avatar = null, picture = picture)
         try {
             notificationManager.notify(data.timestamp.toInt(), notification)
         } catch (e: SecurityException) {

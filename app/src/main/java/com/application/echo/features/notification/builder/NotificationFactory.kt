@@ -5,10 +5,10 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
-import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.Person
 import androidx.core.app.RemoteInput
+import androidx.core.graphics.drawable.IconCompat
 import com.application.echo.MainActivity
 import com.application.echo.R
 import com.application.echo.features.notification.action.NotificationActionReceiver
@@ -19,42 +19,37 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/**
- * Builds [Notification] objects from [NotificationData].
- *
- * Each notification type gets its own style:
- * - Messages → [NotificationCompat.MessagingStyle] with conversation grouping
- * - Calls → full-screen intent style
- * - Social → simple big-text style
- * - System → minimal default style
- */
 @Singleton
 class NotificationFactory @Inject constructor(
     @ApplicationContext private val context: Context,
 ) {
 
-    fun build(data: NotificationData, avatar: Bitmap? = null): Notification {
+    fun build(
+        data: NotificationData,
+        avatar: Bitmap? = null,
+        picture: Bitmap? = null,
+    ): Notification {
         return when (data.type) {
             NotificationType.MESSAGE,
             NotificationType.GROUP_MESSAGE,
-            -> buildMessageNotification(data, avatar)
+            -> buildMessageNotification(data, avatar, picture)
 
-            NotificationType.MESSAGE_REACTION -> buildReactionNotification(data)
+            NotificationType.MESSAGE_REACTION -> buildReactionNotification(data, avatar)
 
-            NotificationType.INCOMING_CALL -> buildCallNotification(data)
-            NotificationType.MISSED_CALL -> buildMissedCallNotification(data)
+            NotificationType.INCOMING_CALL -> buildCallNotification(data, avatar)
+            NotificationType.MISSED_CALL -> buildMissedCallNotification(data, avatar)
 
             NotificationType.FRIEND_REQUEST,
             NotificationType.FRIEND_ACCEPTED,
-            -> buildSocialNotification(data)
+            -> buildSocialNotification(data, avatar)
 
-            NotificationType.MENTION -> buildMentionNotification(data)
+            NotificationType.MENTION -> buildMentionNotification(data, avatar, picture)
 
             NotificationType.TYPING_INDICATOR,
             NotificationType.SYSTEM,
             NotificationType.ANNOUNCEMENT,
             NotificationType.UNKNOWN,
-            -> buildDefaultNotification(data)
+            -> buildDefaultNotification(data, picture)
         }
     }
 
@@ -63,11 +58,15 @@ class NotificationFactory @Inject constructor(
     private fun buildMessageNotification(
         data: NotificationData,
         avatar: Bitmap?,
+        picture: Bitmap?,
     ): Notification {
         val channelId = NotificationChannels.channelFor(data.type)
+
+        val senderIcon = avatar?.let { IconCompat.createWithBitmap(it) }
         val person = Person.Builder()
             .setName(data.senderName ?: "Someone")
-            .apply { if (avatar != null) setIcon(androidx.core.graphics.drawable.IconCompat.createWithBitmap(avatar)) }
+            .setKey(data.senderId)
+            .apply { if (senderIcon != null) setIcon(senderIcon) }
             .build()
 
         val style = NotificationCompat.MessagingStyle(mePerson())
@@ -77,27 +76,40 @@ class NotificationFactory @Inject constructor(
             .setGroupConversation(data.type == NotificationType.GROUP_MESSAGE)
             .addMessage(data.body, data.timestamp, person)
 
-        return baseBuilder(channelId, data)
+        val builder = baseBuilder(channelId, data)
             .setStyle(style)
             .setCategory(NotificationCompat.CATEGORY_MESSAGE)
             .addAction(replyAction(data))
             .addAction(markReadAction(data))
-            .build()
+
+        if (avatar != null) builder.setLargeIcon(avatar)
+
+        // Image attachment — show as BigPictureStyle on expand
+        if (picture != null) {
+            builder.setStyle(
+                NotificationCompat.BigPictureStyle()
+                    .bigPicture(picture)
+                    .setSummaryText(data.body),
+            )
+        }
+
+        return builder.build()
     }
 
     // ── Reaction ─────────────────────────────────────────────────────
 
-    private fun buildReactionNotification(data: NotificationData): Notification {
+    private fun buildReactionNotification(data: NotificationData, avatar: Bitmap?): Notification {
         val channelId = NotificationChannels.channelFor(data.type)
         return baseBuilder(channelId, data)
             .setContentText("${data.senderName ?: "Someone"} reacted: ${data.body}")
             .setCategory(NotificationCompat.CATEGORY_SOCIAL)
+            .applyAvatar(avatar)
             .build()
     }
 
     // ── Calls ────────────────────────────────────────────────────────
 
-    private fun buildCallNotification(data: NotificationData): Notification {
+    private fun buildCallNotification(data: NotificationData, avatar: Bitmap?): Notification {
         val channelId = NotificationChannels.channelFor(data.type)
         return baseBuilder(channelId, data)
             .setContentText(data.body.ifEmpty { "${data.senderName ?: "Someone"} is calling…" })
@@ -105,45 +117,73 @@ class NotificationFactory @Inject constructor(
             .setOngoing(true)
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setFullScreenIntent(contentPendingIntent(data), true)
+            .applyAvatar(avatar)
             .build()
     }
 
-    private fun buildMissedCallNotification(data: NotificationData): Notification {
+    private fun buildMissedCallNotification(data: NotificationData, avatar: Bitmap?): Notification {
         val channelId = NotificationChannels.channelFor(data.type)
         return baseBuilder(channelId, data)
             .setContentText(data.body.ifEmpty { "Missed call from ${data.senderName ?: "Unknown"}" })
             .setCategory(NotificationCompat.CATEGORY_MISSED_CALL)
+            .applyAvatar(avatar)
             .build()
     }
 
     // ── Social ───────────────────────────────────────────────────────
 
-    private fun buildSocialNotification(data: NotificationData): Notification {
+    private fun buildSocialNotification(data: NotificationData, avatar: Bitmap?): Notification {
         val channelId = NotificationChannels.channelFor(data.type)
         return baseBuilder(channelId, data)
             .setStyle(NotificationCompat.BigTextStyle().bigText(data.body))
             .setCategory(NotificationCompat.CATEGORY_SOCIAL)
+            .applyAvatar(avatar)
             .build()
     }
 
     // ── Mentions ─────────────────────────────────────────────────────
 
-    private fun buildMentionNotification(data: NotificationData): Notification {
+    private fun buildMentionNotification(
+        data: NotificationData,
+        avatar: Bitmap?,
+        picture: Bitmap?,
+    ): Notification {
         val channelId = NotificationChannels.channelFor(data.type)
-        return baseBuilder(channelId, data)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(data.body))
+        val builder = baseBuilder(channelId, data)
             .setCategory(NotificationCompat.CATEGORY_MESSAGE)
             .addAction(replyAction(data))
-            .build()
+            .applyAvatar(avatar)
+
+        if (picture != null) {
+            builder.setStyle(
+                NotificationCompat.BigPictureStyle()
+                    .bigPicture(picture)
+                    .setSummaryText(data.body),
+            )
+        } else {
+            builder.setStyle(NotificationCompat.BigTextStyle().bigText(data.body))
+        }
+
+        return builder.build()
     }
 
     // ── Default ──────────────────────────────────────────────────────
 
-    private fun buildDefaultNotification(data: NotificationData): Notification {
+    private fun buildDefaultNotification(data: NotificationData, picture: Bitmap?): Notification {
         val channelId = NotificationChannels.channelFor(data.type)
-        return baseBuilder(channelId, data)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(data.body))
-            .build()
+        val builder = baseBuilder(channelId, data)
+
+        if (picture != null) {
+            builder.setStyle(
+                NotificationCompat.BigPictureStyle()
+                    .bigPicture(picture)
+                    .setSummaryText(data.body),
+            )
+        } else {
+            builder.setStyle(NotificationCompat.BigTextStyle().bigText(data.body))
+        }
+
+        return builder.build()
     }
 
     // ── Helpers ──────────────────────────────────────────────────────
@@ -162,6 +202,12 @@ class NotificationFactory @Inject constructor(
             .setContentIntent(contentPendingIntent(data))
             .setGroup(data.threadKey)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+    }
+
+    private fun NotificationCompat.Builder.applyAvatar(avatar: Bitmap?): NotificationCompat.Builder {
+        if (avatar != null) setLargeIcon(avatar)
+        return this
     }
 
     private fun mePerson(): Person = Person.Builder().setName("Me").build()

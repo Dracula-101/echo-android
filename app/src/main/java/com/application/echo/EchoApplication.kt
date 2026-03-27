@@ -15,17 +15,5 @@ class EchoApplication : android.app.Application() {
             Timber.plant(Timber.DebugTree())
         }
         NotificationChannels.createAll(this)
-        val app = FirebaseApp.initializeApp(this)
-        if (app != null) {
-            FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    Timber.d("FCM Token: %s", task.result)
-                } else {
-                    Timber.e(task.exception, "Failed to get FCM token")
-                }
-            }
-        } else {
-            Timber.w("Firebase not initialized — skipping FCM token fetch")
-        }
     }
 }

@@ -5,6 +5,7 @@ import android.app.NotificationChannelGroup
 import android.app.NotificationManager
 import android.content.Context
 import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.core.content.getSystemService
 import com.application.echo.features.notification.model.NotificationType
 
@@ -136,6 +137,7 @@ object NotificationChannels {
         )
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun channel(
         id: String,
         name: String,
@@ -144,8 +146,8 @@ object NotificationChannels {
         description: String,
     ): NotificationChannel {
         return NotificationChannel(id, name, importance).apply {
-            this.description = description
             this.group = group
+            this.description = description
         }
     }
 }
