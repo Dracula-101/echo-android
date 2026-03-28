@@ -1,19 +1,27 @@
 package com.application.echo.presentation.rootnav
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.application.echo.core.common.platform.base.BaseViewModel
 import com.application.echo.features.auth.model.AuthState
 import com.application.echo.features.auth.repository.AuthRepository
+import com.application.echo.features.profile.model.CreatingProfileState
+import com.application.echo.features.profile.repository.ProfileRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import javax.inject.Inject
 
 @HiltViewModel
 class RootNavViewModel @Inject constructor(
-    private val authRepository: AuthRepository,
+    savedStateHandle: SavedStateHandle,
+    authRepository: AuthRepository,
+    profileRepository: ProfileRepository
 ) : BaseViewModel<RootNavState, RootNavEvent, RootNavAction>(
-    initialState = RootNavState(),
+    initialState = savedStateHandle[KEY_STATE] ?: RootNavState()
 ) {
 
     init {
@@ -21,8 +29,7 @@ class RootNavViewModel @Inject constructor(
             .onEach { authState ->
                 sendEvent(RootNavEvent.OnAuthStateChanged(authState))
                 sendAction(RootNavAction.UpdateAuthState(authState))
-            }
-            .launchIn(viewModelScope)
+            }.launchIn(viewModelScope)
     }
 
     override fun handleAction(action: RootNavAction) {
@@ -36,6 +43,10 @@ class RootNavViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    companion object {
+        private const val KEY_STATE = "root_nav_state"
     }
 }
 

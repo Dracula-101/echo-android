@@ -10,6 +10,7 @@ package com.application.echo.features.auth.model
  * authRepository.authStateFlow.collect { state ->
  *     when (state) {
  *         is AuthState.Initializing    -> showSplash()
+ *         is AuthState.CreateProfile   -> goToCreateProfile(state.userId)
  *         is AuthState.Authenticated   -> goToHome(state.user)
  *         is AuthState.Unauthenticated -> goToLogin()
  *     }
@@ -20,6 +21,9 @@ sealed interface AuthState {
 
     /** App just launched — checking persisted session / refreshing token. */
     data object Initializing : AuthState
+
+    /** User is creating a profile. */
+    data class CreateProfile(val userId: String) : AuthState
 
     /** User is logged in and the access token is valid. */
     data class Authenticated(val user: UserState) : AuthState

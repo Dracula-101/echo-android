@@ -12,4 +12,5 @@ interface AuthDiskSource {
     var sessionId: String?
 
     var sessionToken: String?
+
 }

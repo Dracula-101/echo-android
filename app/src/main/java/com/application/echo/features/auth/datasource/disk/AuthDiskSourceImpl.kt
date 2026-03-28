@@ -21,10 +21,10 @@ class AuthDiskSourceImpl @Inject constructor(
     sharedPreferences = sharedPreferences,
 ), AuthDiskSource {
 
-    private val _userStateFlow = MutableStateFlow(UserState.Companion.Empty)
+    private val _userStateFlow = MutableStateFlow(UserState.Empty)
 
     override var userState: UserState
-        get() = getString(USER_STATE_KEY)?.let { json.decodeFromString<UserState>(it) } ?: UserState.Companion.Empty
+        get() = getString(USER_STATE_KEY)?.let { json.decodeFromString<UserState>(it) } ?: UserState.Empty
         set(value) {
             putString(
                 key = USER_STATE_KEY,

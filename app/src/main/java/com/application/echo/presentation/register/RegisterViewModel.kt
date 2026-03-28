@@ -131,8 +131,8 @@ class RegisterViewModel @Inject constructor(
 @Parcelize
 data class RegisterState(
     val email: String = "pratikpujari1000@gmail.com",
-    val password: String = "Pratik@123",
-    val confirmPassword: String = "Pratik@123",
+    val password: String = "12345678",
+    val confirmPassword: String = "12345678",
     val isPasswordVisible: Boolean = false,
     val isConfirmPasswordVisible: Boolean = false,
     val isLoading: Boolean = false,

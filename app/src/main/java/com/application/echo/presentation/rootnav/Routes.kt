@@ -12,4 +12,7 @@ data object LoginScreen
 data object RegisterScreen
 
 @Serializable
+data object CreateProfile
+
+@Serializable
 data object HomeScreen

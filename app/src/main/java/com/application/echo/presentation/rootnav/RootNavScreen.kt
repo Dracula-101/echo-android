@@ -15,6 +15,7 @@ import com.application.echo.core.navigation.Navigator
 import com.application.echo.core.navigation.echoComposable
 import com.application.echo.core.navigation.transition.EchoTransitionPreset
 import com.application.echo.features.auth.model.AuthState
+import com.application.echo.presentation.create_profile.CreateProfileScreen
 import com.application.echo.presentation.home.HomeScreen
 import com.application.echo.presentation.login.LoginScreen
 import com.application.echo.presentation.register.RegisterScreen
@@ -35,6 +36,7 @@ fun RootNavScreen(
                 is RootNavEvent.OnAuthStateChanged -> {
                     when (event.authState) {
                         is AuthState.Authenticated -> navigator.navigateToRoot(HomeScreen)
+                        is AuthState.CreateProfile -> navigator.navigateToRoot(CreateProfile)
                         is AuthState.Unauthenticated -> navigator.navigateToRoot(LoginScreen)
                         is AuthState.Initializing -> Unit // wait
                     }
@@ -75,6 +77,11 @@ fun RootNavScreen(
                     navigator.navigateBackTo(LoginScreen)
                 },
             )
+        }
+        echoComposable<CreateProfile>(
+            transition = EchoTransitionPreset.SlideHorizontal,
+        ) {
+            CreateProfileScreen()
         }
         echoComposable<HomeScreen>(
             transition = EchoTransitionPreset.Fade,

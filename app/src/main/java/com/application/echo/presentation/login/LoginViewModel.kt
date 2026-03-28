@@ -117,7 +117,7 @@ class LoginViewModel @Inject constructor(
 
 @Parcelize
 data class LoginState(
-    val email: String = "pratik.test@gmail.com",
+    val email: String = "pratikpujari1000@gmail.com",
     val password: String = "12345678",
     val isPasswordVisible: Boolean = false,
     val isLoading: Boolean = false,

@@ -14,6 +14,7 @@ import com.application.echo.features.auth.datasource.disk.AuthDiskSource
 import com.application.echo.features.auth.datasource.network.AuthNetworkSource
 import com.application.echo.features.auth.model.AuthState
 import com.application.echo.features.auth.model.UserState
+import com.application.echo.features.profile.datasource.disk.ProfileDiskSource
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
@@ -30,7 +31,8 @@ private const val DEFAULT_TOKEN_LIFETIME_SECONDS = 86_400L // 24 hours
 
 class AuthRepositoryImpl @Inject constructor(
     private val networkSource: AuthNetworkSource,
-    private val diskSource: AuthDiskSource,
+    private val authDiskSource: AuthDiskSource,
+    private val profileDiskSource: ProfileDiskSource,
     private val tokenManager: AuthTokenManager,
     @AppDispatcher(AppDispatchers.IO) ioDispatcher: CoroutineDispatcher,
 ) : AuthRepository {
@@ -43,8 +45,8 @@ class AuthRepositoryImpl @Inject constructor(
     private val _authStateFlow = MutableStateFlow<AuthState>(AuthState.Initializing)
     override val authStateFlow: StateFlow<AuthState> = _authStateFlow.asStateFlow()
 
-    override val userStateFlow: StateFlow<UserState> =
-        MutableStateFlow(diskSource.userState)
+    override val userStateFlow: MutableStateFlow<UserState> =
+        MutableStateFlow(authDiskSource.userState)
 
     init {
         scope.launch { restoreSession() }
@@ -70,36 +72,17 @@ class AuthRepositoryImpl @Inject constructor(
         acceptTerms: Boolean,
     ): AuthResult<RegisterResponse> = sessionMutex.withLock {
         val registerResult = networkSource.register(email, password, acceptTerms)
-
         return registerResult.fold(
             onSuccess = { response ->
-                if (response.requiresEmailVerification) {
-                    _authStateFlow.value = AuthState.Unauthenticated(
-                        AuthState.Unauthenticated.Reason.EmailVerificationRequired
-                    )
-                    return@fold registerResult
+                if(!response.requiresEmailVerification) {
+                    _authStateFlow.value = AuthState.CreateProfile(response.userId)
                 }
-
-                val loginResult = networkSource.login(email, password)
-                loginResult.fold(
-                    onSuccess = { loginResponse ->
-                        persistSession(
-                            loginResponse.session,
-                            loginResponse.user.id,
-                            loginResponse.user.email
-                        )
-                        emitAuthenticated()
-                        registerResult
-                    },
-                    onError = { error ->
-                        clearSession()
-                        return@fold AuthResult.Error(error)
-                    }
-                )
+                AuthResult.Success(response)
             },
             onError = { error ->
+                Timber.e("Registration failed: %s", error.code)
                 AuthResult.Error(error)
-            }
+            },
         )
     }
 
@@ -115,8 +98,18 @@ class AuthRepositoryImpl @Inject constructor(
      * ensure we have a valid access token before declaring auth state.
      */
     private suspend fun restoreSession() = sessionMutex.withLock {
-        val storedUser = diskSource.userState
-        if (storedUser == UserState.Companion.Empty) {
+        val isCreatingProfile = profileDiskSource.creatingProfileState
+        if (isCreatingProfile) {
+            Timber.d("Creating profile — unauthenticated")
+            val profileUserId = profileDiskSource.creatingProfileUserId
+            if (profileUserId != null) {
+                _authStateFlow.value = AuthState.CreateProfile(profileUserId)
+                return
+            }
+        }
+
+        val storedUser = authDiskSource.userState
+        if (storedUser == UserState.Empty) {
             Timber.d("No stored session — unauthenticated")
             _authStateFlow.value = AuthState.Unauthenticated()
             return
@@ -187,9 +180,9 @@ class AuthRepositoryImpl @Inject constructor(
 
     private fun persistSession(session: SessionInfo, userId: String, email: String) {
         storeTokens(session.accessToken, session.refreshToken)
-        diskSource.sessionId = session.sessionId
-        diskSource.sessionToken = session.sessionToken
-        diskSource.userState = UserState(userId = userId, email = email)
+        authDiskSource.sessionId = session.sessionId
+        authDiskSource.sessionToken = session.sessionToken
+        authDiskSource.userState = UserState(userId = userId, email = email)
     }
 
     private fun storeTokens(accessToken: String, refreshToken: String) {
@@ -203,15 +196,15 @@ class AuthRepositoryImpl @Inject constructor(
 
     private fun clearSession() {
         tokenManager.clearTokenData()
-        diskSource.sessionId = null
-        diskSource.sessionToken = null
-        diskSource.userState = UserState.Companion.Empty
-        (userStateFlow as MutableStateFlow).value = UserState.Companion.Empty
+        authDiskSource.sessionId = null
+        authDiskSource.sessionToken = null
+        authDiskSource.userState = UserState.Empty
+        userStateFlow.value = UserState.Empty
     }
 
     private fun emitAuthenticated() {
-        val user = diskSource.userState
-        (userStateFlow as MutableStateFlow).value = user
+        val user = authDiskSource.userState
+        userStateFlow.value = user
         _authStateFlow.value = AuthState.Authenticated(user)
     }
 }
