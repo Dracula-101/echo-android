@@ -76,7 +76,11 @@ class ProfileDiskSourceImpl @Inject constructor(
     override var creatingProfileUserId: String?
         get() = getString(CREATING_PROFILE_USER_ID_KEY)
         set(value) {
-            putString(CREATING_PROFILE_USER_ID_KEY, value)
+            if (value == null) {
+                remove(CREATING_PROFILE_USER_ID_KEY)
+            } else {
+                putString(CREATING_PROFILE_USER_ID_KEY, value)
+            }
             _creatingProfileUserIdStateFlow.tryEmit(value)
         }
 
@@ -88,7 +92,11 @@ class ProfileDiskSourceImpl @Inject constructor(
     override var creatingProfileDisplayName: String?
         get() = getString(CREATING_PROFILE_USER_DISPLAY_NAME_KEY)
         set(value) {
-            putString(CREATING_PROFILE_USER_DISPLAY_NAME_KEY, value)
+            if (value == null) {
+                remove(CREATING_PROFILE_USER_DISPLAY_NAME_KEY)
+            } else {
+                putString(CREATING_PROFILE_USER_DISPLAY_NAME_KEY, value)
+            }
             _creatingProfileDisplayNameStateFlow.tryEmit(value)
         }
 
@@ -100,7 +108,11 @@ class ProfileDiskSourceImpl @Inject constructor(
     override var creatingProfileFirstName: String?
         get() = getString(CREATING_PROFILE_USER_FIRST_NAME_KEY)
         set(value) {
-            putString(CREATING_PROFILE_USER_FIRST_NAME_KEY, value)
+            if (value == null) {
+                remove(CREATING_PROFILE_USER_FIRST_NAME_KEY)
+            } else {
+                putString(CREATING_PROFILE_USER_FIRST_NAME_KEY, value)
+            }
             _creatingProfileFirstNameStateFlow.tryEmit(value)
         }
 
@@ -112,7 +124,11 @@ class ProfileDiskSourceImpl @Inject constructor(
     override var creatingProfileLastName: String?
         get() = getString(CREATING_PROFILE_USER_LAST_NAME_KEY)
         set(value) {
-            putString(CREATING_PROFILE_USER_LAST_NAME_KEY, value)
+            if (value == null) {
+                remove(CREATING_PROFILE_USER_LAST_NAME_KEY)
+            } else {
+                putString(CREATING_PROFILE_USER_LAST_NAME_KEY, value)
+            }
             _creatingProfileLastNameStateFlow.tryEmit(value)
         }
 
@@ -124,7 +140,11 @@ class ProfileDiskSourceImpl @Inject constructor(
     override var creatingProfileAvatarUrl: String?
         get() = getString(CREATING_PROFILE_USER_AVATAR_URL_KEY)
         set(value) {
-            putString(CREATING_PROFILE_USER_AVATAR_URL_KEY, value)
+            if (value == null) {
+                remove(CREATING_PROFILE_USER_AVATAR_URL_KEY)
+            } else {
+                putString(CREATING_PROFILE_USER_AVATAR_URL_KEY, value)
+            }
             _creatingProfileAvatarUrlStateFlow.tryEmit(value)
         }
 
@@ -138,6 +158,10 @@ class ProfileDiskSourceImpl @Inject constructor(
     override fun finishCreatingProfile() {
         creatingProfileUserId = null
         creatingProfileState = false
+        creatingProfileDisplayName = null
+        creatingProfileFirstName = null
+        creatingProfileLastName = null
+        creatingProfileAvatarUrl = null
     }
 
 }

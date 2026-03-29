@@ -71,7 +71,6 @@ class CreateProfileViewModel @Inject constructor(
 
     private fun saveProfile() {
         viewModelScope.launch {
-            Timber.d("Saving profile, token: ${authTokenManager.getLatestAuthTokenData()}")
             setState { state.copy(isLoading = true) }
             if (state.avatarUri != null) {
                 val result = repository.setProfileInfo(
