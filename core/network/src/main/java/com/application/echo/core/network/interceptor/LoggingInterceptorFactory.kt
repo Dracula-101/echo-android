@@ -1,6 +1,8 @@
 package com.application.echo.core.network.interceptor
 
 import com.application.echo.core.network.util.HeaderConstants
+import okhttp3.Interceptor
+import okhttp3.MultipartBody
 import okhttp3.logging.HttpLoggingInterceptor
 import timber.log.Timber
 
@@ -15,16 +17,21 @@ internal object LoggingInterceptorFactory {
 
     private const val TAG = "EchoHttp"
 
-    fun create(logBody: Boolean): HttpLoggingInterceptor {
-        return HttpLoggingInterceptor { message ->
-            Timber.tag(TAG).d(message)
+    fun create(logBody: Boolean): Interceptor {
+        val logger = HttpLoggingInterceptor { message ->
+            Timber.tag(TAG).d(message.chunked(4000).joinToString("\n"))
         }.apply {
             redactHeader(HeaderConstants.AUTHORIZATION)
-            level = if (logBody) {
-                HttpLoggingInterceptor.Level.BODY
-            } else {
-                HttpLoggingInterceptor.Level.BASIC
+        }
+
+        return Interceptor { chain ->
+            val isMultipart = chain.request().body is MultipartBody
+            logger.level = when {
+                isMultipart -> HttpLoggingInterceptor.Level.HEADERS
+                logBody     -> HttpLoggingInterceptor.Level.BODY
+                else        -> HttpLoggingInterceptor.Level.BASIC
             }
+            logger.intercept(chain)
         }
     }
 }

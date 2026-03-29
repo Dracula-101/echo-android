@@ -68,6 +68,12 @@ data class RegisterResponse(
     val requiresEmailVerification: Boolean,
     @SerializedName("user_id")
     val userId: String,
+    @SerializedName("access_token")
+    val accessToken: String,
+    @SerializedName("refresh_token")
+    val refreshToken: String,
+    @SerializedName("expires_at")
+    val expiresAt: String,
 )
 
 /**
@@ -78,6 +84,13 @@ data class RefreshTokenResponse(
     val accessToken: String,
     @SerializedName("refresh_token")
     val refreshToken: String,
+    @SerializedName("expires_at")
+    val expiresAt: String,
+)
+
+data class RefreshTokenWrapper(
+    @SerializedName("data")
+    val data: RefreshTokenResponse
 )
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -110,4 +123,6 @@ data class SessionInfo(
     val sessionId: String,
     @SerializedName("session_token")
     val sessionToken: String,
+    @SerializedName("expires_at")
+    val expiresAt: String,
 )

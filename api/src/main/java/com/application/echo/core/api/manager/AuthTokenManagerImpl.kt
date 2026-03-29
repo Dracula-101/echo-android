@@ -1,16 +1,24 @@
 package com.application.echo.core.api.manager
 
 import android.content.SharedPreferences
+import android.os.Build
 import com.application.echo.core.common.platform.base.BaseDiskSource
+import com.application.echo.core.common.repository.bufferedMutableSharedFlow
 import com.application.echo.core.network.model.TokenData
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.onSubscription
+import timber.log.Timber
+import java.text.SimpleDateFormat
+import java.util.Locale
+import java.util.TimeZone
 import javax.inject.Inject
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
-private const val ACCESS_TOKEN_KEY = "access_token"
-private const val REFRESH_TOKEN_KEY = "refresh_token"
-private const val EXPIRES_IN_KEY = "expires_in"
+private const val ACCESS_TOKEN_KEY = "access_token_key"
+private const val REFRESH_TOKEN_KEY = "refresh_token_key"
+private const val EXPIRES_AT_KEY = "expires_at_key"
 
 class AuthTokenManagerImpl @Inject constructor(
     sharedPreferences: SharedPreferences
@@ -30,50 +38,65 @@ class AuthTokenManagerImpl @Inject constructor(
             putString(REFRESH_TOKEN_KEY, value)
         }
 
-    private var expiresIn: Long?
-        get() = getLong(EXPIRES_IN_KEY)
+    private var expiresAt: String?
+        get() = getString(EXPIRES_AT_KEY)
         set(value) {
-            putLong(EXPIRES_IN_KEY, value)
+            putString(EXPIRES_AT_KEY, value)
         }
 
-    private val _tokenDataFlow = MutableStateFlow<TokenData?>(null)
+    private val _tokenDataFlow = bufferedMutableSharedFlow<TokenData?>()
 
     override val isTokenValid: Boolean
-        get() = isTokenDataValid(getLatestAuthTokenData())
+        get() {
+            val tokenData = getLatestAuthTokenData()
+            return tokenData != null && isTokenDataValid(tokenData)
+        }
 
     override val tokenDataFlow: Flow<TokenData?>
         get() = _tokenDataFlow.onSubscription { emit(getLatestAuthTokenData()) }
 
-    private fun isTokenDataValid(tokenData: TokenData?): Boolean {
+    private fun isTokenDataValid(tokenData: TokenData): Boolean {
         val currentTime = System.currentTimeMillis() / 1000 // convert to seconds
-        val tokenExpirationTime = tokenData?.expiresIn ?: 0L
+        val tokenExpirationTime = parseExpiresAt(tokenData.expiresAt)
         return currentTime < tokenExpirationTime
     }
     override fun getLatestAuthTokenData(): TokenData? {
         val accessToken = accessToken
         val refreshToken = refreshToken
-        val expiresIn = expiresIn
+        val expiresAt = expiresAt
 
-        return if (accessToken != null && refreshToken != null && expiresIn != null) {
+        return if (accessToken != null && refreshToken != null && expiresAt != null) {
             TokenData(
                 accessToken = accessToken,
                 refreshToken = refreshToken,
-                expiresIn = expiresIn
+                expiresAt = expiresAt
             )
         } else {
             null
         }
     }
 
-    override fun storeTokenData(accessToken: String, refreshToken: String, expiresIn: Long) {
+    @OptIn(ExperimentalTime::class)
+    private fun parseExpiresAt(expiresIn: String): Long = try {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            Instant.parse(expiresIn).epochSeconds
+        } else {
+            SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US)
+                .apply { timeZone = TimeZone.getTimeZone("UTC") }
+                .parse(expiresIn)!!
+                .time / 1000
+        }
+    } catch (e: Exception) { 0L }
+
+    override fun storeTokenData(accessToken: String, refreshToken: String, expiresAt: String) {
         this.accessToken = accessToken
         this.refreshToken = refreshToken
-        this.expiresIn = expiresIn
+        this.expiresAt = expiresAt
         _tokenDataFlow.tryEmit(
             TokenData(
                 accessToken = accessToken,
                 refreshToken = refreshToken,
-                expiresIn = expiresIn,
+                expiresAt = expiresAt,
             ),
         )
     }
@@ -81,7 +104,7 @@ class AuthTokenManagerImpl @Inject constructor(
     override fun clearTokenData() {
         accessToken = null
         refreshToken = null
-        expiresIn = null
+        expiresAt = null
         _tokenDataFlow.tryEmit(null)
     }
 }

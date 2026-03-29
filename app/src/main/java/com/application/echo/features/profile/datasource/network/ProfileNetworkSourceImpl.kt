@@ -1,15 +1,29 @@
 package com.application.echo.features.profile.datasource.network
 
+import android.content.ContentResolver
+import android.content.Context
+import android.net.Uri
+import androidx.core.net.toFile
+import com.application.echo.core.api.media.MediaApiRepository
 import com.application.echo.core.api.profile.CreateProfileRequest
 import com.application.echo.core.api.profile.CreateProfileResponse
 import com.application.echo.core.api.profile.GetProfileResponse
 import com.application.echo.core.api.profile.ProfileApiRepository
+import com.application.echo.core.common.platform.util.MimeTypeResolver
+import com.application.echo.core.common.platform.util.toFile
 import com.application.echo.features.profile.model.ProfileResult
+import com.application.echo.features.profile.model.map
+import com.application.echo.features.profile.model.onSuccess
 import com.application.echo.features.profile.model.toProfileResult
+import dagger.hilt.android.qualifiers.ApplicationContext
+import java.io.File
 import javax.inject.Inject
 
 class ProfileNetworkSourceImpl @Inject constructor(
-    private val profileApi: ProfileApiRepository
+    private val profileApi: ProfileApiRepository,
+    private val mediaApi: MediaApiRepository,
+    private val mimeTypeResolver: MimeTypeResolver,
+    @param:ApplicationContext private val context: Context,
 ) : ProfileNetworkSource {
 
     override suspend fun getProfile(userId: String): ProfileResult<GetProfileResponse> {
@@ -24,7 +38,7 @@ class ProfileNetworkSourceImpl @Inject constructor(
         firstName: String,
         lastName: String,
         avatarUrl: String,
-        fcmToken: String,
+        fcmToken: String?,
     ): ProfileResult<CreateProfileResponse> {
         return profileApi
             .createProfile(
@@ -36,5 +50,14 @@ class ProfileNetworkSourceImpl @Inject constructor(
                 fcmToken = fcmToken,
             )
             .toProfileResult()
+    }
+
+    override suspend fun uploadAvatar(uri: Uri): ProfileResult<String> {
+        val profilePhotoFile = uri.toFile(context = context)
+        val mimeType = mimeTypeResolver.resolveDetailed(uri)
+        return mediaApi
+            .uploadProfilePhoto(profilePhotoFile, mimeType.mimeType)
+            .toProfileResult()
+            .map { it.storageUrl }
     }
 }

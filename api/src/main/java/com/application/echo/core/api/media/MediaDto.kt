@@ -10,16 +10,16 @@ import com.google.gson.annotations.SerializedName
  * Response `data` for `POST /media/upload` and `POST /media/profile-photo`.
  */
 data class MediaUploadResponse(
-    @SerializedName("id")
-    val id: String,
-    @SerializedName("url")
-    val url: String,
+    @SerializedName("file_id")
+    val fileId: String,
     @SerializedName("file_name")
-    val fileName: String? = null,
-    @SerializedName("content_type")
-    val contentType: String? = null,
-    @SerializedName("size")
-    val size: Long? = null,
-    @SerializedName("created_at")
-    val createdAt: String? = null,
+    val fileName: String,
+    @SerializedName("file_size")
+    val fileSize: Int,
+    @SerializedName("processing_status")
+    val processingStatus: String,
+    @SerializedName("storage_url")
+    val storageUrl: String,
+    @SerializedName("uploaded_at")
+    val uploadedAt: String
 )

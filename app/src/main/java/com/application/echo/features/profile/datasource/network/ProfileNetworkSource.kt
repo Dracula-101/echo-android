@@ -1,5 +1,6 @@
 package com.application.echo.features.profile.datasource.network
 
+import android.net.Uri
 import com.application.echo.core.api.profile.CreateProfileRequest
 import com.application.echo.core.api.profile.CreateProfileResponse
 import com.application.echo.core.api.profile.GetProfileResponse
@@ -15,6 +16,8 @@ interface ProfileNetworkSource {
         firstName: String,
         lastName: String,
         avatarUrl: String,
-        fcmToken: String,
+        fcmToken: String? = null,
     ): ProfileResult<CreateProfileResponse>
+
+    suspend fun uploadAvatar(uri: Uri): ProfileResult<String>
 }

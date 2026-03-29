@@ -6,6 +6,7 @@ import com.application.echo.core.network.interceptor.AuthTokenProvider
 import com.application.echo.core.network.interceptor.LoggingInterceptorFactory
 import com.application.echo.core.network.interceptor.RequestHeaderInterceptor
 import com.google.gson.Gson
+import okhttp3.Authenticator
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -23,6 +24,7 @@ internal class EchoHttpClientImpl(
     private val config: HttpClientConfig,
     private val gson: Gson,
     private val authTokenProvider: AuthTokenProvider,
+    private val authenticator: Authenticator,
 ) : EchoHttpClient {
 
     // ──────────────── Interceptors ────────────────
@@ -56,6 +58,7 @@ internal class EchoHttpClientImpl(
         baseOkHttpClient.newBuilder()
             .addInterceptor(authInterceptor)
             .addInterceptor(loggingInterceptor)
+            .authenticator(authenticator)
             .build()
     }
 

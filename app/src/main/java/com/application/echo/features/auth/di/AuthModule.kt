@@ -29,9 +29,11 @@ object AuthModule {
     @Singleton
     fun provideAuthDiskSource(
         @UnencryptedPreferences sharedPreferences: SharedPreferences,
+        @UnencryptedPreferences encryptedSharedPreferences: SharedPreferences,
         json: Json,
     ): AuthDiskSource = AuthDiskSourceImpl(
         sharedPreferences = sharedPreferences,
+        encryptedSharedPreferences = encryptedSharedPreferences,
         json = json,
     )
 

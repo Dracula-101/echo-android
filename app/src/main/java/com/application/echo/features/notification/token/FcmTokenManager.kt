@@ -28,8 +28,8 @@ import kotlin.coroutines.resumeWithException
  */
 @Singleton
 class FcmTokenManager @Inject constructor(
-    @ApplicationContext private val context: Context,
-    @UnencryptedPreferences private val prefs: SharedPreferences,
+    @param:ApplicationContext private val context: Context,
+    @param:UnencryptedPreferences private val prefs: SharedPreferences,
 ) {
 
     private val _tokenFlow = MutableStateFlow(storedToken)

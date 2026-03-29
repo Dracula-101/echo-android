@@ -4,6 +4,9 @@ import android.content.SharedPreferences
 import com.application.echo.core.api.auth.AuthApiRepository
 import com.application.echo.core.api.auth.AuthApiService
 import com.application.echo.core.api.auth.AuthApiRepositoryImpl
+import com.application.echo.core.api.auth.EchoTokenRefreshListener
+import com.application.echo.core.api.auth.TokenRefreshAuthenticator
+import com.application.echo.core.api.auth.TokenRefreshListener
 import com.application.echo.core.api.health.HealthRepository
 import com.application.echo.core.api.health.HealthRepositoryImpl
 import com.application.echo.core.api.manager.AuthTokenManager
@@ -37,6 +40,18 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 internal abstract class ApiBindsModule {
+
+    @Binds
+    @Singleton
+    abstract fun bindTokenRefreshListener(
+        impl: EchoTokenRefreshListener,
+    ): TokenRefreshListener
+
+    @Binds
+    @Singleton
+    abstract fun bindAuthenticator(
+        impl: TokenRefreshAuthenticator,
+    ): okhttp3.Authenticator
 
     @Binds
     @Singleton
@@ -99,6 +114,7 @@ internal object ApiProvidesModule {
         manager: AuthTokenManager,
     ): AuthTokenProvider = manager
 
+
     /**
      * Auth endpoints are public (login, register, refresh) — use [EchoHttpClient.unauthenticated].
      */
@@ -140,7 +156,7 @@ internal object ApiProvidesModule {
      * and X-Device-* headers to every request.
      *
      * The app module must provide a [SessionProvider] binding for this to work.
-     * Add this interceptor to your OkHttpClient via [HttpClientConfig].
+     * Add this interceptor to your OkHttpClient via [EchoHttpClient].
      */
     @Provides
     @Singleton

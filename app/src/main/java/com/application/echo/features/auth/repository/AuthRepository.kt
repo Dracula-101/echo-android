@@ -23,6 +23,8 @@ interface AuthRepository {
 
     suspend fun login(email: String, password: String): AuthResult<LoginResponse>
 
+    suspend fun autoLogin()
+
     suspend fun register(
         email: String,
         password: String,

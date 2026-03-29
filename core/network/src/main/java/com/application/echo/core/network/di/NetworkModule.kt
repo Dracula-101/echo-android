@@ -16,6 +16,7 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import okhttp3.Authenticator
 import retrofit2.Retrofit
 import javax.inject.Singleton
 
@@ -52,10 +53,12 @@ internal object NetworkProvidesModule {
         config: HttpClientConfig,
         gson: Gson,
         authTokenProvider: AuthTokenProvider,
+        authenticator: Authenticator,
     ): EchoHttpClient = EchoHttpClientImpl(
         config = config,
         gson = gson,
         authTokenProvider = authTokenProvider,
+        authenticator = authenticator,
     )
 
     @Provides

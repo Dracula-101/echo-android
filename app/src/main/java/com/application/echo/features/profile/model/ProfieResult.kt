@@ -64,5 +64,5 @@ inline fun <T, R> ProfileResult<T>.map(transform: (T) -> R): ProfileResult<R> = 
  */
 fun <T> ApiResult<T>.toProfileResult(): ProfileResult<T> = when (this) {
     is ApiResult.Success -> ProfileResult.Success(data)
-    is ApiResult.Failure -> ProfileResult.Error(ProfileError.Companion.fromNetworkException(exception))
+    is ApiResult.Failure -> ProfileResult.Error(ProfileError.fromNetworkException(exception))
 }

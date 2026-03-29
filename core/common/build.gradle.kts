@@ -34,6 +34,9 @@ dependencies {
     // Coroutines
     implementation(libs.kotlinx.coroutines.android)
 
+    //crypto
+    implementation(libs.androidx.core.security.crypto)
+
     // Logging
     implementation(libs.timber)
 

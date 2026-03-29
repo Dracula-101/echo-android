@@ -10,7 +10,7 @@ interface AuthTokenManager : AuthTokenProvider {
 
     val tokenDataFlow: Flow<TokenData?>
 
-    fun storeTokenData(accessToken: String, refreshToken: String, expiresIn: Long)
+    fun storeTokenData(accessToken: String, refreshToken: String, expiresAt: String)
 
     fun clearTokenData()
 }

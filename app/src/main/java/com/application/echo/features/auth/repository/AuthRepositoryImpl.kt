@@ -66,14 +66,35 @@ class AuthRepositoryImpl @Inject constructor(
         result
     }
 
+    override suspend fun autoLogin() {
+        val email = authDiskSource.registerEmail
+        val password = authDiskSource.registerPassword
+        if (email != null && password != null) {
+            val loginResult = login(email, password)
+            loginResult.onSuccess {
+                authDiskSource.registerEmail = null
+                authDiskSource.registerPassword = null
+            }
+        } else {
+            Timber.w("Auto-login failed: no stored credentials")
+        }
+    }
+
     override suspend fun register(
         email: String,
         password: String,
         acceptTerms: Boolean,
     ): AuthResult<RegisterResponse> = sessionMutex.withLock {
+        authDiskSource.registerEmail = email
+        authDiskSource.registerPassword = password
         val registerResult = networkSource.register(email, password, acceptTerms)
         return registerResult.fold(
             onSuccess = { response ->
+                storeTokens(
+                    accessToken = response.accessToken,
+                    refreshToken = response.refreshToken,
+                    expiresAt = response.expiresAt,
+                )
                 if(!response.requiresEmailVerification) {
                     _authStateFlow.value = AuthState.CreateProfile(response.userId)
                 }
@@ -134,7 +155,7 @@ class AuthRepositoryImpl @Inject constructor(
         Timber.d("Access token expired — attempting refresh")
         networkSource.refreshToken(tokenData.refreshToken).fold(
             onSuccess = { response ->
-                storeTokens(response.accessToken, response.refreshToken)
+                storeTokens(response.accessToken, response.refreshToken, response.expiresAt)
                 Timber.d("Token refreshed — authenticated")
                 emitAuthenticated()
             },
@@ -179,22 +200,22 @@ class AuthRepositoryImpl @Inject constructor(
     // ── Session Persistence ──────────────────────────────────────────
 
     private fun persistSession(session: SessionInfo, userId: String, email: String) {
-        storeTokens(session.accessToken, session.refreshToken)
+        storeTokens(session.accessToken, session.refreshToken, session.expiresAt)
         authDiskSource.sessionId = session.sessionId
         authDiskSource.sessionToken = session.sessionToken
         authDiskSource.userState = UserState(userId = userId, email = email)
     }
 
-    private fun storeTokens(accessToken: String, refreshToken: String) {
-        val expiresAt = (System.currentTimeMillis() / 1_000) + DEFAULT_TOKEN_LIFETIME_SECONDS
+    private fun storeTokens(accessToken: String, refreshToken: String, expiresAt: String) {
         tokenManager.storeTokenData(
             accessToken = accessToken,
             refreshToken = refreshToken,
-            expiresIn = expiresAt,
+            expiresAt = expiresAt,
         )
     }
 
     private fun clearSession() {
+        Timber.d("Clearing session")
         tokenManager.clearTokenData()
         authDiskSource.sessionId = null
         authDiskSource.sessionToken = null
