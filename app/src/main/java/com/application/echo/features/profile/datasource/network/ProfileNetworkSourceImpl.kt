@@ -4,11 +4,11 @@ import android.content.ContentResolver
 import android.content.Context
 import android.net.Uri
 import androidx.core.net.toFile
-import com.application.echo.core.api.media.MediaApiRepository
-import com.application.echo.core.api.profile.CreateProfileRequest
-import com.application.echo.core.api.profile.CreateProfileResponse
-import com.application.echo.core.api.profile.GetProfileResponse
-import com.application.echo.core.api.profile.ProfileApiRepository
+import com.application.echo.api.media.MediaApiRepository
+import com.application.echo.api.profile.CreateProfileRequest
+import com.application.echo.api.profile.CreateProfileResponse
+import com.application.echo.api.profile.GetProfileResponse
+import com.application.echo.api.profile.ProfileApiRepository
 import com.application.echo.core.common.platform.util.MimeTypeResolver
 import com.application.echo.core.common.platform.util.toFile
 import com.application.echo.features.profile.model.ProfileResult

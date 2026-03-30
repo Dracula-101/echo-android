@@ -1,13 +1,13 @@
 package com.application.echo.features.auth.repository
 
-import com.application.echo.core.api.auth.AuthError
+import com.application.echo.api.auth.AuthError
 import com.application.echo.features.auth.model.AuthResult
-import com.application.echo.core.api.auth.LoginResponse
-import com.application.echo.core.api.auth.RegisterResponse
-import com.application.echo.core.api.auth.SessionInfo
+import com.application.echo.api.auth.LoginResponse
+import com.application.echo.api.auth.RegisterResponse
+import com.application.echo.api.auth.SessionInfo
 import com.application.echo.features.auth.model.fold
 import com.application.echo.features.auth.model.onSuccess
-import com.application.echo.core.api.manager.AuthTokenManager
+import com.application.echo.api.manager.AuthTokenManager
 import com.application.echo.core.common.annotations.AppDispatcher
 import com.application.echo.core.common.model.AppDispatchers
 import com.application.echo.features.auth.datasource.disk.AuthDiskSource

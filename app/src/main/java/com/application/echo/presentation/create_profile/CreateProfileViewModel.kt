@@ -8,8 +8,8 @@ import android.net.Uri
 import android.os.Parcelable
 import androidx.core.net.toUri
 import androidx.lifecycle.SavedStateHandle
-import com.application.echo.core.api.manager.AuthTokenManager
-import com.application.echo.core.api.profile.ProfileError
+import com.application.echo.api.manager.AuthTokenManager
+import com.application.echo.api.profile.ProfileError
 import com.application.echo.core.common.platform.base.BaseViewModel
 import com.application.echo.core.common.repository.model.DataState
 import com.application.echo.features.notification.token.FcmTokenManager

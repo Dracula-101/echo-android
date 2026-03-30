@@ -2,8 +2,8 @@ package com.application.echo.di
 
 import android.content.Context
 import android.provider.Settings
-import com.application.echo.core.api.session.DeviceInfo
-import com.application.echo.core.api.session.SessionProvider
+import com.application.echo.api.session.DeviceInfo
+import com.application.echo.api.session.SessionProvider
 import com.application.echo.features.auth.datasource.disk.AuthDiskSource
 import dagger.Module
 import dagger.Provides

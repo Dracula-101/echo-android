@@ -1,8 +1,8 @@
 package com.application.echo.features.auth.di
 
 import android.content.SharedPreferences
-import com.application.echo.core.api.auth.AuthApiRepository
-import com.application.echo.core.api.manager.AuthTokenManager
+import com.application.echo.api.auth.AuthApiRepository
+import com.application.echo.api.manager.AuthTokenManager
 import com.application.echo.core.common.annotations.AppDispatcher
 import com.application.echo.core.common.annotations.UnencryptedPreferences
 import com.application.echo.core.common.model.AppDispatchers

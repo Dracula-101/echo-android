@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.application.echo.core.api"
+    namespace = "com.application.echo.api"
 }
 
 dependencies {

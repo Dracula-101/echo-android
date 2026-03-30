@@ -1,6 +1,6 @@
 package com.application.echo.features.auth.model
 
-import com.application.echo.core.api.auth.AuthError
+import com.application.echo.api.auth.AuthError
 import com.application.echo.core.network.model.NetworkException
 import com.application.echo.core.network.result.ApiResult
 

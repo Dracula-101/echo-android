@@ -1,6 +1,6 @@
 package com.application.echo.features.profile.model
 
-import com.application.echo.core.api.profile.ProfileError
+import com.application.echo.api.profile.ProfileError
 import com.application.echo.core.network.model.NetworkException
 import com.application.echo.core.network.result.ApiResult
 

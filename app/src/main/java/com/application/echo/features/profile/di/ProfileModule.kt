@@ -2,10 +2,10 @@ package com.application.echo.features.profile.di
 
 import android.content.Context
 import android.content.SharedPreferences
-import com.application.echo.core.api.auth.AuthApiRepository
-import com.application.echo.core.api.manager.AuthTokenManager
-import com.application.echo.core.api.media.MediaApiRepository
-import com.application.echo.core.api.profile.ProfileApiRepository
+import com.application.echo.api.auth.AuthApiRepository
+import com.application.echo.api.manager.AuthTokenManager
+import com.application.echo.api.media.MediaApiRepository
+import com.application.echo.api.profile.ProfileApiRepository
 import com.application.echo.core.common.annotations.AppDispatcher
 import com.application.echo.core.common.annotations.ApplicationScope
 import com.application.echo.core.common.annotations.UnencryptedPreferences

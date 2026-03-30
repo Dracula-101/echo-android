@@ -1,8 +1,8 @@
 package com.application.echo.features.auth.repository
 
 import com.application.echo.features.auth.model.AuthResult
-import com.application.echo.core.api.auth.LoginResponse
-import com.application.echo.core.api.auth.RegisterResponse
+import com.application.echo.api.auth.LoginResponse
+import com.application.echo.api.auth.RegisterResponse
 import com.application.echo.features.auth.model.AuthState
 import com.application.echo.features.auth.model.UserState
 import kotlinx.coroutines.flow.StateFlow
