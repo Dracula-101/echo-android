@@ -17,6 +17,16 @@ internal class ProfileApiRepositoryImpl @Inject constructor(
         userId = userId,
     ).toApiResult()
 
+    override suspend fun searchUsers(
+        query: String,
+        limit: Int,
+        offset: Int,
+    ): ApiResult<SearchProfileResponse> = api.searchUsers(
+        query = query,
+        limit = limit,
+        offset = offset,
+    ).toApiResult()
+
     override suspend fun createProfile(
         userId: String,
         displayName: String,

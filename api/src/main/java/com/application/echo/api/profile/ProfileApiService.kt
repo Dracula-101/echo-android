@@ -7,6 +7,7 @@ import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Path
+import retrofit2.http.Query
 
 /**
  * Retrofit service definition for the User API.
@@ -24,6 +25,13 @@ internal interface ProfileApiService {
     suspend fun createProfile(
         @Body request: CreateProfileRequest,
     ): NetworkResponse<CreateProfileResponse>
+
+    @GET(ApiConstants.USERS_SEARCH)
+    suspend fun searchUsers(
+        @Query("query") query: String,
+        @Query("limit") limit: Int = 20,
+        @Query("offset") offset: Int = 0,
+    ): NetworkResponse<SearchProfileResponse>
 
     @GET(ApiConstants.USERS_HEALTH)
     suspend fun health(): NetworkResponse<HealthResponse>

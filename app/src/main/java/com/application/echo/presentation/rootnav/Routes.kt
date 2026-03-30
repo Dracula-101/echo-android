@@ -15,4 +15,10 @@ data object RegisterScreen
 data object CreateProfile
 
 @Serializable
-data object HomeScreen
+data object ConversationScreen
+
+@Serializable
+data object SearchUserScreen
+
+@Serializable
+data class ChatScreen(val conversationId: String, val participantName: String = "")

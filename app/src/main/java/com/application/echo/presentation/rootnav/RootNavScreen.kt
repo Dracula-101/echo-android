@@ -16,9 +16,10 @@ import com.application.echo.core.navigation.echoComposable
 import com.application.echo.core.navigation.transition.EchoTransitionPreset
 import com.application.echo.features.auth.model.AuthState
 import com.application.echo.presentation.create_profile.CreateProfileScreen
-import com.application.echo.presentation.home.HomeScreen
+import com.application.echo.presentation.conversation.ConversationScreen
 import com.application.echo.presentation.login.LoginScreen
 import com.application.echo.presentation.register.RegisterScreen
+import com.application.echo.presentation.search_user.SearchUserScreen
 import com.application.echo.presentation.splash.SplashScreen
 import com.application.echo.ui.components.scaffold.EchoScaffold
 import kotlinx.coroutines.flow.collectLatest
@@ -35,7 +36,7 @@ fun RootNavScreen(
             when (event) {
                 is RootNavEvent.OnAuthStateChanged -> {
                     when (event.authState) {
-                        is AuthState.Authenticated -> navigator.navigateToRoot(HomeScreen)
+                        is AuthState.Authenticated -> navigator.navigateToRoot(ConversationScreen)
                         is AuthState.CreateProfile -> navigator.navigateToRoot(CreateProfile)
                         is AuthState.Unauthenticated -> navigator.navigateToRoot(LoginScreen)
                         is AuthState.Initializing -> Unit // wait
@@ -83,10 +84,31 @@ fun RootNavScreen(
         ) {
             CreateProfileScreen()
         }
-        echoComposable<HomeScreen>(
+        echoComposable<ConversationScreen>(
             transition = EchoTransitionPreset.Fade,
         ) {
-            HomeScreen()
+            ConversationScreen(
+                navigateToAddUser = {
+                    navigator.navigateTo(SearchUserScreen)
+                }
+            )
+        }
+        echoComposable<SearchUserScreen>(
+            transition = EchoTransitionPreset.SlideHorizontal,
+        ) {
+            SearchUserScreen(
+                onNavigateBack = {
+                    navigator.navigateBack()
+                },
+                onNavigateToChat = { conversationId, participantName ->
+                    navigator.navigateTo(
+                        ChatScreen(
+                            conversationId = conversationId,
+                            participantName = participantName,
+                        )
+                    )
+                }
+            )
         }
     }
 }

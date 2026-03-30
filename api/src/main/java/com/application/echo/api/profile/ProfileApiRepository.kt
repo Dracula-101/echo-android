@@ -13,6 +13,15 @@ interface ProfileApiRepository {
     suspend fun getProfile(userId: String): ApiResult<GetProfileResponse>
 
     /**
+     * Search users by username or display name.
+     */
+    suspend fun searchUsers(
+        query: String,
+        limit: Int = 20,
+        offset: Int = 0,
+    ): ApiResult<SearchProfileResponse>
+
+    /**
      * Create (or update) a user profile.
      */
     suspend fun createProfile(
