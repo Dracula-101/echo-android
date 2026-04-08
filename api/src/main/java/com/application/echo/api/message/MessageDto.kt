@@ -35,6 +35,15 @@ data class CreateConversationRequest(
 /**
  * Response `data` for `POST /messages` and items in `GET /messages`.
  */
+
+data class MessagesResponse(
+    @SerializedName("has_more")
+    val hasMore: Boolean,
+    @SerializedName("messages")
+    val messages: List<MessageResponse>,
+    @SerializedName("limit")
+    val limit: Int,
+)
 data class MessageResponse(
     @SerializedName("id")
     val id: String,
@@ -63,12 +72,35 @@ data class ConversationResponse(
     val id: String,
     @SerializedName("conversation_type")
     val conversationType: String? = null,
-    @SerializedName("participant_ids")
-    val participantIds: List<String>? = null,
+    @SerializedName("participants")
+    val participants: List<ConversationParticipant>? = null,
     @SerializedName("last_message")
     val lastMessage: MessageResponse? = null,
+    @SerializedName("member_count")
+    val memberCount: Int? = null,
+    @SerializedName("message_count")
+    val messageCount: Int? = null,
     @SerializedName("created_at")
     val createdAt: String? = null,
     @SerializedName("updated_at")
     val updatedAt: String? = null,
+)
+
+data class ConversationParticipant(
+    @SerializedName("avatar_url")
+    val avatarUrl: String,
+    @SerializedName("display_name")
+    val displayName: String,
+    @SerializedName("first_name")
+    val firstName: String,
+    @SerializedName("last_name")
+    val lastName: String,
+    @SerializedName("online_status")
+    val onlineStatus: String,
+    @SerializedName("user_avatar")
+    val userAvatar: String,
+    @SerializedName("user_id")
+    val userId: String,
+    @SerializedName("user_name")
+    val userName: String
 )

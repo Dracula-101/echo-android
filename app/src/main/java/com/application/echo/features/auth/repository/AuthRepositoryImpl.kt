@@ -181,6 +181,7 @@ class AuthRepositoryImpl @Inject constructor(
             is AuthError.SessionNotFound,
             is AuthError.AccountLocked,
             is AuthError.AccountDisabled,
+            is AuthError.NetworkError,
             -> {
                 Timber.e("Token refresh permanently failed (%s) — logging out", error.code)
                 clearSession()
@@ -188,8 +189,6 @@ class AuthRepositoryImpl @Inject constructor(
                     AuthState.Unauthenticated.Reason.SessionExpired,
                 )
             }
-            // Transient — network issue, server down, etc. Keep the session
-            // so the user isn't logged out just because they're offline.
             else -> {
                 Timber.w("Token refresh failed transiently (%s) — keeping session", error.code)
                 emitAuthenticated()

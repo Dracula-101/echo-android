@@ -21,7 +21,7 @@ internal interface MessageApiService {
     @GET(ApiConstants.MESSAGES)
     suspend fun getMessages(
         @Query("conversation_id") conversationId: String,
-    ): NetworkResponse<List<MessageResponse>>
+    ): NetworkResponse<MessagesResponse>
 
     @POST(ApiConstants.MESSAGES)
     suspend fun sendMessage(

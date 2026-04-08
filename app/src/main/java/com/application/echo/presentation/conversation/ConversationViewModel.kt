@@ -112,40 +112,24 @@ class ConversationViewModel @Inject constructor(
         }.awaitAll()
     }
 
-    private suspend fun buildConversationUiModel(
+    private fun buildConversationUiModel(
         conversation: ConversationResponse,
     ): ConversationItemUiModel {
-        val otherUserId = conversation.participantIds
-            ?.firstOrNull { it != state.currentUserId }
-
-        val profile = otherUserId?.let { resolveProfile(it) }
-
-        val displayName = profile?.displayName
-            ?: profile?.let {
-                listOfNotNull(it.firstName, it.lastName)
-                    .joinToString(" ")
-                    .ifBlank { null }
-            }
-            ?: "Unknown"
-
+        val conversationParticipant = conversation.participants?.firstOrNull {
+            it.userId != state.currentUserId
+        } ?: throw IllegalStateException("Conversation has no participants")
         return ConversationItemUiModel(
             conversationId = conversation.id,
-            participantName = displayName,
-            participantAvatarUrl = profile?.avatarUrl,
+            participantName = conversationParticipant.displayName,
+            participantAvatarUrl = conversationParticipant.avatarUrl,
             lastMessageContent = conversation.lastMessage?.content,
             formattedTimestamp = formatTimestamp(
                 conversation.lastMessage?.createdAt ?: conversation.updatedAt
             ),
+            onlineStatus = conversationParticipant.onlineStatus,
             isLastMessageFromMe = conversation.lastMessage?.senderId == state.currentUserId,
             conversationType = conversation.conversationType,
         )
-    }
-
-    private suspend fun resolveProfile(userId: String): GetProfileResponse? {
-        profileCache[userId]?.let { return it }
-        return profileApiRepository.getProfile(userId).getOrNull()?.also {
-            profileCache[userId] = it
-        }
     }
 
     private fun mapExceptionToMessage(exception: NetworkException): String = when (exception) {
@@ -177,6 +161,7 @@ data class ConversationItemUiModel(
     val conversationId: String,
     val participantName: String,
     val participantAvatarUrl: String?,
+    val onlineStatus: String? = null,
     val lastMessageContent: String?,
     val formattedTimestamp: String?,
     val isLastMessageFromMe: Boolean,

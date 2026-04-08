@@ -56,8 +56,8 @@ class ChatViewModel @Inject constructor(
         viewModelScope.launch {
             setState { state.copy(isLoading = true) }
             messageApiRepository.getMessages(state.conversationId).fold(
-                onSuccess = { messages ->
-                    val uiModels = messages.map { msg ->
+                onSuccess = { messagesData ->
+                    val uiModels = messagesData.messages.map { msg ->
                         ChatMessageUiModel(
                             messageId = msg.id,
                             content = msg.content.orEmpty(),

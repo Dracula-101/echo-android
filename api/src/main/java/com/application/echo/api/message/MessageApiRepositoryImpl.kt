@@ -15,7 +15,7 @@ internal class MessageApiRepositoryImpl @Inject constructor(
 
     override suspend fun getMessages(
         conversationId: String,
-    ): ApiResult<List<MessageResponse>> = api.getMessages(
+    ): ApiResult<MessagesResponse> = api.getMessages(
         conversationId = conversationId,
     ).toApiResult()
 

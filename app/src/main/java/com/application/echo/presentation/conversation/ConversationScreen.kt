@@ -56,7 +56,8 @@ import kotlinx.coroutines.flow.collectLatest
 @Composable
 fun ConversationScreen(
     viewModel: ConversationViewModel = hiltViewModel(),
-    navigateToAddUser: () -> Unit
+    navigateToAddUser: () -> Unit,
+    navigateToChat: (conversationId: String, participantName: String) -> Unit,
 ) {
     val state by viewModel.stateFlow.collectAsStateWithLifecycle()
     val snackbarState = rememberEchoSnackbarState()
@@ -109,6 +110,7 @@ fun ConversationScreen(
         ConversationContent(
             state = state,
             onAction = viewModel::trySendAction,
+            onNavigateToChat = navigateToChat,
         )
     }
 }
@@ -117,6 +119,7 @@ fun ConversationScreen(
 private fun ConversationContent(
     state: ConversationState,
     onAction: (ConversationAction) -> Unit,
+    onNavigateToChat: (conversationId: String, participantName: String) -> Unit,
 ) {
     when {
         state.isLoading -> LoadingState()
@@ -127,7 +130,7 @@ private fun ConversationContent(
         state.conversations.isEmpty() -> EmptyState()
         else -> ConversationList(
             conversations = state.conversations,
-            onConversationClicked = { onAction(ConversationAction.OnConversationClicked(it)) },
+            onNavigateToChat = onNavigateToChat,
         )
     }
 }
@@ -211,7 +214,7 @@ private fun EmptyState() {
 @Composable
 private fun ConversationList(
     conversations: List<ConversationItemUiModel>,
-    onConversationClicked: (String) -> Unit,
+    onNavigateToChat: (conversationId: String, participantName: String) -> Unit,
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -223,7 +226,12 @@ private fun ConversationList(
         ) { conversation ->
             ConversationListItem(
                 conversation = conversation,
-                onClick = { onConversationClicked(conversation.conversationId) },
+                onClick = {
+                    onNavigateToChat(
+                        conversation.conversationId,
+                        conversation.participantName,
+                    )
+                },
             )
         }
     }
@@ -259,6 +267,7 @@ private fun ConversationListItem(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
+
             if (conversation.lastMessageContent != null) {
                 Text(
                     text = buildString {
@@ -269,6 +278,12 @@ private fun ConversationListItem(
                     color = EchoTheme.colorScheme.surface.onColor.copy(alpha = 0.6f),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
+                )
+            } else{
+                Text(
+                    text = "No messages yet",
+                    style = EchoTheme.typography.bodySmall,
+                    color = EchoTheme.colorScheme.surface.onColor.copy(alpha = 0.6f),
                 )
             }
         }

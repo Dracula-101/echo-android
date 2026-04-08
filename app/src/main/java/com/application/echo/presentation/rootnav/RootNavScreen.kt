@@ -90,7 +90,15 @@ fun RootNavScreen(
             ConversationScreen(
                 navigateToAddUser = {
                     navigator.navigateTo(SearchUserScreen)
-                }
+                },
+                navigateToChat = { conversationId, participantName ->
+                    navigator.navigateTo(
+                        ChatScreen(
+                            conversationId = conversationId,
+                            participantName = participantName,
+                        )
+                    )
+                },
             )
         }
         echoComposable<SearchUserScreen>(
@@ -107,7 +115,16 @@ fun RootNavScreen(
                             participantName = participantName,
                         )
                     )
-                }
+                },
+            )
+        }
+        echoComposable<ChatScreen>(
+            transition = EchoTransitionPreset.SlideHorizontal,
+        ) {
+            com.application.echo.presentation.chat.ChatScreen(
+                onNavigateBack = {
+                    navigator.navigateBack()
+                },
             )
         }
     }

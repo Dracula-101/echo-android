@@ -14,7 +14,7 @@ interface MessageApiRepository {
      */
     suspend fun getMessages(
         conversationId: String,
-    ): ApiResult<List<MessageResponse>>
+    ): ApiResult<MessagesResponse>
 
     /**
      * Send a new message.
