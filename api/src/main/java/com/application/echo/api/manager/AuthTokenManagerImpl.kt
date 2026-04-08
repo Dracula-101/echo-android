@@ -10,11 +10,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.onSubscription
 import timber.log.Timber
 import java.text.SimpleDateFormat
+import java.time.Instant
 import java.util.Locale
 import java.util.TimeZone
 import javax.inject.Inject
 import kotlin.time.ExperimentalTime
-import kotlin.time.Instant
 
 private const val ACCESS_TOKEN_KEY = "access_token_key"
 private const val REFRESH_TOKEN_KEY = "refresh_token_key"
@@ -79,7 +79,7 @@ class AuthTokenManagerImpl @Inject constructor(
     @OptIn(ExperimentalTime::class)
     private fun parseExpiresAt(expiresIn: String): Long = try {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            Instant.parse(expiresIn).epochSeconds
+            Instant.parse(expiresIn).epochSecond
         } else {
             SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US)
                 .apply { timeZone = TimeZone.getTimeZone("UTC") }

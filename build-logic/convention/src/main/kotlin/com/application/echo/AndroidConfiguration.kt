@@ -164,6 +164,11 @@ internal fun Project.configureProductFlavors(applicationExtension: ApplicationEx
                     "BACKEND_URL",
                     "\"${SecretsReader.getDevBackendUrl(project)}\""
                 )
+                buildConfigField(
+                    "String",
+                    "WS_URL",
+                    "\"${SecretsReader.getDevWsUrl(project)}\""
+                )
                 buildConfigField("String", "WEB_BASE_URL", "\"${flavor.webBaseUrl()}\"")
                 buildConfigField("boolean", "ENABLE_LOGGING", flavor.isLoggingEnabled().toString())
                 buildConfigField(
@@ -186,6 +191,11 @@ internal fun Project.configureProductFlavors(applicationExtension: ApplicationEx
                     "String",
                     "BACKEND_URL",
                     "\"${SecretsReader.getProdBackendUrl(project)}\""
+                )
+                buildConfigField(
+                    "String",
+                    "WS_URL",
+                    "\"${SecretsReader.getProdWsUrl(project)}\""
                 )
                 buildConfigField("String", "WEB_BASE_URL", "\"${flavor.webBaseUrl()}\"")
                 buildConfigField("boolean", "ENABLE_LOGGING", flavor.isLoggingEnabled().toString())

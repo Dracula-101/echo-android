@@ -55,6 +55,7 @@ dependencies {
 
     implementation(projects.core.common)
     implementation(projects.core.network)
+    implementation(projects.core.websocket)
     implementation(projects.core.analytics)
     implementation(projects.core.navigation)
 
@@ -73,6 +74,8 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.firebase.messaging)
     implementation(libs.coil.kt.compose)
+    implementation(libs.androidx.lifecycle.process)
+    implementation(libs.square.retrofit.gson)
     implementation(libs.timber)
 
     ksp(libs.hilt.ext.compiler)

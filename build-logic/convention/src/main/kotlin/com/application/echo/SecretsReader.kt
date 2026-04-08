@@ -42,6 +42,22 @@ object SecretsReader {
     }
 
     /**
+     * Gets WebSocket URL for development flavor
+     */
+    fun getDevWsUrl(project: Project): String {
+        val secrets = readSecrets(project)
+        return secrets.getProperty("DEV_WS_URL", "ws://localhost:8080/ws")
+    }
+
+    /**
+     * Gets WebSocket URL for production flavor
+     */
+    fun getProdWsUrl(project: Project): String {
+        val secrets = readSecrets(project)
+        return secrets.getProperty("PROD_WS_URL")
+    }
+
+    /**
      * Gets a secret property with optional default value
      */
     fun getSecret(project: Project, key: String, defaultValue: String = ""): String {
