@@ -93,32 +93,32 @@ class ProfileRepositoryImpl @Inject constructor(
             creatingProfileFirstName = firstName
             creatingProfileLastName = lastName
         }
-        val avatarData = networkSource.uploadAvatar(avatarUri)
-        return avatarData.fold(
-            onSuccess = { avatarUrl ->
-                diskSource.creatingProfileAvatarUrl = avatarUrl
-                val profileResult = networkSource.createProfile(
-                    userId = userId,
-                    displayName = displayName,
-                    firstName = firstName,
-                    lastName = lastName,
-                    avatarUrl = avatarUrl,
-                    fcmToken = fcmTokenManager.currentToken,
-                )
-                return profileResult.fold(
-                    onSuccess = {
-                        diskSource.finishCreatingProfile()
-                        authRepository.autoLogin()
+
+        val profileResult = networkSource.createProfile(
+            userId = userId,
+            displayName = displayName,
+            firstName = firstName,
+            lastName = lastName,
+            avatarUrl = "https://ui-avatars.com/api/?name=${displayName.replace(" ", "+")}&background=random",
+            fcmToken = fcmTokenManager.currentToken,
+        )
+
+        return profileResult.fold(
+            onSuccess = {
+                val avatarData = networkSource.uploadAvatar(avatarUri)
+                avatarData.fold(
+                    onSuccess = { avatarUrl ->
+                        diskSource.creatingProfileAvatarUrl = avatarUrl
                         ProfileResult.Success(Unit)
                     },
-                    onError = {
-                        ProfileResult.Error(it)
+                    onError = { error ->
+                        Timber.e("Failed to upload avatar: $error")
+                        ProfileResult.Error(error)
                     }
                 )
             },
-            onError = { error ->
-                Timber.e("Failed to upload avatar: $error")
-                ProfileResult.Error(error)
+            onError = {
+                ProfileResult.Error(it)
             }
         )
     }

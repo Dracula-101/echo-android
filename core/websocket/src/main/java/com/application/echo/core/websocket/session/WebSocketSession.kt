@@ -36,7 +36,7 @@ interface WebSocketSession {
     val isConnected: Boolean
 
     /** Opens the WebSocket connection using the configured URL and headers. */
-    fun connect()
+    fun connect(headers: Map<String, String> = emptyMap())
 
     /**
      * Initiates a graceful disconnect.

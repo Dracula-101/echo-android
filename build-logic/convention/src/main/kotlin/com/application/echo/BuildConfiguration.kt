@@ -51,8 +51,8 @@ internal fun Flavor.versionNameSuffix(): String? = when (this) {
 }
 
 internal fun Flavor.webBaseUrl(): String = when (this) {
-    Flavor.DEVELOPMENT -> "https://dev.application.echo.com/"
-    Flavor.PRODUCTION -> "https://application.echo.com/"
+    Flavor.DEVELOPMENT -> "https://echo-app.net/"
+    Flavor.PRODUCTION -> "https://echo-app.net/"
 }
 
 internal fun Flavor.isLoggingEnabled(): Boolean = when (this) {

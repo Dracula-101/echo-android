@@ -62,8 +62,8 @@ internal class EchoWebSocketSession @Inject constructor(
 
     // ──────────────── Public API ────────────────
 
-    override fun connect() {
-        connection.connect(config.url, config.headers)
+    override fun connect(headers: Map<String, String>) {
+        connection.connect(config.url, config.headers + headers)
     }
 
     override fun disconnect(code: Int, reason: String) {

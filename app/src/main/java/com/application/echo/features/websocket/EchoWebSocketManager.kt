@@ -40,6 +40,8 @@ import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
 
+private const val USER_ID_HEADER = "X-User-ID"
+
 @Singleton
 class EchoWebSocketManager @Inject constructor(
     private val session: WebSocketSession,
@@ -95,7 +97,7 @@ class EchoWebSocketManager @Inject constructor(
                             "Auth state -> Authenticated (user=%s) — connecting WebSocket",
                             state.user.userId,
                         )
-                        session.connect()
+                        session.connect(mapOf(USER_ID_HEADER to state.user.userId))
                     }
 
                     is AuthState.Unauthenticated -> {
