@@ -72,6 +72,7 @@ object ServerEventType {
     const val TYPING_START = "typing.start"
     const val TYPING_STOP = "typing.stop"
     const val PRESENCE_CHANGED = "presence.changed"
+    const val MESSAGE_NEW = "message.new"
     const val MESSAGE_READ = "message.read"
     const val SYNC_REQUIRED = "sync.required"
     const val ERROR = "error"

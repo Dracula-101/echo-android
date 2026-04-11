@@ -4,7 +4,7 @@
     <selectionStates>
       <SelectionState runConfigName="app">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2026-03-27T06:40:03.942001Z">
+        <DropdownSelection timestamp="2026-04-11T06:14:11.625485Z">
           <Target type="DEFAULT_BOOT">
             <handle>
               <DeviceId pluginId="PhysicalDevice" identifier="serial=UC79LNJZQSP7GE6D" />
@@ -15,7 +15,7 @@
           <targets>
             <Target type="DEFAULT_BOOT">
               <handle>
-                <DeviceId pluginId="LocalEmulator" identifier="path=/Users/pratik/.android/avd/Pixel_Tablet.avd" />
+                <DeviceId pluginId="LocalEmulator" identifier="path=/Users/pratik/.android/avd/Pixel_6.avd" />
               </handle>
             </Target>
             <Target type="DEFAULT_BOOT">

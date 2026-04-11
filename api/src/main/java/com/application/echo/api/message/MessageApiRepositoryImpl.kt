@@ -15,8 +15,30 @@ internal class MessageApiRepositoryImpl @Inject constructor(
 
     override suspend fun getMessages(
         conversationId: String,
+        before: String?,
+        after: String?,
+        limit: Int?,
     ): ApiResult<MessagesResponse> = api.getMessages(
         conversationId = conversationId,
+        before = before,
+        after = after,
+        limit = limit,
+    ).toApiResult()
+
+    override suspend fun syncMessages(
+        conversationId: String,
+        lastMessageId: String?,
+        limit: Int?,
+    ): ApiResult<SyncMessagesResponse> = api.syncMessages(
+        conversationId = conversationId,
+        lastMessageId = lastMessageId,
+        limit = limit,
+    ).toApiResult()
+
+    override suspend fun markAsRead(
+        messageId: String,
+    ): ApiResult<ReadReceiptResponse> = api.markAsRead(
+        messageId = messageId,
     ).toApiResult()
 
     override suspend fun sendMessage(
@@ -49,6 +71,13 @@ internal class MessageApiRepositoryImpl @Inject constructor(
         conversationId = conversationId,
     ).toApiResult()
 
-    override suspend fun getMyConversations(): ApiResult<List<ConversationResponse>> =
-        api.getMyConversations().toApiResult()
+    override suspend fun getMyConversations(
+        updatedSince: String?,
+        limit: Int?,
+        cursor: String?,
+    ): ApiResult<List<ConversationResponse>> = api.getMyConversations(
+        updatedSince = updatedSince,
+        limit = limit,
+        cursor = cursor,
+    ).toApiResult()
 }

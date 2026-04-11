@@ -1,7 +1,6 @@
 package com.application.echo.presentation.conversation
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -32,15 +31,20 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
+import com.application.echo.ui.components.badge.NotificationBadge
 import com.application.echo.ui.components.button.EchoFilledButton
 import com.application.echo.ui.components.button.EchoIconButton
+import com.application.echo.ui.components.card.EchoCard
+import com.application.echo.ui.components.card.EchoCardStyle
 import com.application.echo.ui.components.scaffold.EchoScaffold
 import com.application.echo.ui.components.scaffold.model.rememberEchoPullToRefreshState
 import com.application.echo.ui.components.snackbar.EchoSnackbarHost
@@ -92,9 +96,7 @@ fun ConversationScreen(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = {
-                    navigateToAddUser()
-                },
+                onClick = navigateToAddUser,
                 containerColor = EchoTheme.colorScheme.primary.color,
                 contentColor = EchoTheme.colorScheme.primary.onColor,
             ) {
@@ -107,11 +109,17 @@ fun ConversationScreen(
             onRefresh = { viewModel.trySendAction(ConversationAction.OnRefresh) },
         ),
     ) {
-        ConversationContent(
-            state = state,
-            onAction = viewModel::trySendAction,
-            onNavigateToChat = navigateToChat,
-        )
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(EchoTheme.colorScheme.background.color),
+        ) {
+            ConversationContent(
+                state = state,
+                onAction = viewModel::trySendAction,
+                onNavigateToChat = navigateToChat,
+            )
+        }
     }
 }
 
@@ -127,9 +135,10 @@ private fun ConversationContent(
             message = state.errorMessage,
             onRetry = { onAction(ConversationAction.OnRetry) },
         )
+
         state.conversations.isEmpty() -> EmptyState()
         else -> ConversationList(
-            conversations = state.conversations,
+            state = state,
             onNavigateToChat = onNavigateToChat,
         )
     }
@@ -198,14 +207,14 @@ private fun EmptyState() {
         EchoSpacer(size = EchoSpacerSize.Medium)
         Text(
             text = "No conversations yet",
-            style = EchoTheme.typography.titleMedium,
+            style = EchoTheme.typography.titleLarge,
             color = EchoTheme.colorScheme.surface.onColor,
         )
         EchoSpacer(size = EchoSpacerSize.Small)
         Text(
-            text = "Start a new conversation using the + button",
+            text = "Start a new conversation using the + button. Pull down later to refresh your inbox.",
             style = EchoTheme.typography.bodyMedium,
-            color = EchoTheme.colorScheme.surface.onColor.copy(alpha = 0.6f),
+            color = EchoTheme.colorScheme.surface.onColor.copy(alpha = 0.65f),
             textAlign = TextAlign.Center,
         )
     }
@@ -213,18 +222,37 @@ private fun EmptyState() {
 
 @Composable
 private fun ConversationList(
-    conversations: List<ConversationItemUiModel>,
+    state: ConversationState,
     onNavigateToChat: (conversationId: String, participantName: String) -> Unit,
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(vertical = EchoTheme.spacing.padding.small),
+        contentPadding = PaddingValues(
+            start = EchoTheme.spacing.padding.medium,
+            end = EchoTheme.spacing.padding.medium,
+            top = EchoTheme.spacing.padding.medium,
+            bottom = 96.dp,
+        ),
+        verticalArrangement = Arrangement.spacedBy(EchoTheme.spacing.gap.medium),
     ) {
+        item(key = "summary") {
+            Text(
+                text = if (state.totalUnreadCount > 0) {
+                    "${state.totalUnreadCount} unread messages"
+                } else {
+                    "${state.conversations.size} conversations"
+                },
+                style = EchoTheme.typography.labelLarge.copy(fontWeight = FontWeight.Medium),
+                color = EchoTheme.colorScheme.surface.onColor.copy(alpha = 0.68f),
+                modifier = Modifier.padding(horizontal = EchoTheme.spacing.padding.small),
+            )
+        }
+
         items(
-            items = conversations,
+            items = state.conversations,
             key = { it.conversationId },
         ) { conversation ->
-            ConversationListItem(
+            ConversationCard(
                 conversation = conversation,
                 onClick = {
                     onNavigateToChat(
@@ -238,63 +266,74 @@ private fun ConversationList(
 }
 
 @Composable
-private fun ConversationListItem(
+private fun ConversationCard(
     conversation: ConversationItemUiModel,
     onClick: () -> Unit,
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(
-                horizontal = EchoTheme.spacing.padding.medium,
-                vertical = EchoTheme.spacing.padding.small,
-            ),
-        verticalAlignment = Alignment.CenterVertically,
+    EchoCard(
+        modifier = Modifier.fillMaxWidth(),
+        style = EchoCardStyle.Outlined,
+        onClick = onClick,
     ) {
-        Avatar(
-            name = conversation.participantName,
-            avatarUrl = conversation.participantAvatarUrl,
-        )
-
-        Spacer(Modifier.width(EchoTheme.spacing.gap.medium))
-
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = conversation.participantName,
-                style = EchoTheme.typography.titleSmall,
-                color = EchoTheme.colorScheme.surface.onColor,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Avatar(
+                name = conversation.participantName,
+                avatarUrl = conversation.participantAvatarUrl,
+                onlineStatus = conversation.onlineStatus,
             )
 
-            if (conversation.lastMessageContent != null) {
+            Spacer(modifier = Modifier.width(EchoTheme.spacing.gap.medium))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                    text = conversation.participantName,
+                    style = EchoTheme.typography.titleMedium.copy(
+                        fontWeight = if (conversation.unreadCount > 0) FontWeight.SemiBold else FontWeight.Medium,
+                    ),
+                    color = EchoTheme.colorScheme.surface.onColor,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f),
+                    )
+
+                    if (conversation.formattedTimestamp != null) {
+                        Spacer(modifier = Modifier.width(EchoTheme.spacing.gap.small))
+                        Text(
+                            text = conversation.formattedTimestamp,
+                            style = EchoTheme.typography.labelSmall,
+                            color = EchoTheme.colorScheme.surface.onColor.copy(alpha = 0.5f),
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.size(EchoTheme.spacing.gap.extraSmall))
+
                 Text(
-                    text = buildString {
-                        if (conversation.isLastMessageFromMe) append("You: ")
-                        append(conversation.lastMessageContent)
-                    },
-                    style = EchoTheme.typography.bodySmall,
-                    color = EchoTheme.colorScheme.surface.onColor.copy(alpha = 0.6f),
-                    maxLines = 1,
+                    text = buildPreviewText(conversation),
+                    style = EchoTheme.typography.bodyMedium,
+                    color = EchoTheme.colorScheme.surface.onColor.copy(
+                        alpha = if (conversation.unreadCount > 0) 0.85f else 0.62f,
+                    ),
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
-            } else{
-                Text(
-                    text = "No messages yet",
-                    style = EchoTheme.typography.bodySmall,
-                    color = EchoTheme.colorScheme.surface.onColor.copy(alpha = 0.6f),
+            }
+
+            if (conversation.unreadCount > 0) {
+                Spacer(modifier = Modifier.width(EchoTheme.spacing.gap.small))
+                NotificationBadge(
+                    notificationCount = conversation.unreadCount,
+                    backgroundColor = EchoTheme.colorScheme.primary.color,
+                    contentColor = EchoTheme.colorScheme.primary.onColor,
                 )
             }
-        }
-
-        if (conversation.formattedTimestamp != null) {
-            Spacer(Modifier.width(EchoTheme.spacing.gap.small))
-            Text(
-                text = conversation.formattedTimestamp,
-                style = EchoTheme.typography.labelSmall,
-                color = EchoTheme.colorScheme.surface.onColor.copy(alpha = 0.5f),
-            )
         }
     }
 }
@@ -303,30 +342,76 @@ private fun ConversationListItem(
 private fun Avatar(
     name: String,
     avatarUrl: String?,
+    onlineStatus: String?,
     modifier: Modifier = Modifier,
 ) {
-    if (avatarUrl != null) {
-        AsyncImage(
-            model = avatarUrl,
-            contentDescription = name,
-            modifier = modifier
-                .size(48.dp)
-                .clip(CircleShape),
-            contentScale = ContentScale.Crop,
-        )
-    } else {
-        Box(
-            modifier = modifier
-                .size(48.dp)
-                .clip(CircleShape)
-                .background(EchoTheme.colorScheme.primary.container),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                text = name.firstOrNull()?.uppercase() ?: "?",
-                style = EchoTheme.typography.titleMedium,
-                color = EchoTheme.colorScheme.primary.onContainer,
+    Box {
+        if (avatarUrl != null) {
+            AsyncImage(
+                model = avatarUrl,
+                contentDescription = name,
+                modifier = modifier
+                    .size(56.dp)
+                    .clip(CircleShape),
+                contentScale = ContentScale.Crop,
             )
+        } else {
+            Box(
+                modifier = modifier
+                    .size(56.dp)
+                    .clip(CircleShape)
+                    .background(EchoTheme.colorScheme.primary.container),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = name.firstOrNull()?.uppercase() ?: "?",
+                    style = EchoTheme.typography.titleMedium,
+                    color = EchoTheme.colorScheme.primary.onContainer,
+                )
+            }
         }
+
+        PresenceDot(
+            onlineStatus = onlineStatus,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(2.dp),
+        )
+    }
+}
+
+@Composable
+private fun PresenceDot(
+    onlineStatus: String?,
+    modifier: Modifier = Modifier,
+) {
+    val color = when (onlineStatus?.lowercase()) {
+        "online" -> Color(0xFF31C26A)
+        "away" -> Color(0xFFFFB020)
+        else -> EchoTheme.colorScheme.outline.color.copy(alpha = 0.65f)
+    }
+
+    Box(
+        modifier = modifier
+            .size(12.dp)
+            .clip(CircleShape)
+            .background(EchoTheme.colorScheme.background.color),
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(8.dp)
+                .clip(CircleShape)
+                .background(color),
+        )
+    }
+}
+
+private fun buildPreviewText(conversation: ConversationItemUiModel): String {
+    val body = conversation.lastMessageContent?.takeIf { it.isNotBlank() } ?: "No messages yet"
+    return if (conversation.isLastMessageFromMe && body != "No messages yet") {
+        "You: $body"
+    } else {
+        body
     }
 }

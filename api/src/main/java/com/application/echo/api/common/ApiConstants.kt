@@ -31,6 +31,9 @@ internal object ApiConstants {
     // ── Messages ──
     const val MESSAGES = "$API_PREFIX/messages"
     const val MESSAGES_HEALTH = "$API_PREFIX/messages/health"
+    const val MESSAGES_SYNC = "$API_PREFIX/messages/sync"
+    const val MESSAGE_BY_ID = "$API_PREFIX/messages/{message_id}"
+    const val MESSAGE_READ = "$API_PREFIX/messages/{message_id}/read"
     const val CONVERSATIONS = "$API_PREFIX/messages/conversations"
     const val CONVERSATION_BY_ID = "$API_PREFIX/messages/conversations/{conversation_id}"
     const val MY_CONVERSATIONS = "$API_PREFIX/messages/conversations/me"

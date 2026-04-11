@@ -31,7 +31,6 @@ import javax.inject.Inject
 class ProfileRepositoryImpl @Inject constructor(
     private val diskSource: ProfileDiskSource,
     private val networkSource: ProfileNetworkSource,
-    private val fcmTokenManager: FcmTokenManager,
     private val authRepository: AuthRepository,
     defaultDispatcher: CoroutineDispatcher,
 ) : ProfileRepository {
@@ -99,8 +98,6 @@ class ProfileRepositoryImpl @Inject constructor(
             displayName = displayName,
             firstName = firstName,
             lastName = lastName,
-            avatarUrl = "https://ui-avatars.com/api/?name=${displayName.replace(" ", "+")}&background=random",
-            fcmToken = fcmTokenManager.currentToken,
         )
 
         return profileResult.fold(
@@ -109,6 +106,8 @@ class ProfileRepositoryImpl @Inject constructor(
                 avatarData.fold(
                     onSuccess = { avatarUrl ->
                         diskSource.creatingProfileAvatarUrl = avatarUrl
+                        diskSource.finishCreatingProfile()
+                        authRepository.autoLogin()
                         ProfileResult.Success(Unit)
                     },
                     onError = { error ->

@@ -1,6 +1,7 @@
 package com.application.echo.features.websocket.handler
 
 import com.application.echo.core.websocket.handler.TypedMessageHandler
+import com.application.echo.features.messaging.repository.MessagingRepository
 import com.application.echo.features.websocket.model.MessageReadPayload
 import com.application.echo.features.websocket.model.PresenceChangedPayload
 import com.application.echo.features.websocket.model.ServerEventType
@@ -48,6 +49,7 @@ class SubscribedHandler @Inject constructor(
 
 class TypingStartHandler @Inject constructor(
     private val gson: Gson,
+    private val messagingRepository: dagger.Lazy<MessagingRepository>,
 ) : TypedMessageHandler {
     override val messageType: String = ServerEventType.TYPING_START
 
@@ -62,6 +64,7 @@ class TypingStartHandler @Inject constructor(
                 data.conversationId,
                 data.timestamp,
             )
+            messagingRepository.get().onTypingEvent(data.conversationId, data.userId, true)
         } else {
             Timber.tag(TAG).w("[%s] typing.start event received with empty payload", message.id)
         }
@@ -70,6 +73,7 @@ class TypingStartHandler @Inject constructor(
 
 class TypingStopHandler @Inject constructor(
     private val gson: Gson,
+    private val messagingRepository: dagger.Lazy<MessagingRepository>,
 ) : TypedMessageHandler {
     override val messageType: String = ServerEventType.TYPING_STOP
 
@@ -84,6 +88,7 @@ class TypingStopHandler @Inject constructor(
                 data.conversationId,
                 data.timestamp,
             )
+            messagingRepository.get().onTypingEvent(data.conversationId, data.userId, false)
         } else {
             Timber.tag(TAG).w("[%s] typing.stop event received with empty payload", message.id)
         }
@@ -92,6 +97,7 @@ class TypingStopHandler @Inject constructor(
 
 class PresenceChangedHandler @Inject constructor(
     private val gson: Gson,
+    private val messagingRepository: dagger.Lazy<MessagingRepository>,
 ) : TypedMessageHandler {
     override val messageType: String = ServerEventType.PRESENCE_CHANGED
 
@@ -108,6 +114,7 @@ class PresenceChangedHandler @Inject constructor(
                 data.customStatus ?: "none",
                 data.changedAt,
             )
+            messagingRepository.get().onPresenceChanged(data.userId, data.newStatus)
         } else {
             Timber.tag(TAG).w("[%s] presence.changed event received with empty payload", message.id)
         }
@@ -116,6 +123,7 @@ class PresenceChangedHandler @Inject constructor(
 
 class MessageReadHandler @Inject constructor(
     private val gson: Gson,
+    private val messagingRepository: dagger.Lazy<MessagingRepository>,
 ) : TypedMessageHandler {
     override val messageType: String = ServerEventType.MESSAGE_READ
 
@@ -131,6 +139,7 @@ class MessageReadHandler @Inject constructor(
                 data.messageIds.joinToString(),
                 data.readAt,
             )
+            messagingRepository.get().onMessagesRead(data.conversationId, data.messageIds)
         } else {
             Timber.tag(TAG).w("[%s] message.read event received with empty payload", message.id)
         }
@@ -139,6 +148,7 @@ class MessageReadHandler @Inject constructor(
 
 class SyncRequiredHandler @Inject constructor(
     private val gson: Gson,
+    private val messagingRepository: dagger.Lazy<MessagingRepository>,
 ) : TypedMessageHandler {
     override val messageType: String = ServerEventType.SYNC_REQUIRED
 
@@ -161,6 +171,7 @@ class SyncRequiredHandler @Inject constructor(
                     conv.lastMessageAt,
                 )
             }
+            messagingRepository.get().onSyncRequired(data.conversations)
         } else {
             Timber.tag(TAG).w("[%s] sync.required event received with empty payload", message.id)
         }

@@ -32,16 +32,12 @@ internal class ProfileApiRepositoryImpl @Inject constructor(
         displayName: String,
         firstName: String,
         lastName: String,
-        avatarUrl: String?,
-        fcmToken: String?,
     ): ApiResult<CreateProfileResponse> = api.createProfile(
         request = CreateProfileRequest(
             userId = userId,
             displayName = displayName,
             firstName = firstName,
             lastName = lastName,
-            avatarUrl = avatarUrl,
-            fcmToken = fcmToken,
         ),
     ).toApiResult()
 }

@@ -34,7 +34,10 @@ object WebSocketBridgeModule {
     @Provides
     @Singleton
     fun provideHeartbeatConfig(): HeartbeatConfig {
-        return HeartbeatConfig.DEFAULT
+        // Disabled — OkHttp's pingInterval (30s) handles transport-level keepalive.
+        // The application-level heartbeat was sending raw binary frames that the
+        // server rejected as invalid JSON.
+        return HeartbeatConfig.NONE
     }
 
     @Provides

@@ -29,7 +29,5 @@ interface ProfileApiRepository {
         displayName: String,
         firstName: String,
         lastName: String,
-        avatarUrl: String? = null,
-        fcmToken: String? = null,
     ): ApiResult<CreateProfileResponse>
 }

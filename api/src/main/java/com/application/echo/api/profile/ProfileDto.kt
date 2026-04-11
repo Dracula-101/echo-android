@@ -18,10 +18,6 @@ data class CreateProfileRequest(
     val firstName: String,
     @SerializedName("last_name")
     val lastName: String,
-    @SerializedName("avatar_url")
-    val avatarUrl: String? = null,
-    @SerializedName("fcm_token")
-    val fcmToken: String? = null,
 )
 
 

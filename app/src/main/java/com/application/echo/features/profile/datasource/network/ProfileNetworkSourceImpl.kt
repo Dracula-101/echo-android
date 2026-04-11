@@ -37,8 +37,6 @@ class ProfileNetworkSourceImpl @Inject constructor(
         displayName: String,
         firstName: String,
         lastName: String,
-        avatarUrl: String,
-        fcmToken: String?,
     ): ProfileResult<CreateProfileResponse> {
         return profileApi
             .createProfile(
@@ -46,8 +44,6 @@ class ProfileNetworkSourceImpl @Inject constructor(
                 displayName = displayName,
                 firstName = firstName,
                 lastName = lastName,
-                avatarUrl = avatarUrl,
-                fcmToken = fcmToken,
             )
             .toProfileResult()
     }

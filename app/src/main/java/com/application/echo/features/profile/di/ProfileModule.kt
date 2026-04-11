@@ -69,13 +69,11 @@ object ProfileModule {
         networkSource: ProfileNetworkSource,
         diskSource: ProfileDiskSource,
         authRepository: AuthRepository,
-        fcmTokenManager: FcmTokenManager,
         @AppDispatcher(AppDispatchers.Default) defaultDispatcher: CoroutineDispatcher,
     ): ProfileRepository = ProfileRepositoryImpl(
         diskSource = diskSource,
         networkSource = networkSource,
         authRepository = authRepository,
-        fcmTokenManager = fcmTokenManager,
         defaultDispatcher = defaultDispatcher,
     )
 }

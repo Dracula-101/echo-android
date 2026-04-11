@@ -15,8 +15,6 @@ interface ProfileNetworkSource {
         displayName: String,
         firstName: String,
         lastName: String,
-        avatarUrl: String,
-        fcmToken: String? = null,
     ): ProfileResult<CreateProfileResponse>
 
     suspend fun uploadAvatar(uri: Uri): ProfileResult<String>

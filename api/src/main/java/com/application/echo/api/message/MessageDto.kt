@@ -49,7 +49,7 @@ data class MessageResponse(
     val id: String,
     @SerializedName("conversation_id")
     val conversationId: String,
-    @SerializedName("sender_id")
+    @SerializedName("sender_user_id")
     val senderId: String,
     @SerializedName("content")
     val content: String? = null,
@@ -80,27 +80,52 @@ data class ConversationResponse(
     val memberCount: Int? = null,
     @SerializedName("message_count")
     val messageCount: Int? = null,
+    @SerializedName("unread_count")
+    val unreadCount: Int? = null,
     @SerializedName("created_at")
     val createdAt: String? = null,
     @SerializedName("updated_at")
     val updatedAt: String? = null,
 )
 
+/**
+ * Response for `GET /messages/sync`.
+ * Cursor-based catch-up endpoint — returns messages after a known message ID.
+ */
+data class SyncMessagesResponse(
+    @SerializedName("messages")
+    val messages: List<MessageResponse>,
+    @SerializedName("has_more")
+    val hasMore: Boolean,
+)
+
+/**
+ * Response for `POST /messages/{id}/read`.
+ */
+data class ReadReceiptResponse(
+    @SerializedName("message_id")
+    val messageId: String,
+    @SerializedName("conversation_id")
+    val conversationId: String,
+    @SerializedName("read_at")
+    val readAt: String? = null,
+)
+
 data class ConversationParticipant(
     @SerializedName("avatar_url")
-    val avatarUrl: String,
+    val avatarUrl: String? = null,
     @SerializedName("display_name")
-    val displayName: String,
+    val displayName: String? = null,
     @SerializedName("first_name")
-    val firstName: String,
+    val firstName: String? = null,
     @SerializedName("last_name")
-    val lastName: String,
+    val lastName: String? = null,
     @SerializedName("online_status")
-    val onlineStatus: String,
+    val onlineStatus: String? = null,
     @SerializedName("user_avatar")
-    val userAvatar: String,
+    val userAvatar: String? = null,
     @SerializedName("user_id")
-    val userId: String,
+    val userId: String = "",
     @SerializedName("user_name")
-    val userName: String
+    val userName: String? = null,
 )
