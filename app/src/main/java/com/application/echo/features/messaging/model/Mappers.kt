@@ -30,7 +30,7 @@ fun ConversationResponse.toParticipantEntities(): List<ParticipantEntity> =
             conversationId = id,
             userId = participant.userId,
             displayName = participant.displayName.orEmpty(),
-            avatarUrl = participant.avatarUrl.orEmpty(),
+            avatarUrl = (participant.userAvatar ?: participant.avatarUrl).orEmpty(),
             userName = participant.userName.orEmpty(),
             onlineStatus = participant.onlineStatus.orEmpty(),
         )

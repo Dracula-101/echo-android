@@ -98,7 +98,7 @@ fun EchoTextField(
         if (label != null) {
             Text(
                 text = label,
-                style = EchoTheme.typography.labelMedium,
+                style = EchoTheme.typography.bodyMedium,
                 color = when {
                     !enabled -> colors.disabledText
                     isError -> colors.errorText
@@ -131,15 +131,15 @@ fun EchoTextField(
                         .clip(EchoTheme.shapes.input)
                         .border(
                             border = BorderStroke(
-                                width = EchoTheme.dimen.border.medium,
+                                width = EchoTheme.dimen.border.small,
                                 color = borderColor,
                             ),
                             shape = EchoTheme.shapes.input,
                         )
-                        .background(colors.background.copy(0.5f), EchoTheme.shapes.input)
+                        .background(colors.background, EchoTheme.shapes.input)
                         .padding(
                             horizontal = EchoTheme.spacing.padding.medium,
-                            vertical = 1.75 * EchoTheme.spacing.padding.small,
+                            vertical = 2 * EchoTheme.spacing.padding.small,
                         ),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {

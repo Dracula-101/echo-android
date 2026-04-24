@@ -1,11 +1,14 @@
 package com.application.echo.core.network.di
 
+import android.se.omapi.Session
 import com.application.echo.core.network.client.EchoHttpClient
 import com.application.echo.core.network.client.EchoHttpClientImpl
 import com.application.echo.core.network.client.HttpClientConfig
-import com.application.echo.core.network.interceptor.AuthTokenProvider
+import com.application.echo.core.network.provider.AuthTokenProvider
+import com.application.echo.core.network.provider.DeviceInfoProvider
 import com.application.echo.core.network.monitor.ConnectivityManagerNetworkMonitor
 import com.application.echo.core.network.monitor.NetworkMonitor
+import com.application.echo.core.network.provider.SessionProvider
 import com.application.echo.core.network.qualifier.Authenticated
 import com.application.echo.core.network.qualifier.Unauthenticated
 import com.google.gson.FieldNamingPolicy
@@ -53,11 +56,15 @@ internal object NetworkProvidesModule {
         config: HttpClientConfig,
         gson: Gson,
         authTokenProvider: AuthTokenProvider,
+        deviceInfoProvider: DeviceInfoProvider,
+        sessionProvider: SessionProvider,
         authenticator: Authenticator,
     ): EchoHttpClient = EchoHttpClientImpl(
         config = config,
         gson = gson,
         authTokenProvider = authTokenProvider,
+        deviceInfoProvider = deviceInfoProvider,
+        sessionProvider = sessionProvider,
         authenticator = authenticator,
     )
 

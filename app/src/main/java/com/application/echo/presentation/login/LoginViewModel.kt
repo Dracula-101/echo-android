@@ -10,6 +10,7 @@ import com.application.echo.core.common.platform.base.BaseViewModel
 import com.application.echo.features.auth.repository.AuthRepository
 import com.application.echo.ui.components.snackbar.EchoSnackbarType
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.parcelize.Parcelize
 import timber.log.Timber
@@ -63,6 +64,7 @@ class LoginViewModel @Inject constructor(
 
         setState { state.copy(isLoading = true) }
         viewModelScope.launch {
+            delay(1_000)
             authRepository.login(
                 email = state.email.trim(),
                 password = state.password,
@@ -117,8 +119,8 @@ class LoginViewModel @Inject constructor(
 
 @Parcelize
 data class LoginState(
-    val email: String = "pratikpujari1000@gmail.com",
-    val password: String = "12345678",
+    val email: String = "",
+    val password: String = "",
     val isPasswordVisible: Boolean = false,
     val isLoading: Boolean = false,
     val emailError: String? = null,

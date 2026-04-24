@@ -1,5 +1,6 @@
 package com.application.echo.core.network.interceptor
 
+import com.application.echo.core.network.provider.AuthTokenProvider
 import com.application.echo.core.network.util.HeaderConstants
 import okhttp3.Interceptor
 import okhttp3.Response

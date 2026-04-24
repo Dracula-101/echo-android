@@ -2,14 +2,19 @@ package com.application.echo.core.network.client
 
 import com.application.echo.core.network.adapter.NetworkResponseCallAdapterFactory
 import com.application.echo.core.network.interceptor.AuthInterceptor
-import com.application.echo.core.network.interceptor.AuthTokenProvider
+import com.application.echo.core.network.provider.AuthTokenProvider
+import com.application.echo.core.network.interceptor.DeviceInfoInterceptor
+import com.application.echo.core.network.provider.DeviceInfoProvider
 import com.application.echo.core.network.interceptor.LoggingInterceptorFactory
 import com.application.echo.core.network.interceptor.RequestHeaderInterceptor
+import com.application.echo.core.network.interceptor.SessionHeaderInterceptor
+import com.application.echo.core.network.provider.SessionProvider
 import com.google.gson.Gson
 import okhttp3.Authenticator
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import kotlin.getValue
 
 /**
  * Default implementation of [EchoHttpClient].
@@ -24,6 +29,8 @@ internal class EchoHttpClientImpl(
     private val config: HttpClientConfig,
     private val gson: Gson,
     private val authTokenProvider: AuthTokenProvider,
+    private val deviceInfoProvider: DeviceInfoProvider,
+    private val sessionProvider: SessionProvider,
     private val authenticator: Authenticator,
 ) : EchoHttpClient {
 
@@ -33,9 +40,11 @@ internal class EchoHttpClientImpl(
 
     private val authInterceptor by lazy { AuthInterceptor(authTokenProvider) }
 
-    private val loggingInterceptor by lazy {
-        LoggingInterceptorFactory.create(logBody = config.isDebug)
-    }
+    private val loggingInterceptor by lazy { LoggingInterceptorFactory.create(logBody = config.isDebug) }
+
+    private val deviceInfoInterceptor by lazy { DeviceInfoInterceptor(deviceInfoProvider) }
+
+    private val sessionInterceptor by lazy { SessionHeaderInterceptor(sessionProvider) }
 
     // ──────────────── OkHttp Clients ────────────────
 
@@ -45,19 +54,20 @@ internal class EchoHttpClientImpl(
             .readTimeout(config.readTimeout.duration, config.readTimeout.unit)
             .writeTimeout(config.writeTimeout.duration, config.writeTimeout.unit)
             .addInterceptor(requestHeaderInterceptor)
+            .addInterceptor(deviceInfoInterceptor)
+            .addInterceptor(loggingInterceptor)
             .build()
     }
 
     private val unauthenticatedOkHttp: OkHttpClient by lazy {
         baseOkHttpClient.newBuilder()
-            .addInterceptor(loggingInterceptor)
             .build()
     }
 
     private val authenticatedOkHttp: OkHttpClient by lazy {
         baseOkHttpClient.newBuilder()
             .addInterceptor(authInterceptor)
-            .addInterceptor(loggingInterceptor)
+            .addInterceptor(sessionInterceptor)
             .authenticator(authenticator)
             .build()
     }

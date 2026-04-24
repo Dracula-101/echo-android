@@ -2,12 +2,14 @@ package com.application.echo.presentation.login
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -23,6 +25,9 @@ import androidx.compose.material.icons.filled.MailOutline
 import androidx.compose.material.icons.filled.Password
 import androidx.compose.material.icons.filled.RemoveRedEye
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.outlined.Password
+import androidx.compose.material.icons.outlined.RemoveRedEye
+import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -40,25 +45,30 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.application.echo.ui.components.adaptive.AdaptiveLayout
 import com.application.echo.ui.components.button.EchoFilledButton
+import com.application.echo.ui.components.button.EchoTextButton
 import com.application.echo.ui.components.scaffold.EchoScaffold
 import com.application.echo.ui.components.snackbar.EchoSnackbarHost
 import com.application.echo.ui.components.snackbar.rememberEchoSnackbarState
 import com.application.echo.ui.components.textfield.EchoTextField
 import com.application.echo.ui.design.R
 import com.application.echo.ui.design.theme.EchoTheme
+import com.application.echo.ui.design.utils.alpha10
 import com.application.echo.ui.design.utils.alpha20
+import com.application.echo.ui.design.utils.alpha30
 import com.application.echo.ui.design.utils.alpha50
 import com.application.echo.ui.design.utils.alpha70
+import com.application.echo.ui.design.utils.alpha90
 import kotlinx.coroutines.flow.collectLatest
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -85,9 +95,7 @@ fun LoginScreen(
 
     EchoScaffold(
         snackbarHost = {
-            EchoSnackbarHost(
-                state = snackbarState,
-            )
+            EchoSnackbarHost(state = snackbarState)
         }
     ) {
         LoginContent(
@@ -104,57 +112,42 @@ private fun LoginContent(
     onAction: (LoginAction) -> Unit,
     onNavigateToRegisterScreen: () -> Unit,
 ) {
-    AdaptiveLayout(
-        layoutContentRatio = 0.4f,
-        firstContent = {
-            AppInfo()
-        },
-        secondContent = {
-            LoginForm(
-                modifier = Modifier
-                    .padding(horizontal = EchoTheme.spacing.padding.medium),
-                state = state,
-                onAction = onAction,
-                onNavigateToRegisterScreen = onNavigateToRegisterScreen,
-            )
-        },
+    Column(
         modifier = Modifier
+            .fillMaxWidth()
+            .navigationBarsPadding()
             .statusBarsPadding()
-            .navigationBarsPadding(),
-    )
+            .padding(EchoTheme.spacing.padding.medium),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Spacer(modifier = Modifier.padding(EchoTheme.spacing.gap.extraLarge))
+        AppHeader()
+        Spacer(modifier = Modifier.padding(EchoTheme.spacing.gap.extraLarge))
+        LoginForm(
+            state = state,
+            onAction = onAction,
+            onNavigateToRegisterScreen = onNavigateToRegisterScreen,
+        )
+    }
 }
 
 @Composable
-private fun AppInfo(
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(280.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Bottom,
+private fun AppHeader() {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Image(
             modifier = Modifier
-                .padding(EchoTheme.spacing.padding.medium)
-                .size(80.dp),
-            imageVector = ImageVector.vectorResource(
-                id = R.drawable.ic_logo,
-            ),
+                .size(EchoTheme.dimen.icon.extraLarge),
+            imageVector = ImageVector.vectorResource(id = R.drawable.ic_app_logo_grayscale),
             contentDescription = "App Logo",
         )
         Text(
-            "Login",
-            style = EchoTheme.typography.headlineLarge,
+            "echo",
+            style = EchoTheme.typography.titleLarge,
         )
-        Spacer(modifier = modifier.size(EchoTheme.spacing.padding.extraSmall))
-        Text(
-            "Welcome back!",
-            style = EchoTheme.typography.bodyLarge,
-            color = EchoTheme.colorScheme.inverse.surface,
-        )
-        Spacer(modifier = modifier.size(EchoTheme.spacing.padding.extraLarge))
     }
 }
 
@@ -166,8 +159,18 @@ private fun LoginForm(
     onNavigateToRegisterScreen: () -> Unit,
 ) {
     val focusManager = LocalFocusManager.current
-
     Column {
+        Text(
+            "Welcome back",
+            style = EchoTheme.typography.headlineMedium,
+            color = EchoTheme.colorScheme.surface.onColor,
+        )
+        Text(
+            "Sign in to the quiet part of the internet",
+            style = EchoTheme.typography.bodyLarge,
+            color = EchoTheme.colorScheme.surface.onColor.alpha70,
+        )
+        Spacer(modifier = modifier.size(EchoTheme.spacing.padding.extraLarge))
         EchoTextField(
             value = state.email,
             label = "Email",
@@ -180,12 +183,6 @@ private fun LoginForm(
                 keyboardType = KeyboardType.Email,
                 imeAction = ImeAction.Next,
             ),
-            leading = { _ ->
-                Icon(
-                    Icons.Default.MailOutline,
-                    contentDescription = "Email Icon",
-                )
-            },
             modifier = modifier,
         )
         Spacer(modifier = modifier.size(EchoTheme.spacing.padding.medium))
@@ -214,7 +211,7 @@ private fun LoginForm(
             ),
             leading = { _ ->
                 Icon(
-                    Icons.Default.Password,
+                    Icons.Outlined.Password,
                     contentDescription = "Password Icon",
                 )
             },
@@ -225,9 +222,9 @@ private fun LoginForm(
                 ) {
                     Icon(
                         imageVector = if (state.isPasswordVisible) {
-                            Icons.Default.VisibilityOff
+                            Icons.Outlined.VisibilityOff
                         } else {
-                            Icons.Default.RemoveRedEye
+                            Icons.Outlined.RemoveRedEye
                         },
                         contentDescription = if (state.isPasswordVisible) {
                             "Hide Password"
@@ -239,16 +236,23 @@ private fun LoginForm(
             },
             modifier = modifier,
         )
-        Spacer(modifier = modifier.size(EchoTheme.spacing.padding.medium))
-//        if (state.generalError != null) {
-//            Text(
-//                text = state.generalError,
-//                style = EchoTheme.typography.bodyMedium,
-//                color = EchoTheme.colorScheme.secondary.color,
-//                modifier = modifier.padding(bottom = EchoTheme.spacing.padding.small),
-//            )
-//        }
-        EchoFilledButton(
+        Spacer(modifier = modifier.size(EchoTheme.spacing.padding.small))
+        Text(
+            "Forgot Password?",
+            style = EchoTheme.typography.bodyMedium,
+            color = EchoTheme.colorScheme.surface.onColor.alpha70,
+            textDecoration = TextDecoration.Underline,
+            modifier = modifier
+                .clip(EchoTheme.shapes.snackbar)
+                .clickable { }
+                .padding(
+                    vertical = EchoTheme.spacing.padding.extraSmall,
+                    horizontal = EchoTheme.spacing.padding.small,
+                )
+                .align(Alignment.End),
+        )
+        Spacer(modifier = modifier.size(EchoTheme.spacing.padding.large))
+        EchoTextButton(
             onClick = {
                 focusManager.clearFocus()
                 onAction(LoginAction.OnLoginClicked)
@@ -265,100 +269,116 @@ private fun LoginForm(
                 Spacer(Modifier.size(EchoTheme.spacing.gap.small))
             }
             Text(
-                "Login",
-                style = EchoTheme.typography.titleLarge,
+                "Sign in",
+                style = EchoTheme.typography.bodyLarge,
                 color = EchoTheme.colorScheme.primary.onColor.copy(alpha = if (state.isLoading) 0.5f else 1f),
+                fontWeight = FontWeight.Bold
             )
-            if (!state.isLoading) {
-                Spacer(Modifier.size(EchoTheme.spacing.gap.small))
-                Icon(
-                    Icons.AutoMirrored.Filled.ArrowForward,
-                    contentDescription = "Login Icon",
-                    tint = EchoTheme.colorScheme.primary.onColor,
-                )
-            }
         }
-        HorizontalDivider(
-            modifier = modifier
-                .padding(vertical = EchoTheme.spacing.padding.large),
-        )
-        Row {
+        Box(
+            modifier = modifier.fillMaxWidth(),
+            contentAlignment = Alignment.Center,
+        ) {
+            HorizontalDivider(
+                modifier = modifier
+                    .padding(vertical = EchoTheme.spacing.padding.large),
+            )
+            Text(
+                "or continue with",
+                style = EchoTheme.typography.bodyLarge,
+                color = EchoTheme.colorScheme.surface.onColor.alpha50,
+                modifier = Modifier
+                    .background(EchoTheme.colorScheme.background.color)
+                    .padding(horizontal = EchoTheme.spacing.padding.medium),
+            )
+        }
+        Row(
+            modifier = modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(EchoTheme.spacing.gap.medium),
+        ) {
             OtherLoginOptions(
                 modifier = modifier.weight(1f),
+                text = "Google",
                 onClick = {},
                 icon = ImageVector.vectorResource(R.drawable.ic_google),
             )
             OtherLoginOptions(
                 modifier = modifier.weight(1f),
+                text = "Facebook",
                 onClick = {},
                 icon = ImageVector.vectorResource(R.drawable.ic_facebook),
             )
         }
-        Spacer(modifier = modifier.height(EchoTheme.spacing.padding.extraLarge))
-        Column(
-            modifier = modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-        ) {
-            Text(
-                buildAnnotatedString {
-                    append("Don't have an account? ")
-                    val signUpText = "Sign Up"
-                    append(signUpText)
-                    addStyle(
-                        style = EchoTheme.typography.bodyLarge.toSpanStyle().copy(
-                            color = EchoTheme.colorScheme.primary.color,
-                        ),
-                        start = length - signUpText.length,
-                        end = length,
-                    )
-                },
-                style = EchoTheme.typography.bodyLarge,
-                color = EchoTheme.colorScheme.inverse.surface,
-                modifier = modifier
-                    .clip(EchoTheme.shapes.snackbar)
-                    .clickable { onNavigateToRegisterScreen() }
-                    .padding(
-                        vertical = EchoTheme.spacing.padding.extraSmall,
-                        horizontal = EchoTheme.spacing.padding.small,
+    }
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.BottomCenter,
+    ) {
+        Text(
+            buildAnnotatedString {
+                append("New here? ")
+                addStyle(
+                    style = EchoTheme.typography.bodyLarge.toSpanStyle().copy(
+                        color = EchoTheme.colorScheme.surface.onColor.alpha50,
                     ),
-            )
-            Text(
-                "Forgot Password?",
-                style = EchoTheme.typography.bodyLarge,
-                color = EchoTheme.colorScheme.primary.color,
-                textDecoration = TextDecoration.Underline,
-                modifier = modifier
-                    .clip(EchoTheme.shapes.snackbar)
-                    .clickable { }
-                    .padding(
-                        vertical = EchoTheme.spacing.padding.extraSmall,
-                        horizontal = EchoTheme.spacing.padding.small,
+                    start = 0,
+                    end = length,
+                )
+                val signUpText = "Create an account"
+                append(signUpText)
+                addStyle(
+                    style = EchoTheme.typography.bodyLarge.toSpanStyle().copy(
+                        color = EchoTheme.colorScheme.surface.onColor.alpha90,
                     ),
-            )
-        }
+                    start = length - signUpText.length,
+                    end = length,
+                )
+            },
+            style = EchoTheme.typography.bodyLarge,
+            color = EchoTheme.colorScheme.inverse.surface,
+            modifier = modifier
+                .clip(EchoTheme.shapes.snackbar)
+                .clickable { onNavigateToRegisterScreen() }
+                .padding(
+                    vertical = EchoTheme.spacing.padding.extraSmall,
+                    horizontal = EchoTheme.spacing.padding.small,
+                )
+        )
     }
 }
 
 @Composable
 private fun OtherLoginOptions(
     modifier: Modifier = Modifier,
+    text: String,
     onClick: () -> Unit,
     icon: ImageVector,
 ) {
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(8.dp))
-            .background(EchoTheme.colorScheme.primary.color.alpha20)
+            .clip(EchoTheme.shapes.input)
+            .background(EchoTheme.colorScheme.surface.onColor.alpha10)
             .clickable { onClick() }
-            .padding(vertical = EchoTheme.spacing.padding.small),
+            .padding(EchoTheme.spacing.padding.medium),
         contentAlignment = Alignment.Center,
     ) {
-        Image(
-            imageVector = icon,
-            contentDescription = "Other Login Options",
-            modifier = Modifier.size(EchoTheme.dimen.icon.large),
-            colorFilter = ColorFilter.tint(EchoTheme.colorScheme.primary.color.alpha70),
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(EchoTheme.spacing.gap.extraSmall),
+        ) {
+            Image(
+                imageVector = icon,
+                contentDescription = text,
+                modifier = Modifier.size(EchoTheme.dimen.icon.medium),
+                colorFilter = ColorFilter.tint(EchoTheme.colorScheme.surface.onColor.alpha30),
+            )
+            Text(
+                text,
+                style = EchoTheme.typography.bodyLarge,
+                color = EchoTheme.colorScheme.surface.onColor,
+                modifier = Modifier.padding(start = EchoTheme.spacing.padding.small),
+            )
+        }
     }
 }

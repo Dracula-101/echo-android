@@ -22,7 +22,11 @@ import com.application.echo.presentation.register.RegisterScreen
 import com.application.echo.presentation.search_user.SearchUserScreen
 import com.application.echo.presentation.splash.SplashScreen
 import com.application.echo.ui.components.scaffold.EchoScaffold
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.delayEach
+import kotlinx.coroutines.flow.onEach
 
 @Composable
 fun RootNavScreen(
@@ -32,7 +36,8 @@ fun RootNavScreen(
     val state = viewModel.stateFlow.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
-        viewModel.eventFlow.collectLatest { event ->
+        viewModel.eventFlow
+            .collectLatest { event ->
             when (event) {
                 is RootNavEvent.OnAuthStateChanged -> {
                     when (event.authState) {

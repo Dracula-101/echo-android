@@ -4,9 +4,10 @@ import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
 import com.application.echo.BuildConfig
-import com.application.echo.api.session.SessionProvider
+import com.application.echo.core.network.provider.SessionProvider
 import com.application.echo.core.common.annotations.AppDispatcher
 import com.application.echo.core.common.model.AppDispatchers
+import com.application.echo.core.network.provider.DeviceInfoProvider
 import com.application.echo.core.websocket.handler.MessageHandlerRegistry
 import com.application.echo.core.websocket.handler.TypedMessageHandler
 import com.application.echo.core.websocket.model.WebSocketEvent
@@ -48,6 +49,7 @@ class EchoWebSocketManager @Inject constructor(
     private val registry: MessageHandlerRegistry,
     private val authRepository: AuthRepository,
     private val sessionProvider: SessionProvider,
+    private val deviceInfoProvider: DeviceInfoProvider,
     private val gson: Gson,
     handlers: @JvmSuppressWildcards Set<TypedMessageHandler>,
     @AppDispatcher(AppDispatchers.IO) ioDispatcher: CoroutineDispatcher,
@@ -321,7 +323,7 @@ class EchoWebSocketManager @Inject constructor(
     // ──────────────── Internals ────────────────
 
     private fun buildClientInfo(): ClientInfo {
-        val device = sessionProvider.deviceInfo
+        val device = deviceInfoProvider.getDeviceInfo()
         return ClientInfo(
             appVersion = BuildConfig.VERSION_NAME,
             deviceId = device.deviceId,

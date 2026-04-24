@@ -1,4 +1,4 @@
-package com.application.echo.core.network.interceptor
+package com.application.echo.core.network.provider
 
 import com.application.echo.core.network.model.TokenData
 
@@ -6,7 +6,7 @@ import com.application.echo.core.network.model.TokenData
  * Contract for supplying the current authentication token.
  *
  * Implement this in the data layer and bind it via Hilt so the
- * [AuthInterceptor] can attach the Bearer token automatically.
+ * [com.application.echo.core.network.interceptor.AuthInterceptor] can attach the Bearer token automatically.
  *
  * Return `null` when no token is available (e.g. the user is logged out).
  */

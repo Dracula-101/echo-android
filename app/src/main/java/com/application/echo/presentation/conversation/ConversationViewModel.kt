@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.application.echo.core.common.platform.base.BaseViewModel
 import com.application.echo.features.auth.repository.AuthRepository
 import com.application.echo.features.messaging.model.Conversation
+import com.application.echo.features.messaging.model.OnlineStatus
 import com.application.echo.features.messaging.repository.MessagingRepository
 import com.application.echo.ui.components.snackbar.EchoSnackbarType
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -43,6 +44,7 @@ class ConversationViewModel @Inject constructor(
             is ConversationAction.OnRetry -> refreshConversations()
             is ConversationAction.OnConversationClicked -> {}
             is ConversationAction.OnNewConversationClicked -> {}
+            is ConversationAction.OnSettingsClicked -> {}
         }
     }
 
@@ -112,7 +114,7 @@ class ConversationViewModel @Inject constructor(
             participantAvatarUrl = otherParticipant?.avatarUrl,
             lastMessageContent = lastMessage?.content,
             formattedTimestamp = formatTimestamp(lastMessage?.timestamp ?: updatedAt),
-            onlineStatus = otherParticipant?.onlineStatus?.name?.lowercase(),
+            onlineStatus = otherParticipant?.onlineStatus ?: OnlineStatus.UNKNOWN,
             isLastMessageFromMe = lastMessage?.senderId == currentUserId,
             conversationType = conversationType,
             unreadCount = unreadCount,
@@ -141,7 +143,7 @@ data class ConversationItemUiModel(
     val conversationId: String,
     val participantName: String,
     val participantAvatarUrl: String?,
-    val onlineStatus: String? = null,
+    val onlineStatus: OnlineStatus = OnlineStatus.UNKNOWN,
     val lastMessageContent: String?,
     val formattedTimestamp: String?,
     val isLastMessageFromMe: Boolean,
@@ -168,6 +170,7 @@ sealed interface ConversationAction {
     data object OnRetry : ConversationAction
     data class OnConversationClicked(val conversationId: String) : ConversationAction
     data object OnNewConversationClicked : ConversationAction
+    data object OnSettingsClicked : ConversationAction
 }
 
 // ── Timestamp formatting ─────────────────────────────────────────────

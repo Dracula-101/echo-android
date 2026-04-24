@@ -41,13 +41,4 @@ internal object ApiConstants {
     // ── Headers ──
     const val HEADER_SESSION_ID = "X-Session-ID"
     const val HEADER_SESSION_TOKEN = "X-Session-Token"
-    const val HEADER_DEVICE_NAME = "X-Device-Name"
-    const val HEADER_DEVICE_ID = "X-Device-ID"
-    const val HEADER_DEVICE_TYPE = "X-Device-Type"
-    const val HEADER_DEVICE_PLATFORM = "X-Device-Platform"
-    const val HEADER_DEVICE_OS = "X-Device-OS"
-    const val HEADER_DEVICE_OS_VERSION = "X-Device-OS-Version"
-    const val HEADER_DEVICE_MODEL = "X-Device-Model"
-    const val HEADER_DEVICE_MANUFACTURER = "X-Device-Manufacturer"
-    const val HEADER_REAL_IP = "X-Real-IP"
 }

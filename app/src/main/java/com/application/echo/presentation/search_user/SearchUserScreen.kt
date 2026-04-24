@@ -201,7 +201,7 @@ private fun SearchResultItem(
             ),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (user.avatarUrl != null) {
+        if (!user.avatarUrl.isNullOrBlank()) {
             AsyncImage(
                 model = user.avatarUrl,
                 contentDescription = user.displayName,

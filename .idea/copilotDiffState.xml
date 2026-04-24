@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CopilotDiffPersistence">
+    <option name="pendingDiffs">
+      <map>
+        <entry key="/SessionModule (snapshot).kt">
+          <value>
+            <PendingDiffInfo>
+              <option name="filePath" value="/SessionModule (snapshot).kt" />
+              <option name="originalContent" value="package com.application.echo.di&#10;&#10;import android.annotation.SuppressLint&#10;import android.content.Context&#10;import android.provider.Settings&#10;import com.application.echo.core.network.provider.SessionProvider&#10;import com.application.echo.features.auth.datasource.disk.AuthDiskSource&#10;import dagger.Module&#10;import dagger.Provides&#10;import dagger.hilt.InstallIn&#10;import dagger.hilt.android.qualifiers.ApplicationContext&#10;import dagger.hilt.components.SingletonComponent&#10;import javax.inject.Singleton&#10;&#10;@Module&#10;@InstallIn(SingletonComponent::class)&#10;object SessionModule {&#10;&#10;    @SuppressLint(&quot;HardwareIds&quot;)&#10;    @Provides&#10;    @Singleton&#10;    fun provideSessionProvider(&#10;        authDiskSource: AuthDiskSource,&#10;    ): SessionProvider {&#10;        return object : SessionProvider {&#10;            override val sessionId: String?&#10;                get() = authDiskSource.sessionId&#10;            override val sessionToken: String?&#10;                get() = authDiskSource.sessionToken&#10;        }&#10;    }&#10;}&#10;" />
+              <option name="updatedContent" value="package com.application.echo.di&#10;&#10;import dagger.Module&#10;import dagger.hilt.InstallIn&#10;import dagger.hilt.components.SingletonComponent&#10;&#10;@Module&#10;@InstallIn(SingletonComponent::class)&#10;object SessionModule {&#10;    // SessionProvider is now provided by ApiProvidesModule.provideSessionProvider()&#10;    // which binds AuthTokenManagerImpl (SessionManager) to SessionProvider&#10;}&#10;&#10;" />
+            </PendingDiffInfo>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+</project>

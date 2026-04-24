@@ -41,7 +41,6 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.application.echo.ui.components.adaptive.AdaptiveLayout
 import com.application.echo.ui.components.button.EchoFilledButton
 import com.application.echo.ui.components.scaffold.EchoScaffold
 import com.application.echo.ui.components.snackbar.EchoSnackbarHost
@@ -86,7 +85,6 @@ fun RegisterScreen(
             state = state,
             onAction = viewModel::trySendAction,
             onNavigateToLoginScreen = onNavigateToLoginScreen,
-
         )
     }
 }
@@ -97,24 +95,6 @@ private fun RegisterContent(
     onAction: (RegisterAction) -> Unit,
     onNavigateToLoginScreen: () -> Unit,
 ) {
-    AdaptiveLayout(
-        layoutContentRatio = 0.4f,
-        firstContent = {
-            AppInfo()
-        },
-        secondContent = {
-            RegisterForm(
-                modifier = Modifier
-                    .padding(horizontal = EchoTheme.spacing.padding.medium),
-                state = state,
-                onAction = onAction,
-                onNavigateToLoginScreen = onNavigateToLoginScreen,
-            )
-        },
-        modifier = Modifier
-            .statusBarsPadding()
-            .navigationBarsPadding(),
-    )
 }
 
 @Composable

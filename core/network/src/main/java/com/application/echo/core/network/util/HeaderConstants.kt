@@ -17,4 +17,17 @@ object HeaderConstants {
     const val BEARER = "Bearer"
     const val APPLICATION_JSON = "application/json"
     const val ANDROID = "Android"
+
+    const val DEVICE_ID = "X-Device-ID"
+    const val DEVICE_NAME = "X-Device-Name"
+    const val DEVICE_TYPE = "X-Device-Type"
+    const val DEVICE_PLATFORM = "X-Device-Platform"
+    const val DEVICE_OS = "X-Device-OS"
+    const val DEVICE_OS_VERSION = "X-Device-OS-Version"
+    const val DEVICE_MODEL = "X-Device-Model"
+    const val DEVICE_MANUFACTURER = "X-Device-Manufacturer"
+
+
+    const val SESSION_ID = "X-Session-ID"
+    const val SESSION_TOKEN = "X-Session-Token"
 }
