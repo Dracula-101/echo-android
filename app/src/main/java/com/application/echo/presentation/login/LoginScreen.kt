@@ -23,6 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.MailOutline
 import androidx.compose.material.icons.filled.Password
+import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.RemoveRedEye
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.outlined.Password
@@ -67,6 +68,7 @@ import com.application.echo.ui.design.utils.alpha10
 import com.application.echo.ui.design.utils.alpha20
 import com.application.echo.ui.design.utils.alpha30
 import com.application.echo.ui.design.utils.alpha50
+import com.application.echo.ui.design.utils.alpha60
 import com.application.echo.ui.design.utils.alpha70
 import com.application.echo.ui.design.utils.alpha90
 import kotlinx.coroutines.flow.collectLatest
@@ -75,6 +77,7 @@ import kotlinx.coroutines.flow.collectLatest
 @Composable
 fun LoginScreen(
     onNavigateToRegisterScreen: () -> Unit,
+    onNavigateToPhoneAuthScreen: () -> Unit,
     viewModel: LoginViewModel = hiltViewModel(),
 ) {
     val state by viewModel.stateFlow.collectAsStateWithLifecycle()
@@ -102,6 +105,7 @@ fun LoginScreen(
             state = state,
             onAction = viewModel::trySendAction,
             onNavigateToRegisterScreen = onNavigateToRegisterScreen,
+            onNavigateToPhoneAuthScreen = onNavigateToPhoneAuthScreen,
         )
     }
 }
@@ -111,6 +115,7 @@ private fun LoginContent(
     state: LoginState,
     onAction: (LoginAction) -> Unit,
     onNavigateToRegisterScreen: () -> Unit,
+    onNavigateToPhoneAuthScreen: () -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -127,6 +132,7 @@ private fun LoginContent(
             state = state,
             onAction = onAction,
             onNavigateToRegisterScreen = onNavigateToRegisterScreen,
+            onNavigateToPhoneAuthScreen = onNavigateToPhoneAuthScreen,
         )
     }
 }
@@ -157,6 +163,7 @@ private fun LoginForm(
     state: LoginState,
     onAction: (LoginAction) -> Unit,
     onNavigateToRegisterScreen: () -> Unit,
+    onNavigateToPhoneAuthScreen: () -> Unit,
 ) {
     val focusManager = LocalFocusManager.current
     Column {
@@ -167,8 +174,8 @@ private fun LoginForm(
         )
         Text(
             "Sign in to the quiet part of the internet",
-            style = EchoTheme.typography.bodyLarge,
-            color = EchoTheme.colorScheme.surface.onColor.alpha70,
+            style = EchoTheme.typography.bodyMedium,
+            color = EchoTheme.colorScheme.surface.onColor.alpha50,
         )
         Spacer(modifier = modifier.size(EchoTheme.spacing.padding.extraLarge))
         EchoTextField(
@@ -209,12 +216,6 @@ private fun LoginForm(
                     onAction(LoginAction.OnLoginClicked)
                 },
             ),
-            leading = { _ ->
-                Icon(
-                    Icons.Outlined.Password,
-                    contentDescription = "Password Icon",
-                )
-            },
             trailing = { _ ->
                 IconButton(
                     modifier = Modifier.size(EchoTheme.dimen.icon.medium),
@@ -295,19 +296,20 @@ private fun LoginForm(
         Row(
             modifier = modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(EchoTheme.spacing.gap.medium),
+            horizontalArrangement = Arrangement.spacedBy(EchoTheme.spacing.gap.small),
         ) {
+            OtherLoginOptions(
+                modifier = modifier.weight(1f),
+                text = "Phone",
+                onClick = onNavigateToPhoneAuthScreen,
+                icon = Icons.Default.Phone,
+                isActive = true,
+            )
             OtherLoginOptions(
                 modifier = modifier.weight(1f),
                 text = "Google",
                 onClick = {},
                 icon = ImageVector.vectorResource(R.drawable.ic_google),
-            )
-            OtherLoginOptions(
-                modifier = modifier.weight(1f),
-                text = "Facebook",
-                onClick = {},
-                icon = ImageVector.vectorResource(R.drawable.ic_facebook),
             )
         }
     }
@@ -354,11 +356,15 @@ private fun OtherLoginOptions(
     text: String,
     onClick: () -> Unit,
     icon: ImageVector,
+    isActive: Boolean = false,
 ) {
     Box(
         modifier = modifier
             .clip(EchoTheme.shapes.input)
-            .background(EchoTheme.colorScheme.surface.onColor.alpha10)
+            .background(
+                if (isActive) EchoTheme.colorScheme.background.onColor.alpha90
+                else EchoTheme.colorScheme.background.onColor.alpha10
+            )
             .clickable { onClick() }
             .padding(EchoTheme.spacing.padding.medium),
         contentAlignment = Alignment.Center,
@@ -371,12 +377,15 @@ private fun OtherLoginOptions(
                 imageVector = icon,
                 contentDescription = text,
                 modifier = Modifier.size(EchoTheme.dimen.icon.medium),
-                colorFilter = ColorFilter.tint(EchoTheme.colorScheme.surface.onColor.alpha30),
+                colorFilter = ColorFilter.tint(
+                    if (isActive) EchoTheme.colorScheme.surface.color
+                    else EchoTheme.colorScheme.surface.onColor.alpha50
+                ),
             )
             Text(
                 text,
                 style = EchoTheme.typography.bodyLarge,
-                color = EchoTheme.colorScheme.surface.onColor,
+                color = if (isActive) EchoTheme.colorScheme.surface.color else EchoTheme.colorScheme.surface.onColor.alpha50,
                 modifier = Modifier.padding(start = EchoTheme.spacing.padding.small),
             )
         }

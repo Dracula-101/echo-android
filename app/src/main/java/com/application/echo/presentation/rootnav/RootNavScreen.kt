@@ -18,6 +18,8 @@ import com.application.echo.features.auth.model.AuthState
 import com.application.echo.presentation.create_profile.CreateProfileScreen
 import com.application.echo.presentation.conversation.ConversationScreen
 import com.application.echo.presentation.login.LoginScreen
+import com.application.echo.presentation.otp.OtpScreen
+import com.application.echo.presentation.phone.PhoneAuthScreen
 import com.application.echo.presentation.register.RegisterScreen
 import com.application.echo.presentation.search_user.SearchUserScreen
 import com.application.echo.presentation.splash.SplashScreen
@@ -72,6 +74,28 @@ fun RootNavScreen(
             LoginScreen(
                 onNavigateToRegisterScreen = {
                     navigator.navigateTo(RegisterScreen)
+                },
+                onNavigateToPhoneAuthScreen = {
+                    navigator.navigateTo(OtpScreen)
+                },
+            )
+        }
+        echoComposable<PhoneAuthScreen> {
+            PhoneAuthScreen(
+                onNavigateToOtp = {
+                },
+                onNavigateToEmailAuth = {
+                    navigator.navigateTo(LoginScreen)
+                }
+            )
+        }
+        echoComposable<OtpScreen> {
+            OtpScreen(
+                onNavigateToHome = {
+                    navigator.navigateToRoot(ConversationScreen)
+                },
+                onNavigateBack = {
+                    navigator.navigateBack()
                 },
             )
         }

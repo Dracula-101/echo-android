@@ -1,0 +1,16 @@
+<vector android:height="15dp" android:viewportHeight="480"
+    android:viewportWidth="640" android:width="20dp" xmlns:android="http://schemas.android.com/apk/res/android">
+    <group>
+        <clip-path android:pathData="M-0.122,0l641.738,0l0,481.28L-0.122,481.28z"/>
+        <path android:fillColor="#ffc621" android:fillType="evenOdd"
+            android:pathData="M-166.22,3.29L809.5,3.29l0,468.12L-166.22,471.41z" android:strokeWidth="1"/>
+        <path android:fillColor="#ef2118" android:fillType="evenOdd"
+            android:pathData="M-168.1,321.95L808.842,321.95L808.842,481.28L-168.1,481.28z" android:strokeWidth="1"/>
+        <path android:fillColor="#298c08" android:fillType="evenOdd"
+            android:pathData="M-166.22,0L809.5,0l0,169.2L-166.22,169.2z" android:strokeWidth="1"/>
+        <path android:fillColor="#006bc6" android:fillType="evenOdd"
+            android:pathData="M304.408,248.743m-101.368,0a101.368,101.368 45,1 1,202.735 0a101.368,101.368 0,1 1,-202.735 0" android:strokeWidth="1"/>
+        <path android:fillColor="#ffc621" android:fillType="evenOdd"
+            android:pathData="m258.942,176.908 l-6.11,4.23 22.09,31.02 5.922,-3.76zM286.578,250.228 L277.46,243.836 281.22,231.898 236.006,232.556 222.846,222.498 284.604,221.84 296.072,187.154 302.276,201.254zM358.488,183.77 L352.566,179.258 329.724,209.714 334.988,214.132zM297.012,232.18l3.29,-10.528l12.502,0L298.516,178.6l5.64,-15.51 19.27,58.656 36.472,0.47 -11.468,10.058zM382.176,280.308 L384.714,273.352 348.712,260.85 346.08,267.43zM317.222,236.692 L328.22,236.598 332.074,248.442 368.546,221.652 385.09,222.216 335.176,258.594 345.986,293.562 332.826,285.666zM298.61,332.572 L306.036,332.76 306.318,294.69 299.362,294.22zM319.29,257.09 L322.862,267.524 312.804,275.044 349.84,301.082 354.54,316.874 304.156,281.154 274.546,302.492 277.836,287.452 319.196,257.09zM222.188,269.31 L224.35,276.36 260.728,264.892 258.848,258.124zM300.396,265.55 L291.56,272.224 281.408,264.986 268.06,308.226 254.524,317.626 272.854,258.688 243.338,237.068 258.66,235.564z" android:strokeWidth="1"/>
+    </group>
+</vector>

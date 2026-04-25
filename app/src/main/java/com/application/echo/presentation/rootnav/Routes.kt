@@ -9,6 +9,12 @@ data object SplashScreen
 data object LoginScreen
 
 @Serializable
+data object PhoneAuthScreen
+
+@Serializable
+data object OtpScreen
+
+@Serializable
 data object RegisterScreen
 
 @Serializable
