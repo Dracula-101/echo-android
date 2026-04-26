@@ -6,8 +6,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -25,6 +27,7 @@ import androidx.compose.ui.graphics.BlendMode.Companion.Color
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
@@ -62,6 +65,7 @@ internal fun ConversationListItem(
                     style = EchoTheme.typography.titleSmall,
                     color = EchoTheme.colorScheme.surface.onColor,
                     maxLines = 1,
+                    fontWeight = if (conversation.unreadCount > 0) FontWeight.Bold else EchoTheme.typography.bodyMedium.fontWeight,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f, fill = false),
                 )
@@ -82,6 +86,7 @@ internal fun ConversationListItem(
                     )
                 }
             }
+            Spacer(modifier = Modifier.height(EchoTheme.spacing.padding.extraSmall))
 
             val isTyping = conversation.lastMessageContent == "typing..."
             Text(
