@@ -21,7 +21,7 @@ import kotlin.getValue
  *
  * Builds two OkHttp clients:
  * 1. **unauthenticatedOkHttp** — common headers + logging.
- * 2. **authenticatedOkHttp** — same as above + [AuthInterceptor].
+ * 2. **authenticatedOkHttp** — same as above + [com.application.echo.api.interceptors.AuthInterceptor].
  *
  * Both share the same Retrofit configuration (GSON, call adapter, base URL).
  */

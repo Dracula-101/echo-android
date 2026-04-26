@@ -1,5 +1,7 @@
 package com.application.echo.ui.components.button
 
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.IconButton
@@ -7,6 +9,7 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import com.application.echo.ui.components.common.EchoVariant
 import com.application.echo.ui.components.util.IconResource
 import com.application.echo.ui.components.util.Paint
@@ -30,7 +33,7 @@ fun EchoIconButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     variant: EchoVariant = EchoVariant.Primary,
-    size: Dp = EchoTheme.dimen.icon.medium,
+    size: Dp = EchoTheme.dimen.icon.small,
 ) {
     IconButton(
         onClick = onClick,

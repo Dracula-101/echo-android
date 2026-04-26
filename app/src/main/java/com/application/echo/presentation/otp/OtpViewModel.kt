@@ -36,7 +36,6 @@ class OtpViewModel @Inject constructor(
             is OtpAction.OnPaste -> onPaste(action.raw)
             is OtpAction.OnBackspace -> onBackspace(action.index)
             is OtpAction.OnFilled -> attemptVerify()
-            is OtpAction.OnVerifyClicked -> attemptVerify()
             is OtpAction.OnResendClicked -> attemptResend()
             is OtpAction.OnEditPhoneClicked -> sendEvent(OtpEvent.NavigateBack)
         }
@@ -220,7 +219,6 @@ sealed interface OtpAction {
     data class OnPaste(val raw: String) : OtpAction
     data class OnBackspace(val index: Int) : OtpAction
     data object OnFilled : OtpAction
-    data object OnVerifyClicked : OtpAction
     data object OnResendClicked : OtpAction
     data object OnEditPhoneClicked : OtpAction
 }

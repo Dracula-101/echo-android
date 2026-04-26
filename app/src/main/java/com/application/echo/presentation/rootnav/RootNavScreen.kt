@@ -76,7 +76,7 @@ fun RootNavScreen(
                     navigator.navigateTo(RegisterScreen)
                 },
                 onNavigateToPhoneAuthScreen = {
-                    navigator.navigateTo(OtpScreen)
+                    navigator.navigateTo(PhoneAuthScreen)
                 },
             )
         }
@@ -94,6 +94,7 @@ fun RootNavScreen(
                 onNavigateToHome = {
                     navigator.navigateToRoot(ConversationScreen)
                 },
+                phoneNumber = "91 1234567890",
                 onNavigateBack = {
                     navigator.navigateBack()
                 },

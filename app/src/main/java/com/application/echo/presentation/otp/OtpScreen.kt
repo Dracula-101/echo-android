@@ -7,6 +7,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -16,14 +17,20 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -37,12 +44,14 @@ import com.application.echo.ui.design.theme.EchoTheme
 fun OtpScreen(
     onNavigateToHome: () -> Unit,
     onNavigateBack: () -> Unit,
+    phoneNumber: String,
     viewModel: OtpViewModel = hiltViewModel(),
 ) {
     val state by viewModel.stateFlow.collectAsStateWithLifecycle()
     val snackbarHostState = rememberEchoSnackbarState()
 
     LaunchedEffect(Unit) {
+        viewModel.setState { state.copy(phoneNumber = phoneNumber) }
         viewModel.eventFlow.collect { event ->
             when (event) {
                 is OtpEvent.NavigateToHome -> onNavigateToHome()
@@ -115,7 +124,19 @@ private fun OtpForm(
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
-            "Sent to ${state.phoneNumber}",
+            buildAnnotatedString {
+                append("Sent to +${state.phoneNumber}")
+                append("  ")
+                append("Change")
+                addStyle(
+                    style = EchoTheme.typography.bodyMedium.toSpanStyle().copy(
+                        color = EchoTheme.colorScheme.surface.onColor,
+                        textDecoration = TextDecoration.Underline
+                    ),
+                    start = length - 6,
+                    end = length,
+                )
+            },
             style = EchoTheme.typography.bodyMedium,
             color = EchoTheme.colorScheme.scrim.color,
         )
@@ -146,56 +167,34 @@ private fun OtpForm(
             }
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Expiry
-        AnimatedVisibility(
-            visible = !state.isExpired && state.expirySeconds > 0,
-            enter = fadeIn(),
-            exit = fadeOut(),
-        ) {
-            Text(
-                text = "Code expires in ${state.expiryFormatted}",
-                style = EchoTheme.typography.labelSmall,
-                color = EchoTheme.colorScheme.scrim.color,
-            )
-        }
-
         Spacer(modifier = Modifier.height(EchoTheme.spacing.gap.large))
 
-        EchoLoadingButton(
-            text = "Verify",
-            loading = state.isLoading,
-            enabled = state.isOtpComplete && !state.isLoading,
-            modifier = Modifier.fillMaxWidth(),
-            onClick = { onAction(OtpAction.OnVerifyClicked) },
-        )
-
-        Spacer(modifier = Modifier.height(EchoTheme.spacing.gap.medium))
-
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier
+                .clip(EchoTheme.shapes.chip)
+                .background(EchoTheme.colorScheme.primary.container)
+                .clickable(enabled = state.canResend) { onAction(OtpAction.OnResendClicked) }
+                .padding(vertical = EchoTheme.spacing.padding.small, horizontal = EchoTheme.spacing.padding.medium),
+            horizontalArrangement = Arrangement.spacedBy(EchoTheme.spacing.gap.extraSmall),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                text = "Wrong number?",
-                style = EchoTheme.typography.labelMedium,
-                color = EchoTheme.colorScheme.primary.color,
-                modifier = Modifier.clickable { onAction(OtpAction.OnEditPhoneClicked) },
+            Icon(
+                imageVector = Icons.Default.AccessTime,
+                contentDescription = "Resend Icon",
+                tint = if(state.canResend) EchoTheme.colorScheme.primary.onColor else EchoTheme.colorScheme.primary.dim,
+                modifier = Modifier.size(EchoTheme.dimen.icon.small),
             )
             if (state.canResend) {
                 Text(
                     text = "Resend code",
-                    style = EchoTheme.typography.labelMedium,
-                    color = EchoTheme.colorScheme.primary.color,
-                    modifier = Modifier.clickable { onAction(OtpAction.OnResendClicked) },
+                    style = EchoTheme.typography.bodyMedium,
+                    color = EchoTheme.colorScheme.primary.onColor,
                 )
             } else {
                 Text(
                     text = "Resend in ${state.resendCooldownSeconds}s",
-                    style = EchoTheme.typography.labelMedium,
-                    color = EchoTheme.colorScheme.scrim.color,
+                    style = EchoTheme.typography.bodyMedium,
+                    color = EchoTheme.colorScheme.primary.dim,
                 )
             }
         }

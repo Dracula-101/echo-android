@@ -106,9 +106,9 @@ class ConversationViewModel @Inject constructor(
         }
     }
 
-    private fun Conversation.toUiModel(currentUserId: String): ConversationItemUiModel {
+    private fun Conversation.toUiModel(currentUserId: String): ConversationItem {
         val otherParticipant = participants.firstOrNull { it.userId != currentUserId }
-        return ConversationItemUiModel(
+        return ConversationItem(
             conversationId = id,
             participantName = otherParticipant?.displayName ?: "Unknown",
             participantAvatarUrl = otherParticipant?.avatarUrl,
@@ -130,7 +130,7 @@ class ConversationViewModel @Inject constructor(
 
 @Parcelize
 data class ConversationState(
-    val conversations: List<ConversationItemUiModel> = emptyList(),
+    val conversations: List<ConversationItem> = emptyList(),
     val isLoading: Boolean = false,
     val isRefreshing: Boolean = false,
     val errorMessage: String? = null,
@@ -139,7 +139,7 @@ data class ConversationState(
 ) : Parcelable
 
 @Parcelize
-data class ConversationItemUiModel(
+data class ConversationItem(
     val conversationId: String,
     val participantName: String,
     val participantAvatarUrl: String?,

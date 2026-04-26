@@ -5,11 +5,11 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,7 +19,6 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.LocalContentColor
-import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -28,8 +27,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.times
 import com.application.echo.ui.design.theme.EchoTheme
@@ -66,12 +65,14 @@ fun EchoTextField(
     modifier: Modifier = Modifier,
     label: String? = null,
     placeholder: String? = null,
+    placeholderTextStyle: TextStyle? = null,
     helperText: String? = null,
     errorText: String? = null,
     isError: Boolean = errorText != null,
     enabled: Boolean = true,
     readOnly: Boolean = false,
     singleLine: Boolean = true,
+    contentPadding: PaddingValues? = null,
     maxLines: Int = if (singleLine) 1 else Int.MAX_VALUE,
     leading: @Composable ((isFocused: Boolean) -> Unit)? = null,
     trailing: @Composable ((isFocused: Boolean) -> Unit)? = null,
@@ -139,9 +140,15 @@ fun EchoTextField(
                             shape = EchoTheme.shapes.input,
                         )
                         .background(colors.background, EchoTheme.shapes.input)
-                        .padding(
-                            horizontal = EchoTheme.spacing.padding.medium,
-                            vertical = 2 * EchoTheme.spacing.padding.small,
+                        .then(
+                            if (contentPadding != null) {
+                                Modifier.padding(contentPadding)
+                            } else {
+                                Modifier.padding(
+                                    horizontal = EchoTheme.spacing.padding.medium,
+                                    vertical = 2 * EchoTheme.spacing.padding.small,
+                                )
+                            }
                         ),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -163,8 +170,8 @@ fun EchoTextField(
                         if (value.isEmpty() && placeholder != null) {
                             Text(
                                 text = placeholder,
-                                style = EchoTheme.typography.bodyLarge,
-                                color = colors.placeholder,
+                                style = placeholderTextStyle ?: EchoTheme.typography.bodyLarge,
+                                color = placeholderTextStyle?.color ?: colors.placeholder,
                             )
                         }
                         innerTextField()

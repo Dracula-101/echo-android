@@ -2,6 +2,8 @@ package com.application.echo.core.websocket.interceptor
 
 import com.application.echo.core.websocket.config.WebSocketConfig
 import com.application.echo.core.websocket.model.WebSocketMessage
+import com.google.gson.JsonObject
+import org.json.JSONObject
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -36,7 +38,7 @@ internal class LoggingInterceptor @Inject constructor(
         when (message) {
             is WebSocketMessage.Text -> {
                 if (config.isDebug) {
-                    Timber.tag(TAG).d("<<< RECV text (%d chars): %s", message.payload.length, message.payload)
+                    Timber.tag(TAG).d("<<< RECV text (%d chars): %s", message.payload.length, JSONObject(message.payload).toString(4))
                 } else {
                     Timber.tag(TAG).d("<<< RECV text (%d chars)", message.payload.length)
                 }

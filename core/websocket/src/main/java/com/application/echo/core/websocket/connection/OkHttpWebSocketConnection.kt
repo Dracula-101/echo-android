@@ -29,7 +29,7 @@ import javax.inject.Inject
  * [StateFlow] of the connection state.
  */
 internal class OkHttpWebSocketConnection @Inject constructor(
-    @WebSocketOkHttp private val okHttpClient: OkHttpClient,
+    @param:WebSocketOkHttp private val okHttpClient: OkHttpClient,
     private val webSocketFactory: WebSocketFactory,
     private val logger: WebSocketLogger,
 ) : WebSocketConnection {

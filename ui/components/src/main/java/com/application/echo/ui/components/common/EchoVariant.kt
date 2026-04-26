@@ -23,6 +23,9 @@ enum class EchoVariant {
     /** Teal — secondary / alternative emphasis. */
     Secondary,
 
+    /** White/black - */
+    Neutral,
+
     /** Red — destructive or error actions. */
     Error,
 }
@@ -38,6 +41,7 @@ enum class EchoVariant {
 fun EchoVariant.color(): Color = when (this) {
     EchoVariant.Primary -> EchoTheme.colorScheme.primary.color
     EchoVariant.Secondary -> EchoTheme.colorScheme.secondary.color
+    EchoVariant.Neutral -> EchoTheme.colorScheme.surface.onColor
     EchoVariant.Error -> EchoTheme.colorScheme.error.color
 }
 
@@ -48,6 +52,7 @@ fun EchoVariant.color(): Color = when (this) {
 fun EchoVariant.onColor(): Color = when (this) {
     EchoVariant.Primary -> EchoTheme.colorScheme.primary.onColor
     EchoVariant.Secondary -> EchoTheme.colorScheme.secondary.onColor
+    EchoVariant.Neutral -> EchoTheme.colorScheme.surface.color
     EchoVariant.Error -> EchoTheme.colorScheme.error.onColor
 }
 
@@ -58,6 +63,7 @@ fun EchoVariant.onColor(): Color = when (this) {
 fun EchoVariant.containerColor(): Color = when (this) {
     EchoVariant.Primary -> EchoTheme.colorScheme.primary.container
     EchoVariant.Secondary -> EchoTheme.colorScheme.secondary.container
+    EchoVariant.Neutral -> EchoTheme.colorScheme.surface.container
     EchoVariant.Error -> EchoTheme.colorScheme.error.container
 }
 
@@ -68,5 +74,6 @@ fun EchoVariant.containerColor(): Color = when (this) {
 fun EchoVariant.onContainerColor(): Color = when (this) {
     EchoVariant.Primary -> EchoTheme.colorScheme.primary.onContainer
     EchoVariant.Secondary -> EchoTheme.colorScheme.secondary.onContainer
+    EchoVariant.Neutral -> EchoTheme.colorScheme.surface.onContainer
     EchoVariant.Error -> EchoTheme.colorScheme.error.onContainer
 }

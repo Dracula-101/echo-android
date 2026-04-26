@@ -18,8 +18,8 @@ internal val echoDimensions = EchoDimensions(
         extraLarge = 320.dp
     ),
     icon = Dimensions(
-        extraSmall = 12.dp,
-        small = 16.dp,
+        extraSmall = 14.dp,
+        small = 18.dp,
         medium = 24.dp,
         large = 32.dp,
         extraLarge = 48.dp

@@ -3,6 +3,8 @@ package com.application.echo.api.auth
 import com.application.echo.api.common.ApiConstants.AUTH_REFRESH_TOKEN
 import com.application.echo.core.network.client.HttpClientConfig
 import com.application.echo.core.network.model.TokenData
+import com.application.echo.core.network.provider.DeviceInfoProvider
+import com.application.echo.core.network.util.HeaderConstants
 import com.google.gson.Gson
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
@@ -14,6 +16,7 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import okhttp3.Route
+import okhttp3.internal.addHeaderLenient
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
@@ -22,6 +25,7 @@ internal class TokenRefreshAuthenticator @Inject constructor(
     private val config: HttpClientConfig,
     private val gson: Gson,
     private val listener: TokenRefreshListener,
+    private val deviceInfoProvider: DeviceInfoProvider
 ) : Authenticator {
 
     private val refreshClient = OkHttpClient.Builder()
@@ -66,11 +70,19 @@ internal class TokenRefreshAuthenticator @Inject constructor(
 
     private fun callRefreshToken(refreshToken: String): TokenData? {
         return try {
+            val deviceInfo = deviceInfoProvider.getDeviceInfo()
             val body = gson.toJson(RefreshTokenRequest(refreshToken))
                 .toRequestBody("application/json".toMediaType())
-
             val request = Request.Builder()
                 .url("${config.baseUrl}/$AUTH_REFRESH_TOKEN")
+                .addHeader(HeaderConstants.DEVICE_ID, deviceInfo.deviceId)
+                .addHeader(HeaderConstants.DEVICE_NAME, deviceInfo.deviceName)
+                .addHeader(HeaderConstants.DEVICE_TYPE, deviceInfo.deviceType)
+                .addHeader(HeaderConstants.DEVICE_PLATFORM, deviceInfo.platform)
+                .addHeader(HeaderConstants.DEVICE_OS, deviceInfo.platform)
+                .addHeader(HeaderConstants.DEVICE_OS_VERSION, deviceInfo.osVersion)
+                .addHeader(HeaderConstants.DEVICE_MODEL, deviceInfo.model)
+                .addHeader(HeaderConstants.DEVICE_MANUFACTURER, deviceInfo.manufacturer)
                 .post(body)
                 .build()
 

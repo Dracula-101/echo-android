@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -33,6 +34,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -62,7 +64,6 @@ fun OtpInputField(
         onValueChange = { newValue ->
             val sanitized = newValue.filter { it.isDigit() }
             when {
-                // Paste — more than one new char at once
                 sanitized.length > otpValue.length + 1 -> onPaste(sanitized)
                 // New digit
                 sanitized.length == otpValue.length + 1 && sanitized.length <= length -> {
@@ -70,7 +71,6 @@ fun OtpInputField(
                     onDigitChanged(index, sanitized.last().toString())
                     if (sanitized.length == length) onFilled()
                 }
-                // Backspace
                 sanitized.length < otpValue.length -> {
                     onBackspace(sanitized.length)
                 }
@@ -134,7 +134,7 @@ private fun OtpDigitCell(
             isError -> EchoTheme.colorScheme.error.color.copy(alpha = 0.08f)
             isFocused -> EchoTheme.colorScheme.primary.color.copy(alpha = 0.06f)
             digit.isNotEmpty() -> EchoTheme.colorScheme.surface.variant
-            else -> EchoTheme.colorScheme.surface.color
+            else -> EchoTheme.colorScheme.surface.high
         },
         animationSpec = tween(150),
         label = "backgroundColor",
@@ -142,7 +142,7 @@ private fun OtpDigitCell(
 
     Box(
         modifier = modifier
-            .size(48.dp)
+            .height(56.dp)
             .clip(shape)
             .background(backgroundColor)
             .border(width = borderWidth, color = borderColor, shape = shape),
@@ -158,10 +158,12 @@ private fun OtpDigitCell(
         } else {
             Text(
                 text = digit,
-                style = EchoTheme.typography.titleLarge,
+                style = EchoTheme.typography.headlineMedium,
                 color = if (isError) EchoTheme.colorScheme.error.color
                 else EchoTheme.colorScheme.surface.onColor,
                 textAlign = TextAlign.Center,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1
             )
         }
     }
