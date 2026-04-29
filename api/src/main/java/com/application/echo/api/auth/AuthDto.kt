@@ -11,9 +11,11 @@ import com.google.gson.annotations.SerializedName
  */
 data class LoginRequest(
     @SerializedName("email")
-    val email: String,
+    val email: String? = null,
     @SerializedName("password")
-    val password: String,
+    val password: String? = null,
+    @SerializedName("verify_token")
+    val verifyToken: String? = null,
     @SerializedName("fcm_token")
     val fcmToken: String? = null,
     @SerializedName("apns_token")

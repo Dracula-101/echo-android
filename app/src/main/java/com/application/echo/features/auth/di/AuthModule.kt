@@ -13,6 +13,7 @@ import com.application.echo.features.auth.datasource.network.AuthNetworkSourceIm
 import com.application.echo.features.auth.repository.AuthRepository
 import com.application.echo.features.auth.repository.AuthRepositoryImpl
 import com.application.echo.features.profile.datasource.disk.ProfileDiskSource
+import com.google.firebase.auth.FirebaseAuth
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -53,11 +54,19 @@ object AuthModule {
         profileDiskSource: ProfileDiskSource,
         tokenManager: AuthTokenManager,
         @AppDispatcher(AppDispatchers.IO) ioDispatcher: CoroutineDispatcher,
+        firebaseAuth: FirebaseAuth,
     ): AuthRepository = AuthRepositoryImpl(
         networkSource = networkSource,
         authDiskSource = authDiskSource,
         profileDiskSource = profileDiskSource,
         tokenManager = tokenManager,
         ioDispatcher = ioDispatcher,
+        firebaseAuth = firebaseAuth,
     )
+
+    @Provides
+    @Singleton
+    fun provideFirebaseAuth(): FirebaseAuth {
+        return FirebaseAuth.getInstance()
+    }
 }

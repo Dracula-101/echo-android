@@ -25,6 +25,9 @@ sealed interface AuthState {
     /** User is creating a profile. */
     data class CreateProfile(val userId: String) : AuthState
 
+    /** User is requested OTP verification. */
+    data class OtpVerification(val phoneInfo: PhoneInfo) : AuthState
+
     /** User is logged in and the access token is valid. */
     data class Authenticated(val user: UserState) : AuthState
 

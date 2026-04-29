@@ -1,14 +1,27 @@
 package com.application.echo.presentation.phone
 
+import android.app.Activity
+import android.content.Context
 import android.os.Parcelable
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.application.echo.core.common.platform.base.BaseViewModel
+import com.application.echo.features.auth.model.OtpState
+import com.application.echo.features.auth.model.OtpVerificationState
+import com.application.echo.features.auth.model.PhoneInfo
+import com.application.echo.features.auth.model.fold
+import com.application.echo.features.auth.model.isSuccess
+import com.application.echo.features.auth.repository.AuthRepository
 import com.application.echo.features.country.model.Country
 import com.application.echo.features.country.repository.CountryRepository
 import com.application.echo.ui.components.snackbar.EchoSnackbarType
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.parcelize.Parcelize
 import timber.log.Timber
@@ -17,12 +30,17 @@ import javax.inject.Inject
 @HiltViewModel
 class PhoneAuthViewModel @Inject constructor(
     private val countryRepository: CountryRepository,
+    private val authRepository: AuthRepository,
     private val savedStateHandle: SavedStateHandle,
 ) : BaseViewModel<PhoneAuthState, PhoneAuthEvent, PhoneAuthAction>(
     initialState = savedStateHandle[KEY_STATE] ?: PhoneAuthState(
         selectedCountry = countryRepository.detectCurrentCountry().toUiCountry(),
     ),
 ) {
+
+    init {
+        observeOtpState()
+    }
 
     val countries: List<UiCountry> by lazy {
         countryRepository.all.map { it.toUiCountry() }
@@ -32,7 +50,7 @@ class PhoneAuthViewModel @Inject constructor(
         when (action) {
             is PhoneAuthAction.OnCountryChanged -> onCountryChanged(action.country)
             is PhoneAuthAction.OnPhoneNumberChanged -> onPhoneNumberChanged(action.phoneNumber)
-            is PhoneAuthAction.OnSendOtpClicked -> attemptSendOtp()
+            is PhoneAuthAction.OnSendOtpClicked -> attemptSendOtp(action.activity)
         }
         savedStateHandle[KEY_STATE] = state
     }
@@ -49,7 +67,7 @@ class PhoneAuthViewModel @Inject constructor(
         setState { state.copy(phoneNumber = sanitized, phoneNumberError = null) }
     }
 
-    private fun attemptSendOtp() {
+    private fun attemptSendOtp(activity: Activity) {
         val validated = validatePhoneNumber()
         if (validated.hasPhoneError) {
             setState { validated }
@@ -61,11 +79,42 @@ class PhoneAuthViewModel @Inject constructor(
         Timber.d("Sending OTP to %s", state.e164PhoneNumber)
 
         viewModelScope.launch {
-            delay(1_500) // 🚧 replace with real API call
-            setState { state.copy(isLoading = false) }
-            savedStateHandle[KEY_STATE] = state
-            sendEvent(PhoneAuthEvent.NavigateToOtp(phoneNumber = state.e164PhoneNumber))
+            authRepository.sendOtp(
+                phoneInfo = PhoneInfo(
+                    country = Country(
+                        isoCode = state.selectedCountry.isoCode,
+                        name = state.selectedCountry.name,
+                        dialCode = state.selectedCountry.dialCode,
+                        minDigits = state.selectedCountry.minDigits,
+                        maxDigits = state.selectedCountry.maxDigits,
+                    ),
+                    phoneNumber = state.e164PhoneNumber
+                ),
+                context = activity
+            )
         }
+    }
+
+    private fun observeOtpState() {
+        authRepository.otpStateFlow
+            .onEach { otpState ->
+                when(otpState.state) {
+                    OtpVerificationState.Sent -> { setState { state.copy(isLoading = false) } }
+                    is OtpVerificationState.Failed -> {
+                        setState { state.copy(isLoading = false) }
+                        sendEvent(
+                            PhoneAuthEvent.ShowSnackbar(
+                                message = "Failed to send OTP",
+                                detail = otpState.state.error,
+                                code = "OTP_SEND_ERROR",
+                                type = EchoSnackbarType.ERROR,
+                            )
+                        )
+                    }
+                    else -> {}
+                }
+            }
+            .launchIn(viewModelScope)
     }
 
     private fun validatePhoneNumber(): PhoneAuthState {
@@ -120,7 +169,6 @@ data class PhoneAuthState(
 // ─── Events ───────────────────────────────────────────────────────────────────
 
 sealed interface PhoneAuthEvent {
-    data class NavigateToOtp(val phoneNumber: String) : PhoneAuthEvent
     data class ShowSnackbar(
         val message: String,
         val detail: String,
@@ -134,5 +182,5 @@ sealed interface PhoneAuthEvent {
 sealed interface PhoneAuthAction {
     data class OnCountryChanged(val country: UiCountry) : PhoneAuthAction
     data class OnPhoneNumberChanged(val phoneNumber: String) : PhoneAuthAction
-    data object OnSendOtpClicked : PhoneAuthAction
+    data class OnSendOtpClicked(val activity: Activity) : PhoneAuthAction
 }

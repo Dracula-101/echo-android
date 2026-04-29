@@ -1,9 +1,12 @@
 package com.application.echo.features.auth.repository
 
+import android.app.Activity
 import com.application.echo.features.auth.model.AuthResult
 import com.application.echo.api.auth.LoginResponse
 import com.application.echo.api.auth.RegisterResponse
 import com.application.echo.features.auth.model.AuthState
+import com.application.echo.features.auth.model.OtpState
+import com.application.echo.features.auth.model.PhoneInfo
 import com.application.echo.features.auth.model.UserState
 import kotlinx.coroutines.flow.StateFlow
 
@@ -21,7 +24,11 @@ interface AuthRepository {
     /** Raw user data. Empty when not logged in. */
     val userStateFlow: StateFlow<UserState>
 
+    val otpStateFlow: StateFlow<OtpState>
+
     suspend fun login(email: String, password: String): AuthResult<LoginResponse>
+
+    suspend fun loginWithToken(token: String): AuthResult<LoginResponse>
 
     suspend fun autoLogin()
 
@@ -32,4 +39,10 @@ interface AuthRepository {
     ): AuthResult<RegisterResponse>
 
     fun logout()
+
+    suspend fun sendOtp(phoneInfo: PhoneInfo, context: Activity): AuthResult<Unit>
+
+    suspend fun resendOtp(context: Activity): AuthResult<Unit>
+
+     suspend fun verifyOtp(otp: String): AuthResult<Unit>
 }

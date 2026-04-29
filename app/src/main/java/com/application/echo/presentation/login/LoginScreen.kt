@@ -296,7 +296,7 @@ private fun LoginForm(
         Row(
             modifier = modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(EchoTheme.spacing.gap.small),
+            horizontalArrangement = Arrangement.spacedBy(EchoTheme.spacing.gap.medium),
         ) {
             OtherLoginOptions(
                 modifier = modifier.weight(1f),

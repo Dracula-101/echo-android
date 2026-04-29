@@ -35,6 +35,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -43,12 +44,16 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.application.echo.ui.components.button.EchoFilledButton
+import com.application.echo.ui.components.button.EchoTextButton
+import com.application.echo.ui.components.common.EchoVariant
 import com.application.echo.ui.components.scaffold.EchoScaffold
 import com.application.echo.ui.components.snackbar.EchoSnackbarHost
 import com.application.echo.ui.components.snackbar.rememberEchoSnackbarState
 import com.application.echo.ui.components.textfield.EchoTextField
 import com.application.echo.ui.design.R
 import com.application.echo.ui.design.theme.EchoTheme
+import com.application.echo.ui.design.utils.alpha50
+import com.application.echo.ui.design.utils.alpha90
 import kotlinx.coroutines.flow.collectLatest
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -145,177 +150,70 @@ private fun RegisterForm(
     val focusManager = LocalFocusManager.current
 
     Column {
-//
-//        EchoTextField(
-//            value = state.email,
-//            label = "Email",
-//            onValueChange = { onAction(RegisterAction.OnEmailChanged(it)) },
-//            placeholder = "Enter your email",
-//            isError = state.emailError != null,
-//            errorText = state.emailError,
-//            enabled = !state.isLoading,
-//            keyboardOptions = KeyboardOptions(
-//                keyboardType = KeyboardType.Email,
-//                imeAction = ImeAction.Next,
-//            ),
-//            leading = { _ ->
-//                Icon(
-//                    Icons.Default.MailOutline,
-//                    contentDescription = "Email Icon",
-//                )
-//            },
-//            modifier = modifier,
-//        )
-//        Spacer(modifier = modifier.size(EchoTheme.spacing.padding.medium))
-//        EchoTextField(
-//            value = state.password,
-//            label = "Password",
-//            onValueChange = { onAction(RegisterAction.OnPasswordChanged(it)) },
-//            placeholder = "Enter password",
-//            isError = state.passwordError != null,
-//            errorText = state.passwordError,
-//            enabled = !state.isLoading,
-//            visualTransformation = if (state.isPasswordVisible) {
-//                VisualTransformation.None
-//            } else {
-//                PasswordVisualTransformation()
-//            },
-//            keyboardOptions = KeyboardOptions(
-//                keyboardType = KeyboardType.Password,
-//                imeAction = ImeAction.Next,
-//            ),
-//            leading = { _ ->
-//                Icon(
-//                    Icons.Default.Password,
-//                    contentDescription = "Password Icon",
-//                )
-//            },
-//            trailing = { _ ->
-//                Icon(
-//                    imageVector = if (state.isPasswordVisible) {
-//                        Icons.Default.VisibilityOff
-//                    } else {
-//                        Icons.Default.RemoveRedEye
-//                    },
-//                    contentDescription = if (state.isPasswordVisible) {
-//                        "Hide Password"
-//                    } else {
-//                        "Show Password"
-//                    },
-//                    modifier = Modifier.clickable { onAction(RegisterAction.OnTogglePasswordVisibility) },
-//                )
-//            },
-//            modifier = modifier,
-//        )
-//        Spacer(modifier = modifier.size(EchoTheme.spacing.padding.medium))
-//        EchoTextField(
-//            value = state.confirmPassword,
-//            label = "Confirm Password",
-//            placeholder = "Confirm your password",
-//            isError = state.confirmPasswordError != null,
-//            onValueChange = { onAction(RegisterAction.OnConfirmPasswordChanged(it)) },
-//            errorText = state.confirmPasswordError,
-//            enabled = !state.isLoading,
-//            visualTransformation = if (state.isConfirmPasswordVisible) {
-//                VisualTransformation.None
-//            } else {
-//                PasswordVisualTransformation()
-//            },
-//            keyboardOptions = KeyboardOptions(
-//                keyboardType = KeyboardType.Password,
-//                imeAction = ImeAction.Done,
-//            ),
-//            keyboardActions = KeyboardActions(
-//                onDone = {
-//                    focusManager.clearFocus()
-//                    onAction(RegisterAction.OnRegisterClicked)
-//                },
-//            ),
-//            leading = { _ ->
-//                Icon(
-//                    Icons.Default.Password,
-//                    contentDescription = "Password Icon",
-//                )
-//            },
-//            trailing = { _ ->
-//                Icon(
-//                    imageVector = if (state.isConfirmPasswordVisible) {
-//                        Icons.Default.VisibilityOff
-//                    } else {
-//                        Icons.Default.RemoveRedEye
-//                    },
-//                    contentDescription = if (state.isConfirmPasswordVisible) {
-//                        "Hide Password"
-//                    } else {
-//                        "Show Password"
-//                    },
-//                    modifier = Modifier.clickable { onAction(RegisterAction.OnToggleConfirmPasswordVisibility) },
-//                )
-//            },
-//            modifier = modifier,
-//        )
-//        Spacer(modifier = modifier.size(EchoTheme.spacing.padding.large))
-//        EchoFilledButton(
-//            onClick = {
-//                focusManager.clearFocus()
-//                onAction(RegisterAction.OnRegisterClicked)
-//            },
-//            enabled = !state.isLoading,
-//            modifier = modifier.fillMaxWidth(),
-//        ) {
-//            if (state.isLoading) {
-//                CircularProgressIndicator(
-//                    modifier = Modifier.size(EchoTheme.dimen.icon.small),
-//                    strokeWidth = 2.dp,
-//                    color = EchoTheme.colorScheme.primary.onColor,
-//                )
-//                Spacer(Modifier.size(EchoTheme.spacing.gap.small))
-//            }
-//            Text(
-//                "Register",
-//                style = EchoTheme.typography.titleLarge,
-//            )
-//            if (!state.isLoading) {
-//                Spacer(Modifier.size(EchoTheme.spacing.gap.small))
-//                Icon(
-//                    Icons.AutoMirrored.Filled.ArrowForward,
-//                    contentDescription = "Register Icon",
-//                    tint = EchoTheme.colorScheme.primary.onColor,
-//                )
-//            }
-//        }
-//        HorizontalDivider(
-//            modifier = modifier
-//                .padding(vertical = EchoTheme.spacing.padding.large),
-//        )
-//        Column(
-//            modifier = modifier.fillMaxWidth(),
-//            horizontalAlignment = Alignment.CenterHorizontally,
-//            verticalArrangement = Arrangement.Center,
-//        ) {
-//            Text(
-//                buildAnnotatedString {
-//                    append("Already have an account? ")
-//                    val loginText = "Login"
-//                    append(loginText)
-//                    addStyle(
-//                        style = EchoTheme.typography.bodyLarge.toSpanStyle().copy(
-//                            color = EchoTheme.colorScheme.primary.color,
-//                        ),
-//                        start = length - loginText.length,
-//                        end = length,
-//                    )
-//                },
-//                style = EchoTheme.typography.bodyLarge,
-//                color = EchoTheme.colorScheme.inverse.surface,
-//                modifier = modifier
-//                    .clip(EchoTheme.shapes.snackbar)
-//                    .clickable { onNavigateToLoginScreen() }
-//                    .padding(
-//                        vertical = EchoTheme.spacing.padding.extraSmall,
-//                        horizontal = EchoTheme.spacing.padding.small,
-//                    ),
-//            )
-//        }
+        Text(
+            "Create an account",
+            style = EchoTheme.typography.headlineMedium,
+            color = EchoTheme.colorScheme.surface.onColor,
+        )
+        Text(
+            "Join us and start your echo journey today!",
+            style = EchoTheme.typography.bodyMedium,
+            color = EchoTheme.colorScheme.surface.onColor.alpha50,
+        )
+        Spacer(modifier = modifier.size(EchoTheme.spacing.padding.extraLarge))
+        EchoTextField(
+            value = state.phoneNumber,
+            label = "Phone",
+            onValueChange = { onAction(RegisterAction.OnPhoneNumberChanged(it)) },
+            placeholder = "Enter your phone number",
+            isError = state.phoneNumberError != null,
+            errorText = state.phoneNumberError,
+            enabled = !state.isLoading,
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Email,
+                imeAction = ImeAction.Next,
+            ),
+            modifier = modifier,
+        )
+        HorizontalDivider(
+            modifier = modifier
+                .padding(vertical = EchoTheme.spacing.padding.large),
+        )
+        Column(
+            modifier = modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Text(
+                buildAnnotatedString {
+                    append("Already have an account? ")
+                    addStyle(
+                        style = EchoTheme.typography.bodyLarge.toSpanStyle().copy(
+                            color = EchoTheme.colorScheme.surface.onColor.alpha50,
+                        ),
+                        start = 0,
+                        end = length,
+                    )
+                    val loginText = "Login"
+                    append(loginText)
+                    addStyle(
+                        style = EchoTheme.typography.bodyLarge.toSpanStyle().copy(
+                            color = EchoTheme.colorScheme.surface.onColor.alpha90,
+                        ),
+                        start = length - loginText.length,
+                        end = length,
+                    )
+                },
+                style = EchoTheme.typography.bodyLarge,
+                color = EchoTheme.colorScheme.inverse.surface,
+                modifier = modifier
+                    .clip(EchoTheme.shapes.snackbar)
+                    .clickable { onNavigateToLoginScreen() }
+                    .padding(
+                        vertical = EchoTheme.spacing.padding.extraSmall,
+                        horizontal = EchoTheme.spacing.padding.small,
+                    ),
+            )
+        }
     }
 }

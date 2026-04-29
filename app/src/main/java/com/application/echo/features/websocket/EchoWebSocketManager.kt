@@ -114,6 +114,10 @@ class EchoWebSocketManager @Inject constructor(
                         Timber.tag(TAG).d("Auth state -> CreateProfile — WebSocket idle")
                     }
 
+                    is AuthState.OtpVerification -> {
+                        Timber.tag(TAG).d("Auth state -> OTP Verification — WebSocket idle")
+                    }
+
                     is AuthState.Initializing -> {
                         Timber.tag(TAG).d("Auth state -> Initializing — WebSocket idle")
                     }

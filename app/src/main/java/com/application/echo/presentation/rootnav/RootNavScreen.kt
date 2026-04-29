@@ -3,7 +3,6 @@ package com.application.echo.presentation.rootnav
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
@@ -15,6 +14,7 @@ import com.application.echo.core.navigation.Navigator
 import com.application.echo.core.navigation.echoComposable
 import com.application.echo.core.navigation.transition.EchoTransitionPreset
 import com.application.echo.features.auth.model.AuthState
+import com.application.echo.presentation.chat.ChatScreen
 import com.application.echo.presentation.create_profile.CreateProfileScreen
 import com.application.echo.presentation.conversation.ConversationScreen
 import com.application.echo.presentation.login.LoginScreen
@@ -23,12 +23,7 @@ import com.application.echo.presentation.phone.PhoneAuthScreen
 import com.application.echo.presentation.register.RegisterScreen
 import com.application.echo.presentation.search_user.SearchUserScreen
 import com.application.echo.presentation.splash.SplashScreen
-import com.application.echo.ui.components.scaffold.EchoScaffold
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.debounce
-import kotlinx.coroutines.flow.delayEach
-import kotlinx.coroutines.flow.onEach
 
 @Composable
 fun RootNavScreen(
@@ -43,9 +38,10 @@ fun RootNavScreen(
             when (event) {
                 is RootNavEvent.OnAuthStateChanged -> {
                     when (event.authState) {
-                        is AuthState.Authenticated -> navigator.navigateToRoot(ConversationScreen)
-                        is AuthState.CreateProfile -> navigator.navigateToRoot(CreateProfile)
-                        is AuthState.Unauthenticated -> navigator.navigateToRoot(LoginScreen)
+                        is AuthState.Authenticated -> navigator.navigateToRoot(ConversationScreenRoute)
+                        is AuthState.CreateProfile -> navigator.navigateToRoot(CreateProfileRoute)
+                        is AuthState.Unauthenticated -> navigator.navigateToRoot(LoginScreenRoute)
+                        is AuthState.OtpVerification -> navigator.navigateTo(OtpScreenRoute)
                         is AuthState.Initializing -> Unit // wait
                     }
                 }
@@ -65,65 +61,59 @@ fun RootNavScreen(
 
     EchoNavHost(
         navigator = navigator,
-        startDestination = SplashScreen,
+        startDestination = SplashScreenRoute,
     ) {
-        echoComposable<SplashScreen> {
+        echoComposable<SplashScreenRoute> {
             SplashScreen()
         }
-        echoComposable<LoginScreen> {
+        echoComposable<LoginScreenRoute> {
             LoginScreen(
                 onNavigateToRegisterScreen = {
-                    navigator.navigateTo(RegisterScreen)
+                    navigator.navigateTo(PhoneAuthScreenRoute)
                 },
                 onNavigateToPhoneAuthScreen = {
-                    navigator.navigateTo(PhoneAuthScreen)
+                    navigator.navigateTo(PhoneAuthScreenRoute)
                 },
             )
         }
-        echoComposable<PhoneAuthScreen> {
+        echoComposable<PhoneAuthScreenRoute> {
             PhoneAuthScreen(
-                onNavigateToOtp = {
-                },
                 onNavigateToEmailAuth = {
-                    navigator.navigateTo(LoginScreen)
+                    navigator.navigateBackTo(LoginScreenRoute)
                 }
             )
         }
-        echoComposable<OtpScreen> {
+        echoComposable<OtpScreenRoute> {
             OtpScreen(
-                onNavigateToHome = {
-                    navigator.navigateToRoot(ConversationScreen)
-                },
-                phoneNumber = "91 1234567890",
                 onNavigateBack = {
                     navigator.navigateBack()
                 },
             )
         }
-        echoComposable<RegisterScreen>(
+        echoComposable<RegisterScreenRoute>(
             transition = EchoTransitionPreset.SlideHorizontal,
         ) {
             RegisterScreen(
                 onNavigateToLoginScreen = {
-                    navigator.navigateBackTo(LoginScreen)
+                    navigator.navigateBackTo(LoginScreenRoute)
                 },
             )
         }
-        echoComposable<CreateProfile>(
+        echoComposable<CreateProfileRoute>(
             transition = EchoTransitionPreset.SlideHorizontal,
         ) {
             CreateProfileScreen()
         }
-        echoComposable<ConversationScreen>(
+        echoComposable<ConversationScreenRoute>(
             transition = EchoTransitionPreset.Fade,
         ) {
             ConversationScreen(
                 navigateToAddUser = {
-                    navigator.navigateTo(SearchUserScreen)
+                    navigator.navigateTo(SearchUserScreenRoute)
                 },
                 navigateToChat = { conversationId, participantName ->
                     navigator.navigateTo(
-                        ChatScreen(
+                        ChatScreenRoute(
                             conversationId = conversationId,
                             participantName = participantName,
                         )
@@ -131,7 +121,7 @@ fun RootNavScreen(
                 },
             )
         }
-        echoComposable<SearchUserScreen>(
+        echoComposable<SearchUserScreenRoute>(
             transition = EchoTransitionPreset.SlideHorizontal,
         ) {
             SearchUserScreen(
@@ -140,7 +130,7 @@ fun RootNavScreen(
                 },
                 onNavigateToChat = { conversationId, participantName ->
                     navigator.navigateTo(
-                        ChatScreen(
+                        ChatScreenRoute(
                             conversationId = conversationId,
                             participantName = participantName,
                         )
@@ -148,10 +138,10 @@ fun RootNavScreen(
                 },
             )
         }
-        echoComposable<ChatScreen>(
+        echoComposable<ChatScreenRoute>(
             transition = EchoTransitionPreset.SlideHorizontal,
         ) {
-            com.application.echo.presentation.chat.ChatScreen(
+            ChatScreen(
                 onNavigateBack = {
                     navigator.navigateBack()
                 },

@@ -19,8 +19,9 @@ interface AuthApiRepository {
      * and session credentials (tokens, session ID).
      */
     suspend fun login(
-        email: String,
-        password: String,
+        email: String? = null,
+        password: String? = null,
+        verifyToken: String? = null,
         fcmToken: String? = null,
         apnsToken: String? = null,
     ): ApiResult<LoginResponse>

@@ -15,14 +15,16 @@ internal class AuthApiRepositoryImpl @Inject constructor(
 ) : AuthApiRepository {
 
     override suspend fun login(
-        email: String,
-        password: String,
+        email: String?,
+        password: String?,
+        verifyToken: String?,
         fcmToken: String?,
-        apnsToken: String?,
+        apnsToken: String?
     ): ApiResult<LoginResponse> = api.login(
         request = LoginRequest(
             email = email,
             password = password,
+            verifyToken = verifyToken,
             fcmToken = fcmToken,
             apnsToken = apnsToken,
         ),

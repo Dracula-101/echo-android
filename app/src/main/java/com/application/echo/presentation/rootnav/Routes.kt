@@ -3,28 +3,28 @@ package com.application.echo.presentation.rootnav
 import kotlinx.serialization.Serializable
 
 @Serializable
-data object SplashScreen
+data object SplashScreenRoute
 
 @Serializable
-data object LoginScreen
+data object LoginScreenRoute
 
 @Serializable
-data object PhoneAuthScreen
+data object PhoneAuthScreenRoute
 
 @Serializable
-data object OtpScreen
+data object OtpScreenRoute
 
 @Serializable
-data object RegisterScreen
+data object RegisterScreenRoute
 
 @Serializable
-data object CreateProfile
+data object CreateProfileRoute
 
 @Serializable
-data object ConversationScreen
+data object ConversationScreenRoute
 
 @Serializable
-data object SearchUserScreen
+data object SearchUserScreenRoute
 
 @Serializable
-data class ChatScreen(val conversationId: String, val participantName: String = "")
+data class ChatScreenRoute(val conversationId: String, val participantName: String = "")

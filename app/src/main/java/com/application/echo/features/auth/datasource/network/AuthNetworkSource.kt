@@ -9,6 +9,8 @@ interface AuthNetworkSource {
 
     suspend fun login(email: String, password: String): AuthResult<LoginResponse>
 
+    suspend fun loginWithToken(token: String): AuthResult<LoginResponse>
+
     suspend fun register(
         email: String,
         password: String,

@@ -4,10 +4,15 @@ import android.os.Parcelable
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.application.echo.core.common.platform.base.BaseViewModel
+import com.application.echo.features.auth.model.OtpVerificationState
+import com.application.echo.features.auth.model.PhoneInfo
+import com.application.echo.features.auth.repository.AuthRepository
 import com.application.echo.ui.components.snackbar.EchoSnackbarType
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.parcelize.Parcelize
 import timber.log.Timber
@@ -15,10 +20,11 @@ import javax.inject.Inject
 
 @HiltViewModel
 class OtpViewModel @Inject constructor(
+    private val authRepository: AuthRepository,
     private val savedStateHandle: SavedStateHandle,
-) : BaseViewModel<OtpState, OtpEvent, OtpAction>(
-    initialState = savedStateHandle[KEY_STATE] ?: OtpState(
-        phoneNumber = savedStateHandle[KEY_PHONE] ?: "",
+) : BaseViewModel<OtpScreenState, OtpEvent, OtpAction>(
+    initialState = savedStateHandle[KEY_STATE] ?: OtpScreenState(
+        phoneInfo = authRepository.otpStateFlow.value.phoneInfo,
     ),
 ) {
 
@@ -28,21 +34,71 @@ class OtpViewModel @Inject constructor(
     init {
         startResendCooldown()
         startExpiry()
+        observeOtpState()
+    }
+
+    private fun observeOtpState() {
+        authRepository.otpStateFlow
+            .onEach { otpState ->
+                when (val s = otpState.state) {
+                    is OtpVerificationState.Idle -> Unit
+                    is OtpVerificationState.Sending, OtpVerificationState.Verifying -> {
+                        setState { state.copy(isLoading = true, otpError = null) }
+                    }
+                    is OtpVerificationState.Sent -> {
+                        setState {
+                            state.copy(
+                                isLoading             = false,
+                                otpDigits             = List(OTP_LENGTH) { "" },
+                                otpError              = null,
+                                resendCooldownSeconds = RESEND_COOLDOWN_SECONDS,
+                                expirySeconds         = OTP_EXPIRY_SECONDS,
+                            )
+                        }
+                        savedStateHandle[KEY_STATE] = state
+                        startResendCooldown()
+                        startExpiry()
+                        sendEvent(OtpEvent.ShowSnackbar(
+                            message = "Code sent",
+                            detail  = "A new code has been sent to your phone.",
+                            code    = "OTP_SENT",
+                            type    = EchoSnackbarType.SUCCESS,
+                        ))
+                    }
+                    is OtpVerificationState.Success -> {
+                        setState { state.copy(isLoading = false, otpError = null) }
+                        sendEvent(OtpEvent.ShowSnackbar(
+                            message = "Verification successful",
+                            detail  = "Your phone number has been verified.",
+                            code    = "OTP_VERIFICATION_SUCCESS",
+                            type    = EchoSnackbarType.SUCCESS,
+                        ))
+                    }
+                    is OtpVerificationState.Failed -> {
+                        setState { state.copy(isLoading = false, otpError = null) }
+                        sendEvent(OtpEvent.ShowSnackbar(
+                            message = "Fail to verify",
+                            detail  = s.error,
+                            code    = "OTP_VERIFICATION_FAILED",
+                            type    = EchoSnackbarType.ERROR,
+                        ))
+                    }
+                }
+            }
+            .launchIn(viewModelScope)
     }
 
     override fun handleAction(action: OtpAction) {
         when (action) {
-            is OtpAction.OnDigitChanged -> onDigitChanged(action.index, action.digit)
-            is OtpAction.OnPaste -> onPaste(action.raw)
-            is OtpAction.OnBackspace -> onBackspace(action.index)
-            is OtpAction.OnFilled -> attemptVerify()
-            is OtpAction.OnResendClicked -> attemptResend()
+            is OtpAction.OnDigitChanged     -> onDigitChanged(action.index, action.digit)
+            is OtpAction.OnPaste            -> onPaste(action.raw)
+            is OtpAction.OnBackspace        -> onBackspace(action.index)
+            is OtpAction.OnFilled           -> attemptVerify()
+            is OtpAction.OnResendClicked    -> attemptResend()
             is OtpAction.OnEditPhoneClicked -> sendEvent(OtpEvent.NavigateBack)
         }
         savedStateHandle[KEY_STATE] = state
     }
-
-    // ─── Digit handling ───────────────────────────────────────────────────────
 
     private fun onDigitChanged(index: Int, digit: String) {
         if (index !in 0 until OTP_LENGTH) return
@@ -64,75 +120,23 @@ class OtpViewModel @Inject constructor(
         attemptVerify()
     }
 
-    // ─── Verify ───────────────────────────────────────────────────────────────
-
     private fun attemptVerify() {
         if (!state.isOtpComplete || state.isLoading) return
         if (state.isExpired) {
             setState { state.copy(otpError = "Code expired. Request a new one.") }
             return
         }
-
-        setState { state.copy(isLoading = true) }
-        Timber.d("Verifying OTP: %s for %s", state.otpCode, state.phoneNumber)
-
-        viewModelScope.launch {
-            delay(1_500) // 🚧 replace with real API call
-
-            if (state.otpCode == DUMMY_OTP) {
-                resendCooldownJob?.cancel()
-                expiryJob?.cancel()
-                setState { state.copy(isLoading = false) }
-                savedStateHandle[KEY_STATE] = state
-                sendEvent(OtpEvent.NavigateToHome)
-            } else {
-                setState {
-                    state.copy(
-                        isLoading = false,
-                        otpDigits = List(OTP_LENGTH) { "" },
-                        otpError = "Invalid code. Try again.",
-                    )
-                }
-                savedStateHandle[KEY_STATE] = state
-                sendEvent(
-                    OtpEvent.ShowSnackbar(
-                        message = "Invalid verification code",
-                        detail = "Hint: use $DUMMY_OTP (dummy mode)",
-                        code = "DUMMY_INVALID_OTP",
-                        type = EchoSnackbarType.ERROR,
-                    )
-                )
-            }
-        }
+        Timber.d("Verifying OTP: %s for %s", state.otpCode, state.phoneInfo?.phoneNumber)
+        viewModelScope.launch { authRepository.verifyOtp(state.otpCode) }
     }
-
-    // ─── Resend ───────────────────────────────────────────────────────────────
 
     private fun attemptResend() {
         if (!state.canResend) return
-
-        setState { state.copy(isLoading = true) }
-        Timber.d("Resending OTP to %s", state.phoneNumber)
-
+        Timber.d("Resending OTP to %s", state.phoneInfo?.phoneNumber)
         viewModelScope.launch {
             delay(1_000) // 🚧 replace with real API call
-
-            setState {
-                state.copy(
-                    isLoading = false,
-                    otpDigits = List(OTP_LENGTH) { "" },
-                    otpError = null,
-                    resendCooldownSeconds = RESEND_COOLDOWN_SECONDS,
-                    expirySeconds = OTP_EXPIRY_SECONDS,
-                )
-            }
-            savedStateHandle[KEY_STATE] = state
-            startResendCooldown()
-            startExpiry()
         }
     }
-
-    // ─── Timers ───────────────────────────────────────────────────────────────
 
     private fun startResendCooldown() {
         resendCooldownJob?.cancel()
@@ -167,20 +171,16 @@ class OtpViewModel @Inject constructor(
     }
 
     companion object {
-        private const val KEY_STATE = "otp_state"
-        const val KEY_PHONE = "phone_number"
-        const val OTP_LENGTH = 6
-        const val RESEND_COOLDOWN_SECONDS = 60
-        const val OTP_EXPIRY_SECONDS = 300
-        const val DUMMY_OTP = "123456" // 🚧 remove when real API is wired
+        private const val KEY_STATE           = "otp_state"
+        const val OTP_LENGTH                  = 6
+        const val RESEND_COOLDOWN_SECONDS     = 60
+        const val OTP_EXPIRY_SECONDS          = 300
     }
 }
 
-// ─── State ────────────────────────────────────────────────────────────────────
-
 @Parcelize
-data class OtpState(
-    val phoneNumber: String,
+data class OtpScreenState(
+    val phoneInfo: PhoneInfo?,
     val otpDigits: List<String> = List(6) { "" },
     val otpError: String? = null,
     val isLoading: Boolean = false,
@@ -199,26 +199,21 @@ data class OtpState(
     }
 }
 
-// ─── Events ───────────────────────────────────────────────────────────────────
-
 sealed interface OtpEvent {
-    data object NavigateToHome : OtpEvent
-    data object NavigateBack : OtpEvent
+    data object NavigateBack    : OtpEvent
     data class ShowSnackbar(
-        val message: String,
-        val detail: String,
-        val code: String,
-        val type: EchoSnackbarType,
+        val message : String,
+        val detail  : String,
+        val code    : String,
+        val type    : EchoSnackbarType,
     ) : OtpEvent
 }
 
-// ─── Actions ──────────────────────────────────────────────────────────────────
-
 sealed interface OtpAction {
     data class OnDigitChanged(val index: Int, val digit: String) : OtpAction
-    data class OnPaste(val raw: String) : OtpAction
-    data class OnBackspace(val index: Int) : OtpAction
-    data object OnFilled : OtpAction
-    data object OnResendClicked : OtpAction
-    data object OnEditPhoneClicked : OtpAction
+    data class OnPaste(val raw: String)                          : OtpAction
+    data class OnBackspace(val index: Int)                       : OtpAction
+    data object OnFilled                                         : OtpAction
+    data object OnResendClicked                                  : OtpAction
+    data object OnEditPhoneClicked                               : OtpAction
 }

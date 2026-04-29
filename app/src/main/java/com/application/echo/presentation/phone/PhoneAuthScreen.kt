@@ -1,5 +1,8 @@
 package com.application.echo.presentation.phone
 
+import android.annotation.SuppressLint
+import android.app.Activity
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -11,6 +14,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -28,12 +33,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -47,6 +54,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.buildAnnotatedString
@@ -65,11 +74,12 @@ import com.application.echo.ui.components.snackbar.rememberEchoSnackbarState
 import com.application.echo.ui.components.textfield.EchoTextField
 import com.application.echo.ui.design.R
 import com.application.echo.ui.design.theme.EchoTheme
+import com.application.echo.ui.design.utils.alpha50
 import com.application.echo.ui.design.utils.alpha70
 
 @Composable
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 fun PhoneAuthScreen(
-    onNavigateToOtp: (String) -> Unit,
     onNavigateToEmailAuth: () -> Unit,
     viewModel: PhoneAuthViewModel = hiltViewModel(),
 ) {
@@ -79,7 +89,6 @@ fun PhoneAuthScreen(
     LaunchedEffect(Unit) {
         viewModel.eventFlow.collect { event ->
             when (event) {
-                is PhoneAuthEvent.NavigateToOtp -> onNavigateToOtp(event.phoneNumber)
                 is PhoneAuthEvent.ShowSnackbar -> snackbarHostState.show(
                     message = event.message,
                     detail = event.detail,
@@ -90,7 +99,7 @@ fun PhoneAuthScreen(
         }
     }
 
-    EchoScaffold {
+    Scaffold { _ ->
         PhoneNumberContent(
             state = state,
             countries = viewModel.countries,
@@ -108,10 +117,11 @@ private fun PhoneNumberContent(
     onNavigateToEmailAuth: () -> Unit,
 ) {
     var isSheetVisible by remember { mutableStateOf(false) }
-
+    val activity = LocalActivity.current
+    val keyboard = LocalSoftwareKeyboardController.current
     Column(
         modifier = Modifier
-            .fillMaxWidth()
+            .fillMaxSize()
             .background(EchoTheme.colorScheme.background.color)
             .navigationBarsPadding()
             .statusBarsPadding()
@@ -128,25 +138,38 @@ private fun PhoneNumberContent(
         )
         Spacer(modifier = Modifier.weight(1f))
         EchoTextButton(
-            onClick = onNavigateToEmailAuth,
+            onClick = {
+                if (!state.isLoading && activity != null) onAction(PhoneAuthAction.OnSendOtpClicked(activity))
+                keyboard?.hide()
+            },
             modifier = Modifier.fillMaxWidth(),
+            enabled = !state.isLoading,
         ) {
+            if (state.isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(16.dp),
+                    color = EchoTheme.colorScheme.surface.onColor.alpha50,
+                    strokeWidth = 2.dp,
+                )
+                Spacer(modifier = Modifier.padding(EchoTheme.spacing.gap.extraSmall))
+            }
             Text(
                 "Continue",
                 style = EchoTheme.typography.bodyLarge,
-                color = EchoTheme.colorScheme.surface.onColor,
+                color = if (state.isLoading) EchoTheme.colorScheme.surface.onColor.alpha50
+                else EchoTheme.colorScheme.surface.onColor,
             )
             Spacer(modifier = Modifier.padding(EchoTheme.spacing.gap.extraSmall))
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
                 contentDescription = null,
-                tint = EchoTheme.colorScheme.surface.onColor,
+                tint = if (state.isLoading) EchoTheme.colorScheme.surface.onColor.alpha50 else EchoTheme.colorScheme.surface.onColor,
                 modifier = Modifier.size(EchoTheme.dimen.icon.extraSmall)
             )
         }
         Spacer(modifier = Modifier.padding(EchoTheme.spacing.gap.medium))
         EchoTextButton(
-            onClick = { },
+            onClick = onNavigateToEmailAuth,
             modifier = Modifier.fillMaxWidth(),
         ) {
             Text(
@@ -192,8 +215,11 @@ private fun PhoneNumberContent(
             selected = state.selectedCountry,
             onSelected = {
                 onAction(PhoneAuthAction.OnCountryChanged(it))
+                isSheetVisible = false
             },
-            onDismiss = { },
+            onDismiss = {
+                isSheetVisible = false
+            },
         )
     }
 }
@@ -223,6 +249,8 @@ private fun PhoneNumberForm(
     onCountryClick: () -> Unit,
     onAction: (PhoneAuthAction) -> Unit,
 ) {
+    val activity = LocalActivity.current
+    val keyboard = LocalSoftwareKeyboardController.current
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
             "What's your number?",
@@ -258,7 +286,10 @@ private fun PhoneNumberForm(
                     imeAction = ImeAction.Done,
                 ),
                 keyboardActions = KeyboardActions(
-                    onDone = { onAction(PhoneAuthAction.OnSendOtpClicked) },
+                    onDone = {
+                        if (activity != null) onAction(PhoneAuthAction.OnSendOtpClicked(activity))
+                        keyboard?.hide()
+                    },
                 ),
             )
         }
@@ -281,7 +312,7 @@ private fun CountryCodeButton(
             )
             .background(color = EchoTheme.colorScheme.surface.high)
             .clickable(onClick = onClick)
-            .padding(horizontal = EchoTheme.spacing.padding.medium, vertical = EchoTheme.spacing.padding.medium),
+            .padding(horizontal = EchoTheme.spacing.padding.small, vertical = EchoTheme.spacing.padding.medium),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,
     ) {

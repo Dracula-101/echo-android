@@ -24,6 +24,14 @@ sealed class AuthError(
         val attemptsRemaining: Int? = null,
     ) : AuthError("AUTH_INVALID_CREDENTIALS", message)
 
+    data class InvalidPhoneNumber(
+        override val message: String,
+    ) : AuthError("AUTH_INVALID_PHONE_NUMBER", message)
+
+    data class InvalidOTP(
+        override val message: String,
+    ) : AuthError("AUTH_INVALID_OTP", message)
+
     data class UserNotFound(
         override val message: String,
     ) : AuthError("AUTH_USER_NOT_FOUND", message)

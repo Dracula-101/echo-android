@@ -20,6 +20,12 @@ class AuthNetworkSourceImpl @Inject constructor(
         password = password,
     ).toAuthResult()
 
+    override suspend fun loginWithToken(
+        token: String
+    ): AuthResult<LoginResponse> = api.login(
+        verifyToken = token,
+    ).toAuthResult()
+
     override suspend fun register(
         email: String,
         password: String,

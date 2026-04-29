@@ -1,5 +1,6 @@
 package com.application.echo.features.auth.repository
 
+import android.app.Activity
 import com.application.echo.api.auth.AuthError
 import com.application.echo.features.auth.model.AuthResult
 import com.application.echo.api.auth.LoginResponse
@@ -10,11 +11,25 @@ import com.application.echo.features.auth.model.onSuccess
 import com.application.echo.api.manager.AuthTokenManager
 import com.application.echo.core.common.annotations.AppDispatcher
 import com.application.echo.core.common.model.AppDispatchers
+import com.application.echo.core.network.util.toNetworkException
 import com.application.echo.features.auth.datasource.disk.AuthDiskSource
 import com.application.echo.features.auth.datasource.network.AuthNetworkSource
 import com.application.echo.features.auth.model.AuthState
+import com.application.echo.features.auth.model.OtpState
+import com.application.echo.features.auth.model.OtpVerificationState
+import com.application.echo.features.auth.model.PhoneInfo
 import com.application.echo.features.auth.model.UserState
 import com.application.echo.features.profile.datasource.disk.ProfileDiskSource
+import com.google.firebase.FirebaseException
+import com.google.firebase.FirebaseNetworkException
+import com.google.firebase.FirebaseTooManyRequestsException
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
+import com.google.firebase.auth.FirebaseAuthInvalidUserException
+import com.google.firebase.auth.FirebaseAuthMissingActivityForRecaptchaException
+import com.google.firebase.auth.PhoneAuthCredential
+import com.google.firebase.auth.PhoneAuthOptions
+import com.google.firebase.auth.PhoneAuthProvider
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
@@ -25,21 +40,21 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import timber.log.Timber
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
-private const val DEFAULT_TOKEN_LIFETIME_SECONDS = 86_400L // 24 hours
+private const val OTP_TIMEOUT_SECONDS = 120L
 
 class AuthRepositoryImpl @Inject constructor(
     private val networkSource: AuthNetworkSource,
     private val authDiskSource: AuthDiskSource,
     private val profileDiskSource: ProfileDiskSource,
     private val tokenManager: AuthTokenManager,
+    private val firebaseAuth: FirebaseAuth,
     @AppDispatcher(AppDispatchers.IO) ioDispatcher: CoroutineDispatcher,
 ) : AuthRepository {
 
     private val scope = CoroutineScope(SupervisorJob() + ioDispatcher)
-
-    /** Guards all session-mutating operations (login, register, refresh, logout). */
     private val sessionMutex = Mutex()
 
     private val _authStateFlow = MutableStateFlow<AuthState>(AuthState.Initializing)
@@ -48,35 +63,50 @@ class AuthRepositoryImpl @Inject constructor(
     override val userStateFlow: MutableStateFlow<UserState> =
         MutableStateFlow(authDiskSource.userState)
 
+    private val _otpState = MutableStateFlow(
+        OtpState(phoneInfo = authDiskSource.cachedPhoneInfo, state = OtpVerificationState.Idle)
+    )
+    override val otpStateFlow: StateFlow<OtpState> = _otpState.asStateFlow()
+
+    private var resendToken: PhoneAuthProvider.ForceResendingToken? = null
+
     init {
         scope.launch { restoreSession() }
     }
 
-    // ── Public API ───────────────────────────────────────────────────
+    // ── Auth ─────────────────────────────────────────────────────────
 
     override suspend fun login(
         email: String,
         password: String,
     ): AuthResult<LoginResponse> = sessionMutex.withLock {
-        val result = networkSource.login(email, password)
-        result.onSuccess { response ->
-            persistSession(response.session, response.user.id, response.user.email)
-            emitAuthenticated()
+        networkSource.login(email, password).also { result ->
+            result.onSuccess { response ->
+                persistSession(response.session, response.user.id, response.user.email)
+                emitAuthenticated()
+            }
         }
-        result
+    }
+
+    override suspend fun loginWithToken(token: String): AuthResult<LoginResponse> = sessionMutex.withLock {
+        networkSource.loginWithToken(token).also { result ->
+            result.onSuccess { response ->
+                persistSession(response.session, response.user.id, response.user.email)
+                emitAuthenticated()
+            }
+        }
     }
 
     override suspend fun autoLogin() {
         val email = authDiskSource.registerEmail
         val password = authDiskSource.registerPassword
         if (email != null && password != null) {
-            val loginResult = login(email, password)
-            loginResult.onSuccess {
+            login(email, password).onSuccess {
                 authDiskSource.registerEmail = null
                 authDiskSource.registerPassword = null
             }
         } else {
-            Timber.w("Auto-login failed: no stored credentials")
+            Timber.w("Auto-login skipped: no stored credentials")
         }
     }
 
@@ -87,15 +117,10 @@ class AuthRepositoryImpl @Inject constructor(
     ): AuthResult<RegisterResponse> = sessionMutex.withLock {
         authDiskSource.registerEmail = email
         authDiskSource.registerPassword = password
-        val registerResult = networkSource.register(email, password, acceptTerms)
-        return registerResult.fold(
+        networkSource.register(email, password, acceptTerms).fold(
             onSuccess = { response ->
-                storeTokens(
-                    accessToken = response.accessToken,
-                    refreshToken = response.refreshToken,
-                    expiresAt = response.expiresAt,
-                )
-                if(!response.requiresEmailVerification) {
+                storeTokens(response.accessToken, response.refreshToken, response.expiresAt)
+                if (!response.requiresEmailVerification) {
                     _authStateFlow.value = AuthState.CreateProfile(response.userId)
                 }
                 AuthResult.Success(response)
@@ -114,36 +139,30 @@ class AuthRepositoryImpl @Inject constructor(
 
     // ── Session Restoration ──────────────────────────────────────────
 
-    /**
-     * Called once at init. Checks for a persisted session and tries to
-     * ensure we have a valid access token before declaring auth state.
-     */
     private suspend fun restoreSession() = sessionMutex.withLock {
-        val isCreatingProfile = profileDiskSource.creatingProfileState
-        if (isCreatingProfile) {
-            Timber.d("Creating profile — unauthenticated")
-            val profileUserId = profileDiskSource.creatingProfileUserId
-            if (profileUserId != null) {
-                _authStateFlow.value = AuthState.CreateProfile(profileUserId)
+        if (authDiskSource.cachedPhoneInfo != null) {
+            _authStateFlow.value = AuthState.OtpVerification(authDiskSource.cachedPhoneInfo!!)
+            return
+        }
+
+        if (profileDiskSource.creatingProfileState) {
+            val userId = profileDiskSource.creatingProfileUserId
+            if (userId != null) {
+                _authStateFlow.value = AuthState.CreateProfile(userId)
                 return
             }
         }
 
-        val storedUser = authDiskSource.userState
-        if (storedUser == UserState.Empty) {
-            Timber.d("No stored session — unauthenticated")
+        if (authDiskSource.userState == UserState.Empty) {
             _authStateFlow.value = AuthState.Unauthenticated()
             return
         }
 
-        // Token still valid — go straight to authenticated.
         if (tokenManager.isTokenValid) {
-            Timber.d("Stored session with valid token — authenticated")
             emitAuthenticated()
             return
         }
 
-        // Token expired — try refreshing.
         val tokenData = tokenManager.getLatestAuthTokenData()
         if (tokenData == null) {
             Timber.w("Stored user but no token data — clearing stale session")
@@ -152,48 +171,210 @@ class AuthRepositoryImpl @Inject constructor(
             return
         }
 
-        Timber.d("Access token expired — attempting refresh")
         networkSource.refreshToken(tokenData.refreshToken).fold(
             onSuccess = { response ->
                 storeTokens(response.accessToken, response.refreshToken, response.expiresAt)
-                Timber.d("Token refreshed — authenticated")
                 emitAuthenticated()
             },
-            onError = { error ->
-                handleRefreshError(error)
-            },
+            onError = { error -> handleRefreshError(error) },
         )
     }
 
     // ── Refresh Error Handling ────────────────────────────────────────
 
-    /**
-     * Only logs out on terminal auth errors. Transient failures (network,
-     * timeout, server errors) leave the session intact so the next API
-     * call or app foreground can retry.
-     */
     private fun handleRefreshError(error: AuthError) {
-        when (error) {
-            // Terminal — the refresh token itself is rejected. Session is dead.
-            is AuthError.InvalidRefreshToken,
-            is AuthError.RefreshTokenExpired,
-            is AuthError.SessionExpired,
-            is AuthError.SessionNotFound,
-            is AuthError.AccountLocked,
-            is AuthError.AccountDisabled,
-            is AuthError.NetworkError,
-            -> {
-                Timber.e("Token refresh permanently failed (%s) — logging out", error.code)
-                clearSession()
-                _authStateFlow.value = AuthState.Unauthenticated(
-                    AuthState.Unauthenticated.Reason.SessionExpired,
-                )
-            }
-            else -> {
-                Timber.w("Token refresh failed transiently (%s) — keeping session", error.code)
-                emitAuthenticated()
-            }
+        val isTerminal = error is AuthError.InvalidRefreshToken
+                || error is AuthError.RefreshTokenExpired
+                || error is AuthError.SessionExpired
+                || error is AuthError.SessionNotFound
+                || error is AuthError.AccountLocked
+                || error is AuthError.AccountDisabled
+
+        if (isTerminal) {
+            Timber.e("Token refresh permanently failed (%s) — logging out", error.code)
+            clearSession()
+            _authStateFlow.value = AuthState.Unauthenticated(AuthState.Unauthenticated.Reason.SessionExpired)
+        } else {
+            Timber.w("Token refresh failed transiently (%s) — keeping session", error.code)
+            emitAuthenticated()
         }
+    }
+
+    // ── OTP ──────────────────────────────────────────────────────────
+
+    override suspend fun sendOtp(phoneInfo: PhoneInfo, context: Activity): AuthResult<Unit> {
+        authDiskSource.cachedPhoneInfo = phoneInfo
+        return startPhoneVerification(phoneInfo, context, resendToken = null)
+    }
+
+    override suspend fun resendOtp(context: Activity): AuthResult<Unit> {
+        val token = resendToken
+            ?: return AuthResult.Error(
+                AuthError.Unknown("NO_RESEND_TOKEN", "No active OTP session to resend")
+            )
+        val phoneInfo = authDiskSource.cachedPhoneInfo ?: return AuthResult.Error(
+            AuthError.Unknown("NO_PHONE_INFO", "No cached phone info for OTP resend")
+        )
+        return startPhoneVerification(phoneInfo, context, resendToken = token)
+    }
+
+    private fun startPhoneVerification(
+        phoneInfo: PhoneInfo,
+        context: Activity,
+        resendToken: PhoneAuthProvider.ForceResendingToken?,
+    ): AuthResult<Unit> {
+        _otpState.value = otpState(phoneInfo, OtpVerificationState.Sending)
+        val builder = PhoneAuthOptions.newBuilder(firebaseAuth)
+            .setPhoneNumber(phoneInfo.phoneNumber)
+            .setActivity(context)
+            .setTimeout(OTP_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .setCallbacks(buildVerificationCallbacks(phoneInfo))
+        resendToken?.let { builder.setForceResendingToken(it) }
+        return try {
+            PhoneAuthProvider.verifyPhoneNumber(builder.build())
+            AuthResult.Success(Unit)
+        } catch (e: FirebaseAuthMissingActivityForRecaptchaException) {
+            Timber.e(e, "reCAPTCHA activity missing")
+            AuthResult.Error(AuthError.Unknown("RECAPTCHA_ERROR", "Verification requires a valid Activity"))
+        } catch (e: FirebaseException) {
+            val error = mapFirebaseException(e)
+            Timber.e(e, "Phone verification failed: %s", error.code)
+            AuthResult.Error(error)
+        }
+    }
+
+    private fun buildVerificationCallbacks(
+        phoneInfo: PhoneInfo,
+    ) = object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
+
+        override fun onVerificationCompleted(credential: PhoneAuthCredential) {
+            Timber.d("Auto-verification triggered")
+            signInWithCredential(credential)
+        }
+
+        override fun onVerificationFailed(exception: FirebaseException) {
+            val error = mapFirebaseException(exception)
+            Timber.e(exception, "OTP verification failed: %s", error.code)
+            _otpState.value = otpState(phoneInfo, OtpVerificationState.Failed(error.message))
+        }
+
+        override fun onCodeSent(
+            verificationId: String,
+            token: PhoneAuthProvider.ForceResendingToken,
+        ) {
+            Timber.d("OTP code sent to %s", phoneInfo.phoneNumber)
+            resendToken = token
+            authDiskSource.cachedVerificationId = verificationId
+            _otpState.value = otpState(phoneInfo, OtpVerificationState.Sent)
+            _authStateFlow.value = AuthState.OtpVerification(phoneInfo)
+        }
+    }
+
+    private fun signInWithCredential(credential: PhoneAuthCredential) {
+        val phoneInfo = authDiskSource.cachedPhoneInfo ?: run {
+            Timber.w("signInWithCredential called with no cached phone info")
+            return
+        }
+        _otpState.value = otpState(phoneInfo, OtpVerificationState.Verifying)
+        firebaseAuth.signInWithCredential(credential)
+            .addOnSuccessListener { result ->
+                val user = result.user ?: run {
+                    Timber.e("Firebase sign-in succeeded but user is null")
+                    _otpState.value = otpState(phoneInfo, OtpVerificationState.Failed("Sign-in returned no user"))
+                    return@addOnSuccessListener
+                }
+                user.getIdToken(true)
+                    .addOnSuccessListener { idTokenResult ->
+                        val token = idTokenResult.token ?: run {
+                            Timber.e("ID token result returned null token")
+                            _otpState.value = otpState(
+                                phoneInfo,
+                                OtpVerificationState.Failed("Failed to retrieve ID token")
+                            )
+                            firebaseAuth.signOut()
+                            return@addOnSuccessListener
+                        }
+                        scope.launch {
+                            networkSource.loginWithToken(token).fold(
+                                onSuccess = { response ->
+                                    persistSession(response.session, response.user.id, response.user.email)
+                                    _otpState.value = otpState(null, OtpVerificationState.Success)
+                                    emitAuthenticated()
+                                },
+                                onError = { error ->
+                                    Timber.e("Backend token exchange failed: %s", error.code)
+                                    _otpState.value = otpState(
+                                        phoneInfo,
+                                        OtpVerificationState.Failed(mapBackendOtpError(error))
+                                    )
+                                    firebaseAuth.signOut()
+                                },
+                            )
+                        }
+                    }
+                    .addOnFailureListener { e ->
+                        Timber.e(e, "getIdToken failed")
+                        _otpState.value = otpState(
+                            phoneInfo,
+                            OtpVerificationState.Failed("Could not retrieve verification token")
+                        )
+                        firebaseAuth.signOut()
+                    }
+            }
+            .addOnFailureListener { e ->
+                val error = when (e) {
+                    is FirebaseAuthInvalidCredentialsException -> OtpVerificationState.Failed("Incorrect verification code")
+                    is FirebaseAuthInvalidUserException -> OtpVerificationState.Failed("This account has been disabled")
+                    is FirebaseNetworkException -> OtpVerificationState.Failed("No internet connection")
+                    else -> OtpVerificationState.Failed(e.message ?: "Verification failed")
+                }
+                Timber.e(e, "signInWithCredential failed")
+                _otpState.value = otpState(phoneInfo, error)
+            }
+    }
+
+    override suspend fun verifyOtp(otp: String): AuthResult<Unit> {
+        val verificationId = authDiskSource.cachedVerificationId
+            ?: return AuthResult.Error(
+                AuthError.InvalidPhoneNumber("No OTP session in progress")
+            )
+        if (otp.isBlank() || otp.length != 6 || !otp.all { it.isDigit() }) {
+            return AuthResult.Error(
+                AuthError.InvalidOTP("OTP must be a 6-digit number")
+            )
+        }
+        return try {
+            signInWithCredential(PhoneAuthProvider.getCredential(verificationId, otp))
+            AuthResult.Success(Unit)
+        } catch (e: FirebaseAuthInvalidCredentialsException) {
+            Timber.e(e, "verifyOtp: invalid code")
+            AuthResult.Error(AuthError.InvalidOTP("Incorrect verification code"))
+        } catch (e: FirebaseNetworkException) {
+            Timber.e(e, "verifyOtp: network error")
+            AuthResult.Error(AuthError.NetworkError("No internet connection", cause = e.toNetworkException()))
+        } catch (e: FirebaseException) {
+            val error = mapFirebaseException(e)
+            Timber.e(e, "verifyOtp failed: %s", error.code)
+            AuthResult.Error(error)
+        }
+    }
+
+    // ── Firebase Error Mapping ────────────────────────────────────────
+
+    private fun mapFirebaseException(e: FirebaseException): AuthError = when (e) {
+        is FirebaseAuthInvalidCredentialsException -> AuthError.InvalidOTP("Incorrect verification code")
+        is FirebaseAuthInvalidUserException -> AuthError.AccountDisabled("This account has been disabled")
+        is FirebaseTooManyRequestsException -> AuthError.Unknown("QUOTA_EXCEEDED", "SMS quota exceeded — try again later")
+        is FirebaseNetworkException -> AuthError.NetworkError("No internet connection", cause = e.toNetworkException())
+        else -> AuthError.Unknown("FIREBASE_ERROR", e.message ?: "An unexpected error occurred")
+    }
+
+    private fun mapBackendOtpError(error: AuthError): String = when (error) {
+        is AuthError.AccountLocked -> "Your account has been locked"
+        is AuthError.AccountDisabled -> "Your account has been disabled"
+        is AuthError.NetworkError -> "No internet connection"
+        is AuthError.SessionExpired -> "Session expired — please try again"
+        else -> "Verification failed. Please try again"
     }
 
     // ── Session Persistence ──────────────────────────────────────────
@@ -214,11 +395,13 @@ class AuthRepositoryImpl @Inject constructor(
     }
 
     private fun clearSession() {
-        Timber.d("Clearing session")
         tokenManager.clearTokenData()
         authDiskSource.sessionId = null
         authDiskSource.sessionToken = null
         authDiskSource.userState = UserState.Empty
+        authDiskSource.cachedPhoneInfo = null
+        authDiskSource.cachedVerificationId = null
+        resendToken = null
         userStateFlow.value = UserState.Empty
     }
 
@@ -227,4 +410,6 @@ class AuthRepositoryImpl @Inject constructor(
         userStateFlow.value = user
         _authStateFlow.value = AuthState.Authenticated(user)
     }
+
+    private fun otpState(phoneInfo: PhoneInfo?, state: OtpVerificationState) = OtpState(phoneInfo = phoneInfo, state = state)
 }

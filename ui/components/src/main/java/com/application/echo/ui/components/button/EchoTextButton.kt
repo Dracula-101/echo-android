@@ -45,7 +45,7 @@ fun EchoTextButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    variant: EchoVariant = EchoVariant.Primary,
+    variant: EchoVariant = EchoVariant.Neutral,
     content: @Composable () -> Unit,
 ) {
     TextButton(

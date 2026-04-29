@@ -19,12 +19,14 @@ import org.gradle.kotlin.dsl.dependencies
 class AndroidApplicationFirebaseConventionPlugin : Plugin<Project> {
 
     companion object {
+
+        private const val FIREBASE_BOM = "firebase.bom"
         private const val GOOGLE_SERVICES_PLUGIN = "com.google.gms.google-services"
 
         private const val CRASHLYTICS_PLUGIN = "com.google.firebase.crashlytics"
         private const val PERFORMANCE_PLUGIN = "com.google.firebase.firebase-perf"
-
-        private val FIREBASE_TASK_PATTERNS = listOf("Crashlytics", "FirebasePerf")
+        private const val FIREBASE_AUTH_DEP = "firebase-auth"
+        private val FIREBASE_TASK_PATTERNS = listOf("firebase", "crashlytics", "performance")
     }
 
     override fun apply(target: Project) {
@@ -131,7 +133,8 @@ class AndroidApplicationFirebaseConventionPlugin : Plugin<Project> {
         // BOM must be available for all variants so versionless Firebase
         // libs (e.g. firebase-messaging) can resolve in every build.
         dependencies {
-            add("implementation", platform(libs.findLibrary("firebase.bom").get()))
+            add("implementation", platform(libs.findLibrary(FIREBASE_BOM).get()))
+            add("implementation", libs.findLibrary(FIREBASE_AUTH_DEP).get())
         }
 
         afterEvaluate {
@@ -153,7 +156,7 @@ class AndroidApplicationFirebaseConventionPlugin : Plugin<Project> {
 
     private fun Project.disableFirebaseTasks() {
         tasks.configureEach {
-            if (FIREBASE_TASK_PATTERNS.any { pattern -> name.contains(pattern) }) {
+            if (FIREBASE_TASK_PATTERNS.any { pattern -> name.lowercase().contains(pattern) }) {
                 enabled = false
             }
         }

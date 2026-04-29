@@ -7,7 +7,6 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -34,27 +33,23 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.application.echo.ui.components.button.EchoLoadingButton
 import com.application.echo.ui.components.scaffold.EchoScaffold
+import com.application.echo.ui.components.snackbar.EchoFlatSnackbarHost
 import com.application.echo.ui.components.snackbar.rememberEchoSnackbarState
 import com.application.echo.ui.design.R
 import com.application.echo.ui.design.theme.EchoTheme
 
 @Composable
 fun OtpScreen(
-    onNavigateToHome: () -> Unit,
     onNavigateBack: () -> Unit,
-    phoneNumber: String,
     viewModel: OtpViewModel = hiltViewModel(),
 ) {
     val state by viewModel.stateFlow.collectAsStateWithLifecycle()
     val snackbarHostState = rememberEchoSnackbarState()
 
     LaunchedEffect(Unit) {
-        viewModel.setState { state.copy(phoneNumber = phoneNumber) }
         viewModel.eventFlow.collect { event ->
             when (event) {
-                is OtpEvent.NavigateToHome -> onNavigateToHome()
                 is OtpEvent.NavigateBack -> onNavigateBack()
                 is OtpEvent.ShowSnackbar -> snackbarHostState.show(
                     message = event.message,
@@ -66,14 +61,20 @@ fun OtpScreen(
         }
     }
 
-    EchoScaffold {
+    EchoScaffold(
+        snackbarHost = {
+            EchoFlatSnackbarHost(
+                state = snackbarHostState,
+            )
+        }
+    ) {
         OtpContent(state = state, onAction = viewModel::trySendAction)
     }
 }
 
 @Composable
 private fun OtpContent(
-    state: OtpState,
+    state: OtpScreenState,
     onAction: (OtpAction) -> Unit,
 ) {
     Column(
@@ -113,7 +114,7 @@ private fun AppHeader() {
 
 @Composable
 private fun OtpForm(
-    state: OtpState,
+    state: OtpScreenState,
     onAction: (OtpAction) -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
@@ -125,7 +126,7 @@ private fun OtpForm(
         Spacer(modifier = Modifier.height(4.dp))
         Text(
             buildAnnotatedString {
-                append("Sent to +${state.phoneNumber}")
+                append("Sent to ${state.phoneInfo?.toDisplayString()}")
                 append("  ")
                 append("Change")
                 addStyle(
@@ -149,6 +150,7 @@ private fun OtpForm(
             onPaste = { onAction(OtpAction.OnPaste(it)) },
             onBackspace = { onAction(OtpAction.OnBackspace(it)) },
             onFilled = { onAction(OtpAction.OnFilled) },
+            isLoading = state.isLoading,
         )
 
         // Error
