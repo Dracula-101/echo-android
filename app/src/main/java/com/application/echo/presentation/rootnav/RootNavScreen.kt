@@ -1,12 +1,8 @@
 package com.application.echo.presentation.rootnav
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
+import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.application.echo.core.navigation.EchoNavHost
@@ -30,8 +26,7 @@ fun RootNavScreen(
     navigator: Navigator,
     viewModel: RootNavViewModel = hiltViewModel()
 ) {
-    val state = viewModel.stateFlow.collectAsStateWithLifecycle()
-
+    val state by viewModel.stateFlow.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) {
         viewModel.eventFlow
             .collectLatest { event ->
@@ -42,30 +37,17 @@ fun RootNavScreen(
                         is AuthState.CreateProfile -> navigator.navigateToRoot(CreateProfileRoute)
                         is AuthState.Unauthenticated -> navigator.navigateToRoot(LoginScreenRoute)
                         is AuthState.OtpVerification -> navigator.navigateTo(OtpScreenRoute)
-                        is AuthState.Initializing -> Unit // wait
+                        is AuthState.Initializing -> Unit
                     }
                 }
             }
         }
     }
 
-    if (state.value.isLoading) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center,
-        ) {
-            CircularProgressIndicator()
-        }
-        return
-    }
-
     EchoNavHost(
         navigator = navigator,
-        startDestination = SplashScreenRoute,
+        startDestination = state.startRoute!!,
     ) {
-        echoComposable<SplashScreenRoute> {
-            SplashScreen()
-        }
         echoComposable<LoginScreenRoute> {
             LoginScreen(
                 onNavigateToRegisterScreen = {

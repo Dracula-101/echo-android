@@ -1,23 +1,20 @@
 package com.application.echo
 
-import android.Manifest
-import android.content.pm.PackageManager
-import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.application.echo.core.analytics.Analytics
 import com.application.echo.core.analytics.AnalyticsEvent
 import com.application.echo.core.analytics.LocalAnalytics
 import com.application.echo.core.navigation.LocalNavigator
 import com.application.echo.core.navigation.Navigator
-import com.application.echo.presentation.rootnav.RootNavScreen
+import com.application.echo.features.auth.model.AuthState
+import com.application.echo.features.auth.repository.AuthRepository
 import com.application.echo.ui.design.theme.EchoTheme
+import com.application.echo.presentation.rootnav.RootNavScreen
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -30,16 +27,15 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var navigator: Navigator
 
-    private val notificationPermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestPermission(),
-    ) { /* no-op — best effort */ }
+    @Inject
+    lateinit var authRepository: AuthRepository
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        installSplashScreen()
+        installSplashScreen().setKeepOnScreenCondition {
+            authRepository.authStateFlow.value is AuthState.Initializing
+        }
         super.onCreate(savedInstanceState)
         analytics.trackEvent(AnalyticsEvent.AppEvent.opened("launcher"))
-
-        requestNotificationPermission()
         enableEdgeToEdge()
         setContent {
             CompositionLocalProvider(
@@ -47,17 +43,11 @@ class MainActivity : ComponentActivity() {
                 LocalNavigator provides navigator,
             ) {
                 EchoTheme(isDarkTheme = true) {
-                    RootNavScreen(navigator)
+                    RootNavScreen(
+                        navigator = navigator,
+                    )
                 }
             }
         }
-    }
-
-    private fun requestNotificationPermission() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
-            == PackageManager.PERMISSION_GRANTED
-        ) return
-        notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
     }
 }

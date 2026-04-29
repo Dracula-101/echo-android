@@ -1,14 +1,10 @@
 package com.application.echo.presentation.rootnav
 
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.application.echo.core.common.platform.base.BaseViewModel
 import com.application.echo.features.auth.model.AuthState
 import com.application.echo.features.auth.repository.AuthRepository
-import com.application.echo.features.profile.model.CreatingProfileState
-import com.application.echo.features.profile.repository.ProfileRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.launchIn
@@ -17,48 +13,49 @@ import javax.inject.Inject
 
 @HiltViewModel
 class RootNavViewModel @Inject constructor(
-    savedStateHandle: SavedStateHandle,
     authRepository: AuthRepository,
-    profileRepository: ProfileRepository
 ) : BaseViewModel<RootNavState, RootNavEvent, RootNavAction>(
-    initialState = savedStateHandle[KEY_STATE] ?: RootNavState()
+    initialState = RootNavState(),
 ) {
 
     init {
-        authRepository.authStateFlow
-            .onEach { authState ->
-                sendEvent(RootNavEvent.OnAuthStateChanged(authState))
-                sendAction(RootNavAction.UpdateAuthState(authState))
-            }.launchIn(viewModelScope)
-    }
+        val resolved = authRepository.authStateFlow
+            .filter { it !is AuthState.Initializing }
 
-    override fun handleAction(action: RootNavAction) {
-        when (action) {
-            is RootNavAction.UpdateAuthState -> {
-                setState {
-                    state.copy(
-                        isLoading = action.authState is AuthState.Initializing,
-                        userLoggedIn = action.authState is AuthState.Authenticated,
-                    )
+        // First resolved state seeds the start destination — no navigation event,
+        // so we don't pay a NavHost transition on cold start.
+        resolved
+            .onEach { authState ->
+                if (state.startRoute == null) {
+                    setState { state.copy(startRoute = authState.toStartRoute()) }
                 }
             }
-        }
+            .launchIn(viewModelScope)
+
+        // Subsequent changes (logout, session expiry, etc.) drive runtime navigation.
+        resolved
+            .drop(1)
+            .onEach { sendEvent(RootNavEvent.OnAuthStateChanged(it)) }
+            .launchIn(viewModelScope)
     }
 
-    companion object {
-        private const val KEY_STATE = "root_nav_state"
-    }
+    override fun handleAction(action: RootNavAction) = Unit
 }
 
 sealed class RootNavEvent {
     data class OnAuthStateChanged(val authState: AuthState) : RootNavEvent()
 }
 
-sealed class RootNavAction {
-    data class UpdateAuthState(val authState: AuthState) : RootNavAction()
-}
+sealed class RootNavAction
 
 data class RootNavState(
-    val isLoading: Boolean = true,
-    val userLoggedIn: Boolean = false,
+    val startRoute: Any? = null,
 )
+
+private fun AuthState.toStartRoute(): Any = when (this) {
+    is AuthState.Authenticated -> ConversationScreenRoute
+    is AuthState.CreateProfile -> CreateProfileRoute
+    is AuthState.OtpVerification -> OtpScreenRoute
+    is AuthState.Unauthenticated -> LoginScreenRoute
+    is AuthState.Initializing -> error("Initializing is filtered out before reaching toStartRoute")
+}

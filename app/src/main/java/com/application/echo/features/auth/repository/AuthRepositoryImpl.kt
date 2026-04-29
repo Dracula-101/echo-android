@@ -139,45 +139,65 @@ class AuthRepositoryImpl @Inject constructor(
 
     // ── Session Restoration ──────────────────────────────────────────
 
+    /**
+     * Resolution order:
+     *
+     *  1. Profile creation in progress (tokens exist, userState not yet written)
+     *  2. Stored user + valid token          → Authenticated  (clears any stale OTP state)
+     *  3. Stored user + expired token        → attempt refresh
+     *  4. Stored user + no token data        → stale session, clear + Unauthenticated
+     *  5. OTP was in progress, no session    → OtpVerification
+     *  6. Nothing                            → Unauthenticated
+     *
+     * Token validity is checked BEFORE OTP state so a crash between persistSession
+     * and clearPhoneRegisterSession never strands the user on the OTP screen.
+     */
     private suspend fun restoreSession() = sessionMutex.withLock {
-        if (authDiskSource.cachedPhoneInfo != null) {
-            _authStateFlow.value = AuthState.OtpVerification(authDiskSource.cachedPhoneInfo!!)
-            return
-        }
-
         if (profileDiskSource.creatingProfileState) {
             val userId = profileDiskSource.creatingProfileUserId
             if (userId != null) {
+                Timber.d("Resuming profile creation for user %s", userId)
                 _authStateFlow.value = AuthState.CreateProfile(userId)
                 return
             }
         }
 
-        if (authDiskSource.userState == UserState.Empty) {
-            _authStateFlow.value = AuthState.Unauthenticated()
-            return
-        }
-
-        if (tokenManager.isTokenValid) {
-            emitAuthenticated()
-            return
-        }
-
-        val tokenData = tokenManager.getLatestAuthTokenData()
-        if (tokenData == null) {
-            Timber.w("Stored user but no token data — clearing stale session")
-            clearSession()
-            _authStateFlow.value = AuthState.Unauthenticated(AuthState.Unauthenticated.Reason.SessionExpired)
-            return
-        }
-
-        networkSource.refreshToken(tokenData.refreshToken).fold(
-            onSuccess = { response ->
-                storeTokens(response.accessToken, response.refreshToken, response.expiresAt)
+        if (authDiskSource.userState != UserState.Empty) {
+            if (tokenManager.isTokenValid) {
+                Timber.d("Valid token found — authenticated")
+                clearPhoneRegisterSession()
                 emitAuthenticated()
-            },
-            onError = { error -> handleRefreshError(error) },
-        )
+                return
+            }
+
+            val tokenData = tokenManager.getLatestAuthTokenData()
+            if (tokenData == null) {
+                Timber.w("Stored user but no token data — clearing stale session")
+                clearSession()
+                _authStateFlow.value = AuthState.Unauthenticated(AuthState.Unauthenticated.Reason.SessionExpired)
+                return
+            }
+
+            Timber.d("Token expired — attempting refresh")
+            networkSource.refreshToken(tokenData.refreshToken).fold(
+                onSuccess = { response ->
+                    storeTokens(response.accessToken, response.refreshToken, response.expiresAt)
+                    clearPhoneRegisterSession()
+                    emitAuthenticated()
+                },
+                onError = { error -> handleRefreshError(error) },
+            )
+            return
+        }
+
+        if (authDiskSource.cachedPhoneInfo != null) {
+            Timber.d("OTP flow was in progress — resuming")
+            _authStateFlow.value = AuthState.OtpVerification(authDiskSource.cachedPhoneInfo!!)
+            return
+        }
+
+        Timber.d("No session found — unauthenticated")
+        _authStateFlow.value = AuthState.Unauthenticated()
     }
 
     // ── Refresh Error Handling ────────────────────────────────────────
@@ -212,9 +232,10 @@ class AuthRepositoryImpl @Inject constructor(
             ?: return AuthResult.Error(
                 AuthError.Unknown("NO_RESEND_TOKEN", "No active OTP session to resend")
             )
-        val phoneInfo = authDiskSource.cachedPhoneInfo ?: return AuthResult.Error(
-            AuthError.Unknown("NO_PHONE_INFO", "No cached phone info for OTP resend")
-        )
+        val phoneInfo = authDiskSource.cachedPhoneInfo
+            ?: return AuthResult.Error(
+                AuthError.Unknown("NO_PHONE_INFO", "No cached phone info for OTP resend")
+            )
         return startPhoneVerification(phoneInfo, context, resendToken = token)
     }
 
@@ -248,13 +269,13 @@ class AuthRepositoryImpl @Inject constructor(
     ) = object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
 
         override fun onVerificationCompleted(credential: PhoneAuthCredential) {
-            Timber.d("Auto-verification triggered")
+            Timber.d("Auto-verification triggered for %s", phoneInfo.phoneNumber)
             signInWithCredential(credential)
         }
 
         override fun onVerificationFailed(exception: FirebaseException) {
             val error = mapFirebaseException(exception)
-            Timber.e(exception, "OTP verification failed: %s", error.code)
+            Timber.e(exception, "OTP send failed: %s", error.code)
             _otpState.value = otpState(phoneInfo, OtpVerificationState.Failed(error.message))
         }
 
@@ -287,10 +308,7 @@ class AuthRepositoryImpl @Inject constructor(
                     .addOnSuccessListener { idTokenResult ->
                         val token = idTokenResult.token ?: run {
                             Timber.e("ID token result returned null token")
-                            _otpState.value = otpState(
-                                phoneInfo,
-                                OtpVerificationState.Failed("Failed to retrieve ID token")
-                            )
+                            _otpState.value = otpState(phoneInfo, OtpVerificationState.Failed("Failed to retrieve ID token"))
                             firebaseAuth.signOut()
                             return@addOnSuccessListener
                         }
@@ -298,15 +316,13 @@ class AuthRepositoryImpl @Inject constructor(
                             networkSource.loginWithToken(token).fold(
                                 onSuccess = { response ->
                                     persistSession(response.session, response.user.id, response.user.email)
+                                    clearPhoneRegisterSession()
                                     _otpState.value = otpState(null, OtpVerificationState.Success)
                                     emitAuthenticated()
                                 },
                                 onError = { error ->
                                     Timber.e("Backend token exchange failed: %s", error.code)
-                                    _otpState.value = otpState(
-                                        phoneInfo,
-                                        OtpVerificationState.Failed(mapBackendOtpError(error))
-                                    )
+                                    _otpState.value = otpState(phoneInfo, OtpVerificationState.Failed(mapBackendOtpError(error)))
                                     firebaseAuth.signOut()
                                 },
                             )
@@ -314,40 +330,34 @@ class AuthRepositoryImpl @Inject constructor(
                     }
                     .addOnFailureListener { e ->
                         Timber.e(e, "getIdToken failed")
-                        _otpState.value = otpState(
-                            phoneInfo,
-                            OtpVerificationState.Failed("Could not retrieve verification token")
-                        )
+                        _otpState.value = otpState(phoneInfo, OtpVerificationState.Failed("Could not retrieve verification token"))
                         firebaseAuth.signOut()
                     }
             }
             .addOnFailureListener { e ->
-                val error = when (e) {
+                val state = when (e) {
                     is FirebaseAuthInvalidCredentialsException -> OtpVerificationState.Failed("Incorrect verification code")
                     is FirebaseAuthInvalidUserException -> OtpVerificationState.Failed("This account has been disabled")
+                    is FirebaseTooManyRequestsException -> OtpVerificationState.Failed("Too many attempts — please wait and try again")
                     is FirebaseNetworkException -> OtpVerificationState.Failed("No internet connection")
                     else -> OtpVerificationState.Failed(e.message ?: "Verification failed")
                 }
                 Timber.e(e, "signInWithCredential failed")
-                _otpState.value = otpState(phoneInfo, error)
+                _otpState.value = otpState(phoneInfo, state)
             }
     }
 
     override suspend fun verifyOtp(otp: String): AuthResult<Unit> {
         val verificationId = authDiskSource.cachedVerificationId
-            ?: return AuthResult.Error(
-                AuthError.InvalidPhoneNumber("No OTP session in progress")
-            )
+            ?: return AuthResult.Error(AuthError.InvalidPhoneNumber("No OTP session in progress"))
         if (otp.isBlank() || otp.length != 6 || !otp.all { it.isDigit() }) {
-            return AuthResult.Error(
-                AuthError.InvalidOTP("OTP must be a 6-digit number")
-            )
+            return AuthResult.Error(AuthError.InvalidOTP("OTP must be a 6-digit number"))
         }
         return try {
             signInWithCredential(PhoneAuthProvider.getCredential(verificationId, otp))
             AuthResult.Success(Unit)
         } catch (e: FirebaseAuthInvalidCredentialsException) {
-            Timber.e(e, "verifyOtp: invalid code")
+            Timber.e(e, "verifyOtp: invalid credential")
             AuthResult.Error(AuthError.InvalidOTP("Incorrect verification code"))
         } catch (e: FirebaseNetworkException) {
             Timber.e(e, "verifyOtp: network error")
@@ -374,7 +384,7 @@ class AuthRepositoryImpl @Inject constructor(
         is AuthError.AccountDisabled -> "Your account has been disabled"
         is AuthError.NetworkError -> "No internet connection"
         is AuthError.SessionExpired -> "Session expired — please try again"
-        else -> "Verification failed. Please try again"
+        else -> "Verification failed — please try again"
     }
 
     // ── Session Persistence ──────────────────────────────────────────
@@ -394,14 +404,18 @@ class AuthRepositoryImpl @Inject constructor(
         )
     }
 
+    private fun clearPhoneRegisterSession() {
+        authDiskSource.cachedPhoneInfo = null
+        authDiskSource.cachedVerificationId = null
+        resendToken = null
+    }
+
     private fun clearSession() {
         tokenManager.clearTokenData()
         authDiskSource.sessionId = null
         authDiskSource.sessionToken = null
         authDiskSource.userState = UserState.Empty
-        authDiskSource.cachedPhoneInfo = null
-        authDiskSource.cachedVerificationId = null
-        resendToken = null
+        clearPhoneRegisterSession()
         userStateFlow.value = UserState.Empty
     }
 
@@ -411,5 +425,6 @@ class AuthRepositoryImpl @Inject constructor(
         _authStateFlow.value = AuthState.Authenticated(user)
     }
 
-    private fun otpState(phoneInfo: PhoneInfo?, state: OtpVerificationState) = OtpState(phoneInfo = phoneInfo, state = state)
+    private fun otpState(phoneInfo: PhoneInfo?, state: OtpVerificationState) =
+        OtpState(phoneInfo = phoneInfo, state = state)
 }
