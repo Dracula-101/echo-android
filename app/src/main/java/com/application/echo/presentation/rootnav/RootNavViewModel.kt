@@ -5,6 +5,7 @@ import com.application.echo.core.common.platform.base.BaseViewModel
 import com.application.echo.features.auth.model.AuthState
 import com.application.echo.features.auth.repository.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.launchIn
@@ -22,8 +23,6 @@ class RootNavViewModel @Inject constructor(
         val resolved = authRepository.authStateFlow
             .filter { it !is AuthState.Initializing }
 
-        // First resolved state seeds the start destination — no navigation event,
-        // so we don't pay a NavHost transition on cold start.
         resolved
             .onEach { authState ->
                 if (state.startRoute == null) {
@@ -32,9 +31,9 @@ class RootNavViewModel @Inject constructor(
             }
             .launchIn(viewModelScope)
 
-        // Subsequent changes (logout, session expiry, etc.) drive runtime navigation.
         resolved
             .drop(1)
+            .distinctUntilChanged { old, new -> old::class == new::class }
             .onEach { sendEvent(RootNavEvent.OnAuthStateChanged(it)) }
             .launchIn(viewModelScope)
     }
@@ -53,9 +52,9 @@ data class RootNavState(
 )
 
 private fun AuthState.toStartRoute(): Any = when (this) {
-    is AuthState.Authenticated -> ConversationScreenRoute
-    is AuthState.CreateProfile -> CreateProfileRoute
+    is AuthState.Authenticated   -> ConversationScreenRoute
+    is AuthState.CreateProfile   -> CreateProfileRoute
     is AuthState.OtpVerification -> OtpScreenRoute
     is AuthState.Unauthenticated -> LoginScreenRoute
-    is AuthState.Initializing -> error("Initializing is filtered out before reaching toStartRoute")
+    is AuthState.Initializing    -> error("Initializing is filtered out before reaching toStartRoute")
 }

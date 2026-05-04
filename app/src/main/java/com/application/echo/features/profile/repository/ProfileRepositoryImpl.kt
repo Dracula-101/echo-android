@@ -1,20 +1,14 @@
 package com.application.echo.features.profile.repository
 
 import android.net.Uri
-import androidx.core.net.toUri
 import com.application.echo.features.auth.model.AuthState
 import com.application.echo.features.auth.repository.AuthRepository
-import com.application.echo.features.notification.token.FcmTokenManager
 import com.application.echo.features.profile.datasource.disk.ProfileDiskSource
 import com.application.echo.features.profile.datasource.network.ProfileNetworkSource
 import com.application.echo.features.profile.model.CreatingProfileState
 import com.application.echo.features.profile.model.ProfileResult
 import com.application.echo.features.profile.model.ProfileState
-import com.application.echo.features.profile.model.errorOrNull
 import com.application.echo.features.profile.model.fold
-import com.application.echo.features.profile.model.isSuccess
-import com.application.echo.features.profile.model.onError
-import com.application.echo.features.profile.model.onSuccess
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
@@ -22,7 +16,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import timber.log.Timber
@@ -41,7 +34,7 @@ class ProfileRepositoryImpl @Inject constructor(
         authRepository.authStateFlow
             .onEach { authState ->
                 when(authState) {
-                    is AuthState.CreateProfile -> diskSource.startCreatingProfile(authState.userId)
+                    is AuthState.CreateProfile -> diskSource.startCreatingProfile(authState.phoneNumber)
                     else -> {}
                 }
             }
@@ -49,7 +42,7 @@ class ProfileRepositoryImpl @Inject constructor(
 
         combine(
             diskSource.creatingProfileStateFlow,
-            diskSource.creatingProfileUserIdStateFlow,
+            diskSource.creatingProfilePhoneNumberStateFlow,
             diskSource.creatingProfileDisplayNameStateFlow,
             diskSource.creatingProfileFirstNameStateFlow,
             diskSource.creatingProfileLastNameStateFlow,

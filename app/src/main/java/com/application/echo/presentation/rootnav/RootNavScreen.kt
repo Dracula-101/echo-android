@@ -18,31 +18,30 @@ import com.application.echo.presentation.otp.OtpScreen
 import com.application.echo.presentation.phone.PhoneAuthScreen
 import com.application.echo.presentation.register.RegisterScreen
 import com.application.echo.presentation.search_user.SearchUserScreen
-import com.application.echo.presentation.splash.SplashScreen
 import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun RootNavScreen(
     navigator: Navigator,
-    viewModel: RootNavViewModel = hiltViewModel()
+    viewModel: RootNavViewModel = hiltViewModel(),
 ) {
     val state by viewModel.stateFlow.collectAsStateWithLifecycle()
+
     LaunchedEffect(Unit) {
-        viewModel.eventFlow
-            .collectLatest { event ->
+        viewModel.eventFlow.collectLatest { event ->
             when (event) {
-                is RootNavEvent.OnAuthStateChanged -> {
-                    when (event.authState) {
-                        is AuthState.Authenticated -> navigator.navigateToRoot(ConversationScreenRoute)
-                        is AuthState.CreateProfile -> navigator.navigateToRoot(CreateProfileRoute)
-                        is AuthState.Unauthenticated -> navigator.navigateToRoot(LoginScreenRoute)
-                        is AuthState.OtpVerification -> navigator.navigateTo(OtpScreenRoute)
-                        is AuthState.Initializing -> Unit
-                    }
+                is RootNavEvent.OnAuthStateChanged -> when (event.authState) {
+                    is AuthState.Authenticated -> navigator.navigateToRoot(ConversationScreenRoute)
+                    is AuthState.CreateProfile -> navigator.navigateToRoot(CreateProfileRoute)
+                    is AuthState.OtpVerification -> navigator.navigateTo(OtpScreenRoute)
+                    is AuthState.Unauthenticated -> navigator.navigateToRoot(LoginScreenRoute)
+                    is AuthState.Initializing -> Unit
                 }
             }
         }
     }
+
+    if (state.startRoute == null) return
 
     EchoNavHost(
         navigator = navigator,
@@ -50,35 +49,18 @@ fun RootNavScreen(
     ) {
         echoComposable<LoginScreenRoute> {
             LoginScreen(
-                onNavigateToRegisterScreen = {
-                    navigator.navigateTo(PhoneAuthScreenRoute)
-                },
-                onNavigateToPhoneAuthScreen = {
-                    navigator.navigateTo(PhoneAuthScreenRoute)
-                },
+                onNavigateToRegisterScreen = { navigator.navigateTo(PhoneAuthScreenRoute) },
+                onNavigateToPhoneAuthScreen = { navigator.navigateTo(PhoneAuthScreenRoute) },
             )
         }
         echoComposable<PhoneAuthScreenRoute> {
             PhoneAuthScreen(
-                onNavigateToEmailAuth = {
-                    navigator.navigateBackTo(LoginScreenRoute)
-                }
+                onNavigateToEmailAuth = { navigator.navigateBackTo(LoginScreenRoute) },
             )
         }
         echoComposable<OtpScreenRoute> {
             OtpScreen(
-                onNavigateBack = {
-                    navigator.navigateBack()
-                },
-            )
-        }
-        echoComposable<RegisterScreenRoute>(
-            transition = EchoTransitionPreset.SlideHorizontal,
-        ) {
-            RegisterScreen(
-                onNavigateToLoginScreen = {
-                    navigator.navigateBackTo(LoginScreenRoute)
-                },
+                onNavigateBack = { navigator.navigateBack() },
             )
         }
         echoComposable<CreateProfileRoute>(
@@ -90,9 +72,7 @@ fun RootNavScreen(
             transition = EchoTransitionPreset.Fade,
         ) {
             ConversationScreen(
-                navigateToAddUser = {
-                    navigator.navigateTo(SearchUserScreenRoute)
-                },
+                navigateToAddUser = { navigator.navigateTo(SearchUserScreenRoute) },
                 navigateToChat = { conversationId, participantName ->
                     navigator.navigateTo(
                         ChatScreenRoute(
@@ -107,9 +87,7 @@ fun RootNavScreen(
             transition = EchoTransitionPreset.SlideHorizontal,
         ) {
             SearchUserScreen(
-                onNavigateBack = {
-                    navigator.navigateBack()
-                },
+                onNavigateBack = { navigator.navigateBack() },
                 onNavigateToChat = { conversationId, participantName ->
                     navigator.navigateTo(
                         ChatScreenRoute(
@@ -124,9 +102,7 @@ fun RootNavScreen(
             transition = EchoTransitionPreset.SlideHorizontal,
         ) {
             ChatScreen(
-                onNavigateBack = {
-                    navigator.navigateBack()
-                },
+                onNavigateBack = { navigator.navigateBack() },
             )
         }
     }

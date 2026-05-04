@@ -1,27 +1,19 @@
 package com.application.echo.presentation.phone
 
 import android.app.Activity
-import android.content.Context
 import android.os.Parcelable
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.application.echo.core.common.platform.base.BaseViewModel
-import com.application.echo.features.auth.model.OtpState
-import com.application.echo.features.auth.model.OtpVerificationState
 import com.application.echo.features.auth.model.PhoneInfo
-import com.application.echo.features.auth.model.fold
-import com.application.echo.features.auth.model.isSuccess
-import com.application.echo.features.auth.repository.AuthRepository
 import com.application.echo.features.country.model.Country
 import com.application.echo.features.country.repository.CountryRepository
+import com.application.echo.features.otp.model.OtpVerificationState
+import com.application.echo.features.otp.repository.OtpRepository
 import com.application.echo.ui.components.snackbar.EchoSnackbarType
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.parcelize.Parcelize
 import timber.log.Timber
@@ -30,7 +22,7 @@ import javax.inject.Inject
 @HiltViewModel
 class PhoneAuthViewModel @Inject constructor(
     private val countryRepository: CountryRepository,
-    private val authRepository: AuthRepository,
+    private val otpRepository: OtpRepository,
     private val savedStateHandle: SavedStateHandle,
 ) : BaseViewModel<PhoneAuthState, PhoneAuthEvent, PhoneAuthAction>(
     initialState = savedStateHandle[KEY_STATE] ?: PhoneAuthState(
@@ -38,12 +30,12 @@ class PhoneAuthViewModel @Inject constructor(
     ),
 ) {
 
-    init {
-        observeOtpState()
-    }
-
     val countries: List<UiCountry> by lazy {
         countryRepository.all.map { it.toUiCountry() }
+    }
+
+    init {
+        observeOtpState()
     }
 
     override fun handleAction(action: PhoneAuthAction) {
@@ -74,12 +66,10 @@ class PhoneAuthViewModel @Inject constructor(
             savedStateHandle[KEY_STATE] = state
             return
         }
-
         setState { state.copy(isLoading = true) }
         Timber.d("Sending OTP to %s", state.e164PhoneNumber)
-
         viewModelScope.launch {
-            authRepository.sendOtp(
+            otpRepository.sendOtp(
                 phoneInfo = PhoneInfo(
                     country = Country(
                         isoCode = state.selectedCountry.isoCode,
@@ -88,30 +78,38 @@ class PhoneAuthViewModel @Inject constructor(
                         minDigits = state.selectedCountry.minDigits,
                         maxDigits = state.selectedCountry.maxDigits,
                     ),
-                    phoneNumber = state.e164PhoneNumber
+                    phoneNumber = state.e164PhoneNumber,
                 ),
-                context = activity
+                context = activity,
             )
         }
     }
 
     private fun observeOtpState() {
-        authRepository.otpStateFlow
+        otpRepository.otpStateFlow
             .onEach { otpState ->
-                when(otpState.state) {
-                    OtpVerificationState.Sent -> { setState { state.copy(isLoading = false) } }
+                when (val s = otpState.state) {
+                    is OtpVerificationState.Sending -> {
+                        setState { state.copy(isLoading = true) }
+                    }
+
+                    is OtpVerificationState.Sent -> {
+                        setState { state.copy(isLoading = false) }
+                    }
+
                     is OtpVerificationState.Failed -> {
                         setState { state.copy(isLoading = false) }
                         sendEvent(
                             PhoneAuthEvent.ShowSnackbar(
                                 message = "Failed to send OTP",
-                                detail = otpState.state.error,
+                                detail = s.error,
                                 code = "OTP_SEND_ERROR",
                                 type = EchoSnackbarType.ERROR,
                             )
                         )
                     }
-                    else -> {}
+
+                    else -> Unit
                 }
             }
             .launchIn(viewModelScope)
@@ -133,7 +131,7 @@ class PhoneAuthViewModel @Inject constructor(
     }
 }
 
-// ─── UiCountry ────────────────────────────────────────────────────────────────
+// ── UiCountry ────────────────────────────────────────────────────────
 
 @Parcelize
 data class UiCountry(
@@ -152,7 +150,7 @@ fun Country.toUiCountry() = UiCountry(
     maxDigits = maxDigits,
 )
 
-// ─── State ────────────────────────────────────────────────────────────────────
+// ── State ────────────────────────────────────────────────────────────
 
 @Parcelize
 data class PhoneAuthState(
@@ -166,7 +164,7 @@ data class PhoneAuthState(
     val formattedPhoneNumber: String get() = "+${selectedCountry.dialCode} $phoneNumber"
 }
 
-// ─── Events ───────────────────────────────────────────────────────────────────
+// ── Events ───────────────────────────────────────────────────────────
 
 sealed interface PhoneAuthEvent {
     data class ShowSnackbar(
@@ -177,7 +175,7 @@ sealed interface PhoneAuthEvent {
     ) : PhoneAuthEvent
 }
 
-// ─── Actions ──────────────────────────────────────────────────────────────────
+// ── Actions ──────────────────────────────────────────────────────────
 
 sealed interface PhoneAuthAction {
     data class OnCountryChanged(val country: UiCountry) : PhoneAuthAction

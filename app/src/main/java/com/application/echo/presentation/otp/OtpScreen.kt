@@ -1,5 +1,7 @@
 package com.application.echo.presentation.otp
 
+import android.app.Activity
+import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -27,9 +29,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -46,11 +51,16 @@ fun OtpScreen(
 ) {
     val state by viewModel.stateFlow.collectAsStateWithLifecycle()
     val snackbarHostState = rememberEchoSnackbarState()
+    val activity = LocalActivity.current
 
     LaunchedEffect(Unit) {
         viewModel.eventFlow.collect { event ->
             when (event) {
                 is OtpEvent.NavigateBack -> onNavigateBack()
+                is OtpEvent.RequestResend -> if(activity != null) viewModel.trySendAction(
+                    OtpAction.OnResendWithContext(activity)
+                )
+
                 is OtpEvent.ShowSnackbar -> snackbarHostState.show(
                     message = event.message,
                     detail = event.detail,
@@ -63,9 +73,7 @@ fun OtpScreen(
 
     EchoScaffold(
         snackbarHost = {
-            EchoFlatSnackbarHost(
-                state = snackbarHostState,
-            )
+            EchoFlatSnackbarHost(state = snackbarHostState)
         }
     ) {
         OtpContent(state = state, onAction = viewModel::trySendAction)
@@ -124,23 +132,25 @@ private fun OtpForm(
             color = EchoTheme.colorScheme.background.onColor,
         )
         Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            buildAnnotatedString {
-                append("Sent to ${state.phoneInfo?.toDisplayString()}")
-                append("  ")
-                append("Change")
-                addStyle(
-                    style = EchoTheme.typography.bodyMedium.toSpanStyle().copy(
-                        color = EchoTheme.colorScheme.surface.onColor,
-                        textDecoration = TextDecoration.Underline
-                    ),
-                    start = length - 6,
-                    end = length,
-                )
-            },
-            style = EchoTheme.typography.bodyMedium,
-            color = EchoTheme.colorScheme.scrim.color,
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = "Sent to ${state.phoneInfo?.toDisplayString()}  ",
+                style = EchoTheme.typography.bodyMedium,
+                color = EchoTheme.colorScheme.scrim.color,
+            )
+            Text(
+                modifier = Modifier.clickable { onAction(OtpAction.OnEditPhoneClicked) },
+                text = buildAnnotatedString {
+                    withStyle(
+                        SpanStyle(
+                            color = EchoTheme.colorScheme.surface.onColor,
+                            textDecoration = TextDecoration.Underline,
+                        )
+                    ) { append("Change") }
+                },
+                style = EchoTheme.typography.bodyMedium,
+            )
+        }
         Spacer(modifier = Modifier.height(EchoTheme.spacing.gap.large))
 
         OtpInputField(
@@ -153,7 +163,6 @@ private fun OtpForm(
             isLoading = state.isLoading,
         )
 
-        // Error
         AnimatedVisibility(
             visible = state.otpError != null,
             enter = fadeIn(),
@@ -171,34 +180,40 @@ private fun OtpForm(
 
         Spacer(modifier = Modifier.height(EchoTheme.spacing.gap.large))
 
-        Row(
-            modifier = Modifier
-                .clip(EchoTheme.shapes.chip)
-                .background(EchoTheme.colorScheme.primary.container)
-                .clickable(enabled = state.canResend) { onAction(OtpAction.OnResendClicked) }
-                .padding(vertical = EchoTheme.spacing.padding.small, horizontal = EchoTheme.spacing.padding.medium),
-            horizontalArrangement = Arrangement.spacedBy(EchoTheme.spacing.gap.extraSmall),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(
-                imageVector = Icons.Default.AccessTime,
-                contentDescription = "Resend Icon",
-                tint = if(state.canResend) EchoTheme.colorScheme.primary.onColor else EchoTheme.colorScheme.primary.dim,
-                modifier = Modifier.size(EchoTheme.dimen.icon.small),
-            )
-            if (state.canResend) {
-                Text(
-                    text = "Resend code",
-                    style = EchoTheme.typography.bodyMedium,
-                    color = EchoTheme.colorScheme.primary.onColor,
-                )
-            } else {
-                Text(
-                    text = "Resend in ${state.resendCooldownSeconds}s",
-                    style = EchoTheme.typography.bodyMedium,
-                    color = EchoTheme.colorScheme.primary.dim,
-                )
-            }
-        }
+        ResendButton(state = state, onAction = onAction)
+    }
+}
+
+@Composable
+private fun ResendButton(
+    state: OtpScreenState,
+    onAction: (OtpAction) -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .clip(EchoTheme.shapes.chip)
+            .background(EchoTheme.colorScheme.primary.container)
+            .clickable(enabled = state.canResend) { onAction(OtpAction.OnResendClicked) }
+            .padding(
+                vertical = EchoTheme.spacing.padding.small,
+                horizontal = EchoTheme.spacing.padding.medium,
+            ),
+        horizontalArrangement = Arrangement.spacedBy(EchoTheme.spacing.gap.extraSmall),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = Icons.Default.AccessTime,
+            contentDescription = null,
+            tint = if (state.canResend) EchoTheme.colorScheme.primary.onColor
+            else EchoTheme.colorScheme.primary.dim,
+            modifier = Modifier.size(EchoTheme.dimen.icon.small),
+        )
+        Text(
+            text = if (state.canResend) "Resend code"
+            else "Resend in ${state.resendCooldownSeconds}s",
+            style = EchoTheme.typography.bodyMedium,
+            color = if (state.canResend) EchoTheme.colorScheme.primary.onColor
+            else EchoTheme.colorScheme.primary.dim,
+        )
     }
 }

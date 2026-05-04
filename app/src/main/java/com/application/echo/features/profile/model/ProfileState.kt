@@ -6,7 +6,7 @@ import kotlinx.parcelize.Parcelize
 @Parcelize
 data class ProfileState(
     val id: String,
-    val userId: String,
+    val phoneNumber: String,
     val email: String? = null,
     val displayName: String? = null,
     val firstName: String? = null,
@@ -17,7 +17,7 @@ data class ProfileState(
     companion object {
         val Empty = ProfileState(
             id = "",
-            userId = "",
+            phoneNumber = "",
         )
     }
 }

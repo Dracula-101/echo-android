@@ -110,17 +110,7 @@ class EchoWebSocketManager @Inject constructor(
                         session.disconnect()
                     }
 
-                    is AuthState.CreateProfile -> {
-                        Timber.tag(TAG).d("Auth state -> CreateProfile — WebSocket idle")
-                    }
-
-                    is AuthState.OtpVerification -> {
-                        Timber.tag(TAG).d("Auth state -> OTP Verification — WebSocket idle")
-                    }
-
-                    is AuthState.Initializing -> {
-                        Timber.tag(TAG).d("Auth state -> Initializing — WebSocket idle")
-                    }
+                    else -> Timber.tag(TAG).d("Auth state -> %s", state::class.simpleName)
                 }
             }
             .launchIn(scope)
@@ -195,11 +185,10 @@ class EchoWebSocketManager @Inject constructor(
     fun <T> send(
         type: String,
         payload: T? = null,
-        idempotencyKey: String? = null,
     ): Boolean {
         val message = ClientMessage(
             type = type,
-            idempotencyKey = idempotencyKey,
+            idempotencyKey = getIdempotencyKey(),
             clientInfo = buildClientInfo(),
             payload = payload,
         )
@@ -325,6 +314,10 @@ class EchoWebSocketManager @Inject constructor(
     }
 
     // ──────────────── Internals ────────────────
+
+    private fun getIdempotencyKey(): String {
+        return java.util.UUID.randomUUID().toString()
+    }
 
     private fun buildClientInfo(): ClientInfo {
         val device = deviceInfoProvider.getDeviceInfo()

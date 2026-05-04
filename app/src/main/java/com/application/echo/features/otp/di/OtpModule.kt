@@ -1,21 +1,16 @@
-package com.application.echo.features.auth.di
+package com.application.echo.features.otp.di
 
 import android.content.SharedPreferences
-import com.application.echo.api.auth.AuthApiRepository
-import com.application.echo.api.manager.AuthTokenManager
 import com.application.echo.core.common.annotations.AppDispatcher
 import com.application.echo.core.common.annotations.EncryptedPreferences
 import com.application.echo.core.common.annotations.UnencryptedPreferences
 import com.application.echo.core.common.model.AppDispatchers
-import com.application.echo.features.auth.datasource.disk.AuthDiskSource
-import com.application.echo.features.auth.datasource.disk.AuthDiskSourceImpl
 import com.application.echo.features.auth.datasource.network.AuthNetworkSource
-import com.application.echo.features.auth.datasource.network.AuthNetworkSourceImpl
-import com.application.echo.features.auth.repository.AuthRepository
-import com.application.echo.features.auth.repository.AuthRepositoryImpl
 import com.application.echo.features.otp.datasource.disk.OtpDiskSource
+import com.application.echo.features.otp.datasource.disk.OtpDiskSourceImpl
 import com.application.echo.features.otp.repository.OtpRepository
-import com.application.echo.features.profile.datasource.disk.ProfileDiskSource
+import com.application.echo.features.otp.repository.OtpRepositoryImpl
+import com.google.firebase.auth.FirebaseAuth
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -26,15 +21,19 @@ import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-object AuthModule {
+object OtpModule {
 
     @Provides
     @Singleton
-    fun provideAuthDiskSource(
+    fun provideFirebaseAuth(): FirebaseAuth = FirebaseAuth.getInstance()
+
+    @Provides
+    @Singleton
+    fun provideOtpDiskSource(
         @UnencryptedPreferences sharedPreferences: SharedPreferences,
         @EncryptedPreferences encryptedSharedPreferences: SharedPreferences,
         json: Json,
-    ): AuthDiskSource = AuthDiskSourceImpl(
+    ): OtpDiskSource = OtpDiskSourceImpl(
         sharedPreferences = sharedPreferences,
         encryptedSharedPreferences = encryptedSharedPreferences,
         json = json,
@@ -42,29 +41,15 @@ object AuthModule {
 
     @Provides
     @Singleton
-    fun provideAuthNetworkSource(
-        authApi: AuthApiRepository,
-    ): AuthNetworkSource = AuthNetworkSourceImpl(
-        api = authApi,
-    )
-
-    @Provides
-    @Singleton
-    fun provideAuthRepository(
+    fun provideOtpRepository(
         networkSource: AuthNetworkSource,
-        authDiskSource: AuthDiskSource,
         otpDiskSource: OtpDiskSource,
-        profileDiskSource: ProfileDiskSource,
-        tokenManager: AuthTokenManager,
-        otpRepository: OtpRepository,
+        firebaseAuth: FirebaseAuth,
         @AppDispatcher(AppDispatchers.IO) ioDispatcher: CoroutineDispatcher,
-    ): AuthRepository = AuthRepositoryImpl(
+    ): OtpRepository = OtpRepositoryImpl(
         networkSource = networkSource,
-        authDiskSource = authDiskSource,
         otpDiskSource = otpDiskSource,
-        profileDiskSource = profileDiskSource,
-        tokenManager = tokenManager,
-        otpRepository = otpRepository,
+        firebaseAuth = firebaseAuth,
         ioDispatcher = ioDispatcher,
     )
 }

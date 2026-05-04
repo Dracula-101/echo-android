@@ -1,32 +1,18 @@
 package com.application.echo.features.profile.datasource.disk
 
 import android.content.SharedPreferences
-import android.net.Uri
-import com.application.echo.core.common.annotations.AppDispatcher
-import com.application.echo.core.common.model.AppDispatchers
 import com.application.echo.core.common.platform.base.BaseDiskSource
-import com.application.echo.features.auth.model.AuthState
-import com.application.echo.features.auth.repository.AuthRepository
 import com.application.echo.features.profile.model.ProfileState
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onSubscription
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
-import androidx.core.net.toUri
-import com.application.echo.core.common.annotations.EncryptedPreferences
-import com.application.echo.core.common.platform.base.BaseEncryptedDiskSource
 import com.application.echo.core.common.repository.bufferedMutableSharedFlow
 
 private const val PROFILE_STATE_KEY = "profile_state_key"
 private const val CREATING_PROFILE_STATE_KEY = "creating_profile_key"
-private const val CREATING_PROFILE_USER_ID_KEY = "creating_profile_user_id_key"
+private const val CREATING_PROFILE_PHONE_NUMBER_KEY = "creating_profile_phone_number_key"
 private const val CREATING_PROFILE_USER_DISPLAY_NAME_KEY = "creating_profile_user_display_name_key"
 private const val CREATING_PROFILE_USER_FIRST_NAME_KEY = "creating_profile_user_first_name_key"
 private const val CREATING_PROFILE_USER_LAST_NAME_KEY = "creating_profile_user_last_name_key"
@@ -68,20 +54,20 @@ class ProfileDiskSourceImpl @Inject constructor(
     override val creatingProfileStateFlow: Flow<Boolean>
         get() = _creatingProfileStateFlow.onSubscription { emit(creatingProfileState) }
 
-    private val _creatingProfileUserIdStateFlow = bufferedMutableSharedFlow<String?>()
+    private val _creatingProfilePhoneNumberStateFlow = bufferedMutableSharedFlow<String?>()
 
-    override val creatingProfileUserIdStateFlow: Flow<String?>
-        get() = _creatingProfileUserIdStateFlow.onSubscription { emit(creatingProfileUserId) }
+    override val creatingProfilePhoneNumberStateFlow: Flow<String?>
+        get() = _creatingProfilePhoneNumberStateFlow.onSubscription { emit(creatingProfilePhoneNumber) }
 
-    override var creatingProfileUserId: String?
-        get() = getString(CREATING_PROFILE_USER_ID_KEY)
+    override var creatingProfilePhoneNumber: String?
+        get() = getString(CREATING_PROFILE_PHONE_NUMBER_KEY)
         set(value) {
             if (value == null) {
-                remove(CREATING_PROFILE_USER_ID_KEY)
+                remove(CREATING_PROFILE_PHONE_NUMBER_KEY)
             } else {
-                putString(CREATING_PROFILE_USER_ID_KEY, value)
+                putString(CREATING_PROFILE_PHONE_NUMBER_KEY, value)
             }
-            _creatingProfileUserIdStateFlow.tryEmit(value)
+            _creatingProfilePhoneNumberStateFlow.tryEmit(value)
         }
 
     private val _creatingProfileDisplayNameStateFlow = bufferedMutableSharedFlow<String?>()
@@ -150,13 +136,13 @@ class ProfileDiskSourceImpl @Inject constructor(
 
 
 
-    override fun startCreatingProfile(userId: String) {
-        creatingProfileUserId = userId
+    override fun startCreatingProfile(phoneNumber: String) {
+        creatingProfilePhoneNumber = phoneNumber
         creatingProfileState = true
     }
 
     override fun finishCreatingProfile() {
-        creatingProfileUserId = null
+        creatingProfilePhoneNumber = null
         creatingProfileState = false
         creatingProfileDisplayName = null
         creatingProfileFirstName = null

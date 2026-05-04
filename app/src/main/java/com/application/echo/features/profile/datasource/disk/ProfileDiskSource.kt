@@ -1,6 +1,5 @@
 package com.application.echo.features.profile.datasource.disk
 
-import android.net.Uri
 import com.application.echo.features.profile.model.ProfileState
 import kotlinx.coroutines.flow.Flow
 
@@ -17,8 +16,8 @@ interface ProfileDiskSource {
 
 
     /** Creating profile user id */
-    var creatingProfileUserId: String?
-    val creatingProfileUserIdStateFlow: Flow<String?>
+    var creatingProfilePhoneNumber: String?
+    val creatingProfilePhoneNumberStateFlow: Flow<String?>
 
 
     var creatingProfileDisplayName: String?
@@ -37,6 +36,6 @@ interface ProfileDiskSource {
     val creatingProfileAvatarUrlStateFlow: Flow<String?>
 
 
-    fun startCreatingProfile(userId: String)
+    fun startCreatingProfile(phoneNumber: String)
     fun finishCreatingProfile()
 }

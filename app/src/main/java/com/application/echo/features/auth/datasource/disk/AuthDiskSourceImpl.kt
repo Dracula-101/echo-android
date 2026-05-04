@@ -3,26 +3,20 @@ package com.application.echo.features.auth.datasource.disk
 import android.content.SharedPreferences
 import com.application.echo.core.common.annotations.EncryptedPreferences
 import com.application.echo.core.common.annotations.UnencryptedPreferences
-import kotlinx.coroutines.flow.Flow
-import kotlinx.serialization.json.Json
-import javax.inject.Inject
-import com.application.echo.core.common.platform.base.BaseDiskSource
 import com.application.echo.core.common.platform.base.BaseEncryptedDiskSource
 import com.application.echo.core.common.repository.bufferedMutableSharedFlow
-import com.application.echo.features.auth.model.PhoneInfo
 import com.application.echo.features.auth.model.UserState
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.onSubscription
 import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import javax.inject.Inject
 
-private const val USER_STATE_KEY = "user_state"
-private const val SESSION_ID_KEY = "session_id"
-private const val SESSION_TOKEN_KEY = "session_token"
-private const val REGISTER_EMAIL_KEY = "register_email_key"
-private const val REGISTER_PASSWORD_KEY = "register_password_key"
-private const val REGISTER_PHONE_KEY = "register_phone_key"
-
-private const val REGISTER_VERIFICATION_ID_KEY = "register_verification_id_key"
+private const val KEY_USER_STATE = "user_state"
+private const val KEY_SESSION_ID = "session_id"
+private const val KEY_SESSION_TOKEN = "session_token"
+private const val KEY_REGISTER_EMAIL = "register_email_key"
+private const val KEY_REGISTER_PASSWORD = "register_password_key"
 
 class AuthDiskSourceImpl @Inject constructor(
     @UnencryptedPreferences sharedPreferences: SharedPreferences,
@@ -30,18 +24,17 @@ class AuthDiskSourceImpl @Inject constructor(
     private val json: Json,
 ) : BaseEncryptedDiskSource(
     sharedPreferences = sharedPreferences,
-    encryptedSharedPreferences = encryptedSharedPreferences
+    encryptedSharedPreferences = encryptedSharedPreferences,
 ), AuthDiskSource {
 
     private val _userStateFlow = bufferedMutableSharedFlow<UserState>()
 
     override var userState: UserState
-        get() = getString(USER_STATE_KEY)?.let { json.decodeFromString<UserState>(it) } ?: UserState.Empty
+        get() = getString(KEY_USER_STATE)
+            ?.let { runCatching { json.decodeFromString<UserState>(it) }.getOrNull() }
+            ?: UserState.Empty
         set(value) {
-            putString(
-                key = USER_STATE_KEY,
-                value = json.encodeToString(value)
-            )
+            putString(KEY_USER_STATE, json.encodeToString(value))
             _userStateFlow.tryEmit(value)
         }
 
@@ -49,77 +42,34 @@ class AuthDiskSourceImpl @Inject constructor(
         get() = _userStateFlow.onSubscription { emit(userState) }
 
     override var sessionId: String?
-        get() = getString(SESSION_ID_KEY)
-        set(value) {
-            putString(SESSION_ID_KEY, value)
-        }
+        get() = getString(KEY_SESSION_ID)
+        set(value) { putString(KEY_SESSION_ID, value) }
 
     override var sessionToken: String?
-        get() = getString(SESSION_TOKEN_KEY)
-        set(value) {
-            putString(SESSION_TOKEN_KEY, value)
-        }
-
+        get() = getString(KEY_SESSION_TOKEN)
+        set(value) { putString(KEY_SESSION_TOKEN, value) }
 
     private val _registerEmailStateFlow = bufferedMutableSharedFlow<String?>()
 
     override var registerEmail: String?
-        get() = getEncryptedString(REGISTER_EMAIL_KEY)
+        get() = getEncryptedString(KEY_REGISTER_EMAIL)
         set(value) {
-            putEncryptedString(REGISTER_EMAIL_KEY, value)
+            putEncryptedString(KEY_REGISTER_EMAIL, value)
             _registerEmailStateFlow.tryEmit(value)
         }
 
     override val registerEmailStateFlow: Flow<String?>
         get() = _registerEmailStateFlow
 
-
     private val _registerPasswordStateFlow = bufferedMutableSharedFlow<String?>()
 
     override var registerPassword: String?
-        get() = getEncryptedString(REGISTER_PASSWORD_KEY)
+        get() = getEncryptedString(KEY_REGISTER_PASSWORD)
         set(value) {
-            putEncryptedString(REGISTER_PASSWORD_KEY, value)
+            putEncryptedString(KEY_REGISTER_PASSWORD, value)
             _registerPasswordStateFlow.tryEmit(value)
         }
 
     override val registerPasswordStateFlow: Flow<String?>
         get() = _registerPasswordStateFlow.onSubscription { emit(registerPassword) }
-
-
-    private val _cachedPhoneInfoStateFlow = bufferedMutableSharedFlow<PhoneInfo?>()
-
-    override var cachedPhoneInfo: PhoneInfo?
-        get() = getEncryptedString(REGISTER_PHONE_KEY)?.let {
-            val decoded = json.decodeFromString<PhoneInfo>(it)
-            if(decoded.isExpired()) {
-                remove(REGISTER_PHONE_KEY)
-                null
-            } else {
-                decoded
-            }
-        }
-        set(value) {
-            if (value != null) {
-                putEncryptedString(REGISTER_PHONE_KEY, json.encodeToString(value))
-            } else {
-                remove(REGISTER_PHONE_KEY)
-            }
-            _cachedPhoneInfoStateFlow.tryEmit(value)
-        }
-
-    override val cachedPhoneInfoStateFlow: Flow<PhoneInfo?>
-        get() = _cachedPhoneInfoStateFlow.onSubscription { emit(cachedPhoneInfo) }
-
-    private val _cachedVerificationIdStateFlow = bufferedMutableSharedFlow<String?>()
-
-    override var cachedVerificationId: String?
-        get() = getEncryptedString(REGISTER_VERIFICATION_ID_KEY)
-        set(value) {
-            putEncryptedString(REGISTER_VERIFICATION_ID_KEY, value)
-            _cachedVerificationIdStateFlow.tryEmit(value)
-        }
-
-    override val cachedVerificationIdStateFlow: Flow<String?>
-        get() = _cachedVerificationIdStateFlow.onSubscription { emit(cachedVerificationId) }
 }

@@ -23,7 +23,7 @@ sealed interface AuthState {
     data object Initializing : AuthState
 
     /** User is creating a profile. */
-    data class CreateProfile(val userId: String) : AuthState
+    data class CreateProfile(val phoneNumber: String) : AuthState
 
     /** User is requested OTP verification. */
     data class OtpVerification(val phoneInfo: PhoneInfo) : AuthState
