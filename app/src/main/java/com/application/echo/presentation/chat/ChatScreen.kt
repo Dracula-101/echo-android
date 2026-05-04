@@ -54,7 +54,7 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.application.echo.features.messaging.model.MessageDeliveryStatus
-import com.application.echo.ui.components.button.EchoIconButton
+import com.application.echo.ui.components.icon.EchoIconButton
 import com.application.echo.ui.components.scaffold.EchoScaffold
 import com.application.echo.ui.components.scaffold.model.rememberEchoPullToRefreshState
 import com.application.echo.ui.components.snackbar.EchoSnackbarHost

@@ -51,7 +51,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.application.echo.presentation.common.EchoAvatar
 import com.application.echo.ui.components.badge.NotificationBadge
 import com.application.echo.ui.components.button.EchoFilledButton
-import com.application.echo.ui.components.button.EchoIconButton
+import com.application.echo.ui.components.icon.EchoIconButton
 import com.application.echo.ui.components.common.EchoVariant
 import com.application.echo.ui.components.divider.EchoDivider
 import com.application.echo.ui.components.scaffold.EchoScaffold
@@ -108,14 +108,14 @@ fun ConversationScreen(
                         onClick = {
                             navigateToSettings()
                         },
-                        variant = EchoVariant.Neutral,
+                        variant = EchoVariant.Primary,
                     )
                     EchoIconButton(
                         icon = IconResource.Vector(Icons.Outlined.PhotoCamera),
                         onClick = {
                             viewModel.trySendAction(ConversationAction.OnLogout)
                         },
-                        variant = EchoVariant.Neutral,
+                        variant = EchoVariant.Primary,
                     )
                 },
             )

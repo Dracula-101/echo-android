@@ -68,6 +68,16 @@ fun lightTheme(): EchoColorScheme {
             lowest = Color(0xFFF0F1F2),
         ),
         /**
+         * Success colors for positive states and confirmations
+         * Green color family with good contrast
+         */
+        success = SuccessColors(
+            color = Color(0xFF22C55E),
+            onColor = Color(0xFFFFFFFF),
+            container = Color(0xFFDCFCE7),
+            onContainer = Color(0xFF166534),
+        ),
+        /**
          * Error colors for alerts and validation states
          * Red color family with proper contrast
          */
@@ -180,6 +190,16 @@ fun darkTheme(): EchoColorScheme {
             high = Color(0xFF1F2738),
             low = Color(0xFF10151F),
             lowest = Color(0xFF0A0F1C),
+        ),
+        /**
+         * Success colors for dark theme
+         * Same green (#22C55E) for brand consistency, with adjusted containers
+         */
+        success = SuccessColors(
+            color = Color(0xFF4ADE80),
+            onColor = Color(0xFF052E16),
+            container = Color(0xFF123524),
+            onContainer = Color(0xFFBBF7D0),
         ),
         /**
          * Error colors for dark theme

@@ -66,7 +66,6 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.application.echo.ui.components.button.EchoLoadingButton
 import com.application.echo.ui.components.button.EchoTextButton
 import com.application.echo.ui.components.flags.FlagDrawable
 import com.application.echo.ui.components.scaffold.EchoScaffold

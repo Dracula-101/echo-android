@@ -31,6 +31,7 @@ data class EchoColorScheme(
     val secondary: SecondaryColors,
     val background: BackgroundColors,
     val surface: SurfaceColors,
+    val success: SuccessColors,
     val error: ErrorColors,
     val outline: OutlineColors,
     val scrim: ScrimColors,

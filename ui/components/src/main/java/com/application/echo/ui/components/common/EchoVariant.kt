@@ -23,8 +23,11 @@ enum class EchoVariant {
     /** Teal — secondary / alternative emphasis. */
     Secondary,
 
-    /** White/black - */
+    /** Blue-gray — disabled or low-emphasis actions. */
     Neutral,
+
+    /** Success green — successful or positive actions. */
+    Success,
 
     /** Red — destructive or error actions. */
     Error,
@@ -42,6 +45,7 @@ fun EchoVariant.color(): Color = when (this) {
     EchoVariant.Primary -> EchoTheme.colorScheme.primary.color
     EchoVariant.Secondary -> EchoTheme.colorScheme.secondary.color
     EchoVariant.Neutral -> EchoTheme.colorScheme.surface.onColor
+    EchoVariant.Success -> EchoTheme.colorScheme.success.color
     EchoVariant.Error -> EchoTheme.colorScheme.error.color
 }
 
@@ -52,7 +56,8 @@ fun EchoVariant.color(): Color = when (this) {
 fun EchoVariant.onColor(): Color = when (this) {
     EchoVariant.Primary -> EchoTheme.colorScheme.primary.onColor
     EchoVariant.Secondary -> EchoTheme.colorScheme.secondary.onColor
-    EchoVariant.Neutral -> EchoTheme.colorScheme.surface.color
+    EchoVariant.Neutral -> EchoTheme.colorScheme.surface.onColor
+    EchoVariant.Success -> EchoTheme.colorScheme.success.onColor
     EchoVariant.Error -> EchoTheme.colorScheme.error.onColor
 }
 
@@ -64,6 +69,7 @@ fun EchoVariant.containerColor(): Color = when (this) {
     EchoVariant.Primary -> EchoTheme.colorScheme.primary.container
     EchoVariant.Secondary -> EchoTheme.colorScheme.secondary.container
     EchoVariant.Neutral -> EchoTheme.colorScheme.surface.container
+    EchoVariant.Success -> EchoTheme.colorScheme.success.container
     EchoVariant.Error -> EchoTheme.colorScheme.error.container
 }
 
@@ -75,5 +81,6 @@ fun EchoVariant.onContainerColor(): Color = when (this) {
     EchoVariant.Primary -> EchoTheme.colorScheme.primary.onContainer
     EchoVariant.Secondary -> EchoTheme.colorScheme.secondary.onContainer
     EchoVariant.Neutral -> EchoTheme.colorScheme.surface.onContainer
+    EchoVariant.Success -> EchoTheme.colorScheme.success.onContainer
     EchoVariant.Error -> EchoTheme.colorScheme.error.onContainer
 }

@@ -77,13 +77,13 @@ fun RegisterScreen(
         }
     }
 
-    EchoScaffold (
+    EchoScaffold(
         snackbarHost = {
             EchoSnackbarHost(
                 state = snackbarState,
             )
         }
-    ){
+    ) {
         RegisterContent(
             state = state,
             onAction = viewModel::trySendAction,
@@ -105,7 +105,7 @@ private fun RegisterContent(
             .statusBarsPadding()
             .padding(EchoTheme.spacing.padding.medium),
         horizontalAlignment = Alignment.CenterHorizontally,
-    ){
+    ) {
         Spacer(modifier = Modifier.padding(EchoTheme.spacing.gap.extraLarge))
         AppHeader()
         Spacer(modifier = Modifier.padding(EchoTheme.spacing.gap.extraLarge))
