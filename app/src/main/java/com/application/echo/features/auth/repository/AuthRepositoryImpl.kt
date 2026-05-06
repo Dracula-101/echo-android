@@ -70,7 +70,7 @@ class AuthRepositoryImpl @Inject constructor(
                     // This case should be hit when the user has successfully verified their phone number
                     // but does not have an account yet. We transition them to the CreateProfile state,
                     // which will prompt them to create a profile and complete registration.
-                    _authStateFlow.value = AuthState.CreateProfile(event.phoneInfo.phoneNumber)
+                    _authStateFlow.value = AuthState.CreateProfile(event.phoneInfo)
                 }
             }
         }
@@ -125,16 +125,13 @@ class AuthRepositoryImpl @Inject constructor(
     override suspend fun register(
         email: String,
         password: String,
+        phoneNumber: String,
+        phoneCountryCode: String,
         acceptTerms: Boolean,
     ): AuthResult<RegisterResponse> = sessionMutex.withLock {
-        authDiskSource.registerEmail = email
-        authDiskSource.registerPassword = password
-        networkSource.register(email, password, acceptTerms).fold(
+        networkSource.register(email, password, phoneNumber, phoneCountryCode, acceptTerms).fold(
             onSuccess = { response ->
-                storeTokens(response.accessToken, response.refreshToken, response.expiresAt)
-                if (!response.requiresEmailVerification) {
-                    // If email verification is not required, we can consider the user authenticated immediately.
-                }
+                // TODO: handle registration response properly (e.g. if next step is to verify OTP, transition to OTP screen instead of treating as success)
                 AuthResult.Success(response)
             },
             onError = { error ->
@@ -142,6 +139,17 @@ class AuthRepositoryImpl @Inject constructor(
                 AuthResult.Error(error)
             },
         )
+    }
+
+    override fun setPreRegistrationInfo(
+        email: String?,
+        password: String?,
+        phoneNumber: String?
+    ): AuthResult<Unit> {
+        email?.let { authDiskSource.registerEmail = it }
+        password?.let { authDiskSource.registerPassword = it }
+        phoneNumber?.let { authDiskSource.registerPhoneNumber = it }
+        return AuthResult.Success(Unit)
     }
 
     override fun logout() {
@@ -153,10 +161,10 @@ class AuthRepositoryImpl @Inject constructor(
 
     private suspend fun restoreSession() = sessionMutex.withLock {
         if (profileDiskSource.creatingProfileState) {
-            val phoneNumber = profileDiskSource.creatingProfilePhoneNumber
-            if (phoneNumber != null) {
-                Timber.d("Resuming profile creation for user %s", phoneNumber)
-                _authStateFlow.value = AuthState.CreateProfile(phoneNumber)
+            val phoneInfo = otpRepository.cachedPhoneInfo
+            if (phoneInfo != null) {
+                Timber.d("Resuming profile creation for user %s", phoneInfo)
+                _authStateFlow.value = AuthState.CreateProfile(phoneInfo)
                 return
             }
         }

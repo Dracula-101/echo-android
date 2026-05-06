@@ -160,7 +160,14 @@ private fun RegisterForm(
         Spacer(modifier = modifier.size(EchoTheme.spacing.padding.extraLarge))
         EchoTextField(
             value = state.phoneNumber,
-            label = "Phone",
+            label = {
+                Text(
+                    "Phone Number",
+                    style = EchoTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium,
+                    color = EchoTheme.colorScheme.surface.onColor.alpha90,
+                )
+            },
             onValueChange = { onAction(RegisterAction.OnPhoneNumberChanged(it)) },
             placeholder = "Enter your phone number",
             isError = state.phoneNumberError != null,

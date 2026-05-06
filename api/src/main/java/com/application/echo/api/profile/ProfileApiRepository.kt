@@ -8,6 +8,11 @@ import com.application.echo.core.network.result.ApiResult
 interface ProfileApiRepository {
 
     /**
+     * Check username availability.
+     */
+    suspend fun checkUsernameAvailability(username: String): ApiResult<CheckUsernameResponse>
+
+    /**
      * Fetch a user's profile by their ID.
      */
     suspend fun getProfile(userId: String): ApiResult<GetProfileResponse>

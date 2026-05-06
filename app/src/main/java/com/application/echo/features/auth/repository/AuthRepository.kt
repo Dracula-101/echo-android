@@ -1,5 +1,6 @@
 package com.application.echo.features.auth.repository
 
+import com.application.echo.api.auth.AuthError
 import com.application.echo.features.auth.model.AuthResult
 import com.application.echo.api.auth.LoginResponse
 import com.application.echo.api.auth.RegisterResponse
@@ -30,8 +31,16 @@ interface AuthRepository {
     suspend fun register(
         email: String,
         password: String,
+        phoneNumber: String,
+        phoneCountryCode: String,
         acceptTerms: Boolean,
     ): AuthResult<RegisterResponse>
+
+    fun setPreRegistrationInfo(
+        email: String? = null,
+        password: String? = null,
+        phoneNumber: String? = null,
+    ): AuthResult<Unit>
 
     fun logout()
 }

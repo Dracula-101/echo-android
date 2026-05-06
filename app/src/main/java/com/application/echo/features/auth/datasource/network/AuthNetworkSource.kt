@@ -14,6 +14,8 @@ interface AuthNetworkSource {
     suspend fun register(
         email: String,
         password: String,
+        phoneNumber: String,
+        phoneCountryCode: String,
         acceptTerms: Boolean,
     ): AuthResult<RegisterResponse>
 

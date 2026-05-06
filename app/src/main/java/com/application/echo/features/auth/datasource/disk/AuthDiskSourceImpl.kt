@@ -17,6 +17,7 @@ private const val KEY_SESSION_ID = "session_id"
 private const val KEY_SESSION_TOKEN = "session_token"
 private const val KEY_REGISTER_EMAIL = "register_email_key"
 private const val KEY_REGISTER_PASSWORD = "register_password_key"
+private const val KEY_REGISTER_PHONE_NUMBER = "register_phone_number_key"
 
 class AuthDiskSourceImpl @Inject constructor(
     @UnencryptedPreferences sharedPreferences: SharedPreferences,
@@ -59,7 +60,7 @@ class AuthDiskSourceImpl @Inject constructor(
         }
 
     override val registerEmailStateFlow: Flow<String?>
-        get() = _registerEmailStateFlow
+        get() = _registerEmailStateFlow.onSubscription { emit(registerEmail) }
 
     private val _registerPasswordStateFlow = bufferedMutableSharedFlow<String?>()
 
@@ -72,4 +73,16 @@ class AuthDiskSourceImpl @Inject constructor(
 
     override val registerPasswordStateFlow: Flow<String?>
         get() = _registerPasswordStateFlow.onSubscription { emit(registerPassword) }
+
+    private val _registerPhoneNumberStateFlow = bufferedMutableSharedFlow<String?>()
+
+    override var registerPhoneNumber: String?
+        get() = getEncryptedString(KEY_REGISTER_PHONE_NUMBER)
+        set(value) {
+            putEncryptedString(KEY_REGISTER_PHONE_NUMBER, value)
+            _registerPhoneNumberStateFlow.tryEmit(value)
+        }
+
+    override val registerPhoneNumberStateFlow: Flow<String?>
+        get() = _registerPhoneNumberStateFlow.onSubscription { emit(registerPhoneNumber) }
 }

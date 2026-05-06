@@ -27,9 +27,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.times
 import com.application.echo.ui.design.theme.EchoTheme
 
@@ -63,19 +65,22 @@ fun EchoTextField(
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
-    label: String? = null,
     placeholder: String? = null,
     placeholderTextStyle: TextStyle? = null,
     helperText: String? = null,
     errorText: String? = null,
     isError: Boolean = errorText != null,
+    borderColor: Color? = null,
     enabled: Boolean = true,
     readOnly: Boolean = false,
     singleLine: Boolean = true,
     contentPadding: PaddingValues? = null,
+    minLines: Int = if (singleLine) 1 else 1,
     maxLines: Int = if (singleLine) 1 else Int.MAX_VALUE,
+    label: @Composable ((isFocused: Boolean) -> Unit)? = null,
     leading: @Composable ((isFocused: Boolean) -> Unit)? = null,
     trailing: @Composable ((isFocused: Boolean) -> Unit)? = null,
+    labelTrailing: @Composable ((isFocused: Boolean) -> Unit)? = null,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     keyboardActions: KeyboardActions = KeyboardActions.Default,
     visualTransformation: VisualTransformation = VisualTransformation.None,
@@ -89,8 +94,8 @@ fun EchoTextField(
             readOnly -> colors.unfocusedBorder
             !enabled -> colors.disabledBorder
             isError -> colors.errorBorder
-            isFocused -> colors.focusedBorder
-            else -> colors.unfocusedBorder
+            isFocused -> borderColor ?: colors.focusedBorder
+            else -> borderColor ?: colors.unfocusedBorder
         },
         animationSpec = tween(durationMillis = BORDER_ANIM_DURATION_MS),
         label = "border_color",
@@ -99,16 +104,22 @@ fun EchoTextField(
     Column(modifier = modifier) {
         // ── Label ──
         if (label != null) {
-            Text(
-                text = label,
-                style = EchoTheme.typography.bodyMedium,
-                color = when {
-                    !enabled -> colors.disabledText
-                    isError -> colors.errorText
-                    else -> colors.label
-                },
-            )
-            Spacer(Modifier.height(EchoTheme.spacing.gap.extraSmall))
+            Row {
+                label.invoke(isFocused)
+                if (labelTrailing != null) {
+                    Spacer(Modifier.weight(1f))
+                    CompositionLocalProvider(
+                        LocalContentColor provides when {
+                            !enabled -> colors.disabledText
+                            isError -> colors.errorText
+                            else -> colors.label
+                        }
+                    ) {
+                        labelTrailing(isFocused)
+                    }
+                }
+            }
+            Spacer(Modifier.height(EchoTheme.spacing.gap.small))
         }
 
         // ── Input row ──
@@ -122,6 +133,7 @@ fun EchoTextField(
             ),
             cursorBrush = SolidColor(colors.cursor),
             singleLine = singleLine,
+            minLines = minLines,
             maxLines = maxLines,
             keyboardOptions = keyboardOptions,
             keyboardActions = keyboardActions,

@@ -11,6 +11,10 @@ internal class ProfileApiRepositoryImpl @Inject constructor(
     private val api: ProfileApiService,
 ) : ProfileApiRepository {
 
+    override suspend fun checkUsernameAvailability(username: String): ApiResult<CheckUsernameResponse> = api.checkUsernameAvailability(
+        username = username,
+    ).toApiResult()
+
     override suspend fun getProfile(
         userId: String,
     ): ApiResult<GetProfileResponse> = api.getProfile(

@@ -5,6 +5,7 @@ import android.content.Context
 import android.net.Uri
 import androidx.core.net.toFile
 import com.application.echo.api.media.MediaApiRepository
+import com.application.echo.api.profile.CheckUsernameResponse
 import com.application.echo.api.profile.CreateProfileRequest
 import com.application.echo.api.profile.CreateProfileResponse
 import com.application.echo.api.profile.GetProfileResponse
@@ -25,6 +26,12 @@ class ProfileNetworkSourceImpl @Inject constructor(
     private val mimeTypeResolver: MimeTypeResolver,
     @param:ApplicationContext private val context: Context,
 ) : ProfileNetworkSource {
+
+    override suspend fun checkUserNameAvailability(username: String): ProfileResult<CheckUsernameResponse> {
+        return profileApi
+            .checkUsernameAvailability(username)
+            .toProfileResult()
+    }
 
     override suspend fun getProfile(userId: String): ProfileResult<GetProfileResponse> {
         return profileApi

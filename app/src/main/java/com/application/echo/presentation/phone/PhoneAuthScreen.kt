@@ -62,10 +62,13 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.application.echo.ui.components.button.ButtonSize
+import com.application.echo.ui.components.button.EchoFilledButton
 import com.application.echo.ui.components.button.EchoTextButton
 import com.application.echo.ui.components.flags.FlagDrawable
 import com.application.echo.ui.components.scaffold.EchoScaffold
@@ -98,7 +101,41 @@ fun PhoneAuthScreen(
         }
     }
 
-    Scaffold { _ ->
+    Scaffold(
+        bottomBar = {
+            Text(
+                buildAnnotatedString {
+                    append("By continuing, you agree to our ")
+                    append("Terms")
+                    addStyle(
+                        style = EchoTheme.typography.labelMedium.toSpanStyle().copy(
+                            color = EchoTheme.colorScheme.primary.onColor.alpha70,
+                            textDecoration = TextDecoration.Underline,
+                        ),
+                        start = length - "Terms".length,
+                        end = length,
+                    )
+                    append(" and ")
+                    append("Privacy Policy")
+                    addStyle(
+                        style = EchoTheme.typography.labelMedium.toSpanStyle().copy(
+                            color = EchoTheme.colorScheme.primary.onColor.alpha70,
+                            textDecoration = TextDecoration.Underline,
+                        ),
+                        start = length - "Privacy Policy".length,
+                        end = length,
+                    )
+                },
+                style = EchoTheme.typography.labelMedium,
+                color = EchoTheme.colorScheme.scrim.color,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .navigationBarsPadding()
+                    .padding(vertical = EchoTheme.spacing.padding.medium),
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            )
+        }
+    ) { _ ->
         PhoneNumberContent(
             state = state,
             countries = viewModel.countries,
@@ -124,10 +161,10 @@ private fun PhoneNumberContent(
             .background(EchoTheme.colorScheme.background.color)
             .navigationBarsPadding()
             .statusBarsPadding()
-            .padding(EchoTheme.spacing.padding.medium),
+            .padding(EchoTheme.spacing.padding.medium)
+            .padding(vertical = EchoTheme.spacing.padding.large),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Spacer(modifier = Modifier.padding(EchoTheme.spacing.gap.extraLarge))
         AppHeader()
         Spacer(modifier = Modifier.padding(EchoTheme.spacing.gap.extraLarge))
         PhoneNumberForm(
@@ -136,29 +173,22 @@ private fun PhoneNumberContent(
             onAction = onAction,
         )
         Spacer(modifier = Modifier.weight(1f))
-        EchoTextButton(
+        EchoFilledButton(
             onClick = {
                 if (!state.isLoading && activity != null) onAction(PhoneAuthAction.OnSendOtpClicked(activity))
                 keyboard?.hide()
             },
             modifier = Modifier.fillMaxWidth(),
+            isLoading = state.isLoading,
             enabled = !state.isLoading,
+            size = ButtonSize.Large,
         ) {
-            if (state.isLoading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(16.dp),
-                    color = EchoTheme.colorScheme.surface.onColor.alpha50,
-                    strokeWidth = 2.dp,
-                )
-                Spacer(modifier = Modifier.padding(EchoTheme.spacing.gap.extraSmall))
-            }
             Text(
                 "Continue",
                 style = EchoTheme.typography.bodyLarge,
                 color = if (state.isLoading) EchoTheme.colorScheme.surface.onColor.alpha50
                 else EchoTheme.colorScheme.surface.onColor,
             )
-            Spacer(modifier = Modifier.padding(EchoTheme.spacing.gap.extraSmall))
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
                 contentDescription = null,
@@ -166,7 +196,7 @@ private fun PhoneNumberContent(
                 modifier = Modifier.size(EchoTheme.dimen.icon.extraSmall)
             )
         }
-        Spacer(modifier = Modifier.padding(EchoTheme.spacing.gap.medium))
+        Spacer(modifier = Modifier.padding(EchoTheme.spacing.gap.small))
         EchoTextButton(
             onClick = onNavigateToEmailAuth,
             modifier = Modifier.fillMaxWidth(),
@@ -177,35 +207,7 @@ private fun PhoneNumberContent(
                 color = EchoTheme.colorScheme.surface.onColor.alpha70,
             )
         }
-        Spacer(modifier = Modifier.padding(EchoTheme.spacing.gap.medium))
-        Text(
-            buildAnnotatedString {
-                append("By continuing, you agree to our ")
-                append("Terms")
-                addStyle(
-                    style = EchoTheme.typography.labelMedium.toSpanStyle().copy(
-                        color = EchoTheme.colorScheme.primary.onColor.alpha70,
-                        textDecoration = TextDecoration.Underline,
-                    ),
-                    start = length - "Terms".length,
-                    end = length,
-                )
-                append(" and ")
-                append("Privacy Policy")
-                addStyle(
-                    style = EchoTheme.typography.labelMedium.toSpanStyle().copy(
-                        color = EchoTheme.colorScheme.primary.onColor.alpha70,
-                        textDecoration = TextDecoration.Underline,
-                    ),
-                    start = length - "Privacy Policy".length,
-                    end = length,
-                )
-            },
-            style = EchoTheme.typography.labelMedium,
-            color = EchoTheme.colorScheme.scrim.color,
-            modifier = Modifier.fillMaxWidth(),
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-        )
+        Spacer(modifier = Modifier.padding(EchoTheme.spacing.gap.large))
     }
 
     if (isSheetVisible) {
@@ -230,8 +232,8 @@ private fun AppHeader() {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Image(
-            modifier = Modifier.size(EchoTheme.dimen.icon.extraLarge),
-            imageVector = ImageVector.vectorResource(id = R.drawable.ic_app_logo_grayscale),
+            modifier = Modifier.size(EchoTheme.dimen.icon.large),
+            imageVector = ImageVector.vectorResource(id = R.drawable.ic_logo),
             contentDescription = "App Logo",
         )
         Text(
@@ -252,7 +254,17 @@ private fun PhoneNumberForm(
     val keyboard = LocalSoftwareKeyboardController.current
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
-            "What's your number?",
+            buildAnnotatedString {
+                append("What's your ")
+                withStyle(
+                    EchoTheme.typography.headlineMedium
+                        .toSpanStyle()
+                        .copy(color = EchoTheme.colorScheme.primary.color)
+                ) {
+                    append("number")
+                }
+                append("?")
+            },
             style = EchoTheme.typography.headlineMedium,
             color = EchoTheme.colorScheme.background.onColor,
         )

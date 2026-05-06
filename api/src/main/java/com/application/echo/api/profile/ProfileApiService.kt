@@ -16,6 +16,11 @@ import retrofit2.http.Query
  */
 internal interface ProfileApiService {
 
+    @GET(ApiConstants.USERS_CHECK_USERNAME)
+    suspend fun checkUsernameAvailability(
+        @Query("username") username: String,
+    ): NetworkResponse<CheckUsernameResponse>
+
     @GET(ApiConstants.USERS_PROFILE_BY_ID)
     suspend fun getProfile(
         @Path("user_id") userId: String,

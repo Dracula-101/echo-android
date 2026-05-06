@@ -5,19 +5,18 @@ import kotlinx.parcelize.Parcelize
 
 @Parcelize
 data class ProfileState(
-    val id: String,
-    val phoneNumber: String,
-    val email: String? = null,
     val displayName: String? = null,
     val firstName: String? = null,
     val lastName: String? = null,
-    val avatarUrl: String? = null,
+    val gender: String? = null,
+    val dateOfBirth: Long? = null,
+    val bio: String? = null,
+    val interests: List<String> = emptyList(),
+    val canFindByPhoneNumber: Boolean = false,
+    val canFindByUsername: Boolean = false,
 ) : Parcelable {
 
     companion object {
-        val Empty = ProfileState(
-            id = "",
-            phoneNumber = "",
-        )
+        val Empty = ProfileState()
     }
 }

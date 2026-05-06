@@ -65,6 +65,7 @@ import com.application.echoplatform.model.WindowSize
 fun EchoScaffold(
     modifier: Modifier = Modifier,
     topBar: @Composable () -> Unit = { },
+    bottomBar: @Composable () -> Unit = { },
     utilityBar: @Composable () -> Unit = { },
     overlay: @Composable () -> Unit = { },
     snackbarHost: @Composable () -> Unit = { },
@@ -90,7 +91,9 @@ fun EchoScaffold(
             .then(other = modifier),
         topBar = topBar,
         bottomBar = {
-            if (isNavigationBarVisible) {
+            if (bottomBar != {}) {
+                bottomBar()
+            } else if (isNavigationBarVisible) {
                 ScaffoldBottomAppBar(navigationData = navigationData)
             }
         },

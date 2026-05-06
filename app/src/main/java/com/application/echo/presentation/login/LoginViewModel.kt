@@ -4,6 +4,7 @@ import android.os.Parcelable
 import android.util.Patterns
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
+import androidx.navigation.toRoute
 import com.application.echo.api.auth.AuthError
 import com.application.echo.features.auth.model.fold
 import com.application.echo.core.common.platform.base.BaseViewModel

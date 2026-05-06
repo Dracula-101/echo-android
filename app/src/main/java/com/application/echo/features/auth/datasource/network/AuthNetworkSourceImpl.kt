@@ -29,10 +29,14 @@ class AuthNetworkSourceImpl @Inject constructor(
     override suspend fun register(
         email: String,
         password: String,
+        phoneNumber: String,
+        phoneCountryCode: String,
         acceptTerms: Boolean,
     ): AuthResult<RegisterResponse> = api.register(
         email = email,
         password = password,
+        phoneNumber = phoneNumber,
+        countryCode = phoneCountryCode,
         acceptTerms = acceptTerms,
     ).toAuthResult()
 

@@ -15,4 +15,7 @@ interface AuthDiskSource {
 
     var registerPassword: String?
     val registerPasswordStateFlow: Flow<String?>
+
+    var registerPhoneNumber: String?
+    val registerPhoneNumberStateFlow: Flow<String?>
 }

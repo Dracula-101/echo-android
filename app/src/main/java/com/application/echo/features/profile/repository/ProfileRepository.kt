@@ -13,12 +13,14 @@ interface ProfileRepository {
 
     val creatingProfileStateFlow: Flow<CreatingProfileState>
 
-    suspend fun setProfileInfo(
-        userId: String,
-        displayName: String,
-        firstName: String,
-        lastName: String,
-        avatarUri: Uri
+    suspend fun checkUsernameAvailable(username: String): Boolean
+
+    fun saveProfile(
+        displayName: String? = null,
+        firstName: String? = null,
+        lastName: String? = null,
+        dateOfBirth: Long? = null,
+        gender: String? = null,
     ): ProfileResult<Unit>
 
 }

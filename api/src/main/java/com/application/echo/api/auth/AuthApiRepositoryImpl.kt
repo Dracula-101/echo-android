@@ -33,11 +33,15 @@ internal class AuthApiRepositoryImpl @Inject constructor(
     override suspend fun register(
         email: String,
         password: String,
+        phoneNumber: String,
+        countryCode: String,
         acceptTerms: Boolean,
     ): ApiResult<RegisterResponse> = api.register(
         request = RegisterRequest(
             email = email,
             password = password,
+            phoneNumber = phoneNumber,
+            countryCode = countryCode,
             acceptTerms = acceptTerms,
         ),
     ).toApiResult()

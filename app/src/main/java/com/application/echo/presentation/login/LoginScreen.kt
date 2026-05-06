@@ -11,25 +11,19 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.MailOutline
-import androidx.compose.material.icons.filled.Password
-import androidx.compose.material.icons.filled.Phone
-import androidx.compose.material.icons.filled.RemoveRedEye
-import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material.icons.outlined.Password
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
+import androidx.compose.material.icons.outlined.KeyboardArrowRight
+import androidx.compose.material.icons.outlined.Phone
 import androidx.compose.material.icons.outlined.RemoveRedEye
 import androidx.compose.material.icons.outlined.VisibilityOff
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -38,6 +32,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -51,15 +47,15 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.application.echo.ui.components.button.ButtonSize
 import com.application.echo.ui.components.button.EchoFilledButton
-import com.application.echo.ui.components.button.EchoOutlinedButton
-import com.application.echo.ui.components.button.EchoTextButton
-import com.application.echo.ui.components.common.EchoVariant
+import com.application.echo.ui.components.checkbox.CheckboxSize
+import com.application.echo.ui.components.checkbox.EchoCheckbox
 import com.application.echo.ui.components.scaffold.EchoScaffold
 import com.application.echo.ui.components.snackbar.EchoSnackbarHost
 import com.application.echo.ui.components.snackbar.rememberEchoSnackbarState
@@ -67,10 +63,7 @@ import com.application.echo.ui.components.textfield.EchoTextField
 import com.application.echo.ui.design.R
 import com.application.echo.ui.design.theme.EchoTheme
 import com.application.echo.ui.design.utils.alpha10
-import com.application.echo.ui.design.utils.alpha20
-import com.application.echo.ui.design.utils.alpha30
 import com.application.echo.ui.design.utils.alpha50
-import com.application.echo.ui.design.utils.alpha60
 import com.application.echo.ui.design.utils.alpha70
 import com.application.echo.ui.design.utils.alpha90
 import kotlinx.coroutines.flow.collectLatest
@@ -101,6 +94,42 @@ fun LoginScreen(
     EchoScaffold(
         snackbarHost = {
             EchoSnackbarHost(state = snackbarState)
+        },
+        bottomBar = {
+            Box (
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .navigationBarsPadding(),
+                contentAlignment = Alignment.Center,
+            ){
+                Text(
+                    buildAnnotatedString {
+                        withStyle(
+                            EchoTheme.typography.bodyLarge
+                                .toSpanStyle()
+                                .copy(color = EchoTheme.colorScheme.surface.onColor.alpha50)
+                        ) {
+                            append("New here? ")
+                        }
+                        withStyle(
+                            EchoTheme.typography.bodyLarge
+                                .toSpanStyle()
+                                .copy(color = EchoTheme.colorScheme.surface.onColor.alpha90)
+                        ) {
+                            append("Create an account")
+                        }
+                    },
+                    style = EchoTheme.typography.bodyLarge,
+                    color = EchoTheme.colorScheme.inverse.surface,
+                    modifier = Modifier
+                        .clip(EchoTheme.shapes.snackbar)
+                        .clickable { onNavigateToRegisterScreen() }
+                        .padding(
+                            vertical = EchoTheme.spacing.padding.extraSmall,
+                            horizontal = EchoTheme.spacing.padding.small,
+                        )
+                )
+            }
         }
     ) {
         LoginContent(
@@ -119,23 +148,29 @@ private fun LoginContent(
     onNavigateToRegisterScreen: () -> Unit,
     onNavigateToPhoneAuthScreen: () -> Unit,
 ) {
-    Column(
+    LazyColumn(
         modifier = Modifier
             .fillMaxWidth()
             .navigationBarsPadding()
             .statusBarsPadding()
-            .padding(EchoTheme.spacing.padding.medium),
+            .padding(EchoTheme.spacing.padding.medium)
+            .padding(vertical = EchoTheme.spacing.padding.medium),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Spacer(modifier = Modifier.padding(EchoTheme.spacing.gap.extraLarge))
-        AppHeader()
-        Spacer(modifier = Modifier.padding(EchoTheme.spacing.gap.extraLarge))
-        LoginForm(
-            state = state,
-            onAction = onAction,
-            onNavigateToRegisterScreen = onNavigateToRegisterScreen,
-            onNavigateToPhoneAuthScreen = onNavigateToPhoneAuthScreen,
-        )
+        item {
+            AppHeader()
+        }
+        item {
+            Spacer(modifier = Modifier.padding(EchoTheme.spacing.gap.large))
+        }
+        item {
+            LoginForm(
+                state = state,
+                onAction = onAction,
+                onNavigateToRegisterScreen = onNavigateToRegisterScreen,
+                onNavigateToPhoneAuthScreen = onNavigateToPhoneAuthScreen,
+            )
+        }
     }
 }
 
@@ -148,8 +183,8 @@ private fun AppHeader() {
     ) {
         Image(
             modifier = Modifier
-                .size(EchoTheme.dimen.icon.extraLarge),
-            imageVector = ImageVector.vectorResource(id = R.drawable.ic_app_logo_grayscale),
+                .size(EchoTheme.dimen.icon.large),
+            imageVector = ImageVector.vectorResource(id = R.drawable.ic_logo),
             contentDescription = "App Logo",
         )
         Text(
@@ -168,21 +203,40 @@ private fun LoginForm(
     onNavigateToPhoneAuthScreen: () -> Unit,
 ) {
     val focusManager = LocalFocusManager.current
+    val rememberMeValue = remember { mutableStateOf(false) }
     Column {
         Text(
-            "Welcome back",
+            buildAnnotatedString {
+                append("Welcome ")
+                withStyle(
+                    EchoTheme.typography.headlineMedium
+                        .toSpanStyle()
+                        .copy(color = EchoTheme.colorScheme.primary.color)
+                ) {
+                    append("back")
+                }
+            },
             style = EchoTheme.typography.headlineMedium,
             color = EchoTheme.colorScheme.surface.onColor,
         )
+        Spacer(modifier = modifier.size(EchoTheme.spacing.padding.small))
         Text(
-            "Sign in to the quiet part of the internet",
+            "Sign in to the quiet part of your internet.",
             style = EchoTheme.typography.bodyMedium,
             color = EchoTheme.colorScheme.surface.onColor.alpha50,
         )
         Spacer(modifier = modifier.size(EchoTheme.spacing.padding.extraLarge))
         EchoTextField(
             value = state.email,
-            label = "Email",
+            label = {
+                Text(
+                    "EMAIL",
+                    style = EchoTheme.typography.labelSmall,
+                    color = EchoTheme.colorScheme.surface.onColor.alpha50,
+                    letterSpacing = 1.25.sp,
+                    fontWeight = FontWeight.SemiBold,
+                )
+            },
             onValueChange = { onAction(LoginAction.OnEmailChanged(it)) },
             placeholder = "Enter your email",
             isError = state.emailError != null,
@@ -194,10 +248,18 @@ private fun LoginForm(
             ),
             modifier = modifier,
         )
-        Spacer(modifier = modifier.size(EchoTheme.spacing.padding.medium))
+        Spacer(modifier = modifier.size(EchoTheme.spacing.padding.large))
         EchoTextField(
             value = state.password,
-            label = "Password",
+            label = {
+                Text(
+                    "PASSWORD",
+                    style = EchoTheme.typography.labelSmall,
+                    color = EchoTheme.colorScheme.surface.onColor.alpha50,
+                    letterSpacing = 1.25.sp,
+                    fontWeight = FontWeight.SemiBold,
+                )
+            },
             onValueChange = { onAction(LoginAction.OnPasswordChanged(it)) },
             placeholder = "Enter your password",
             isError = state.passwordError != null,
@@ -237,47 +299,62 @@ private fun LoginForm(
                     )
                 }
             },
+            labelTrailing = {
+                Text(
+                    "Forgot?",
+                    style = EchoTheme.typography.bodySmall,
+
+                    color = EchoTheme.colorScheme.primary.color,
+                    modifier = Modifier
+                        .clickable { /* TODO: Handle forgot password */ }
+                        .padding(end = EchoTheme.spacing.padding.small),
+                )
+            },
             modifier = modifier,
         )
-        Spacer(modifier = modifier.size(EchoTheme.spacing.padding.small))
-        Text(
-            "Forgot Password?",
-            style = EchoTheme.typography.bodyMedium,
-            color = EchoTheme.colorScheme.surface.onColor.alpha70,
-            textDecoration = TextDecoration.Underline,
-            modifier = modifier
-                .clip(EchoTheme.shapes.snackbar)
-                .clickable { }
-                .padding(
-                    vertical = EchoTheme.spacing.padding.extraSmall,
-                    horizontal = EchoTheme.spacing.padding.small,
-                )
-                .align(Alignment.End),
-        )
+        Spacer(modifier = modifier.size(EchoTheme.spacing.padding.medium))
+        Row {
+            EchoCheckbox(
+                checked = { rememberMeValue.value },
+                onCheckedChange = {
+                    rememberMeValue.value = it
+                },
+                enabled = !state.isLoading,
+                size = CheckboxSize.Medium,
+                modifier = Modifier.size(EchoTheme.dimen.icon.small)
+            )
+            Spacer(modifier = Modifier.size(EchoTheme.spacing.gap.extraSmall))
+            Text(
+                "Keep me signed in on this device",
+                style = EchoTheme.typography.bodyMedium,
+                color = EchoTheme.colorScheme.surface.onColor.alpha70,
+                modifier = Modifier.padding(start = EchoTheme.spacing.gap.extraSmall),
+            )
+        }
         Spacer(modifier = modifier.size(EchoTheme.spacing.padding.large))
-        EchoTextButton(
+        EchoFilledButton(
             onClick = {
                 focusManager.clearFocus()
                 onAction(LoginAction.OnLoginClicked)
             },
             enabled = !state.isLoading,
+            isLoading = state.isLoading,
             modifier = modifier.fillMaxWidth(),
+            size = ButtonSize.Large,
         ) {
-            if (state.isLoading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(EchoTheme.dimen.icon.small),
-                    strokeWidth = 2.dp,
-                    color = EchoTheme.colorScheme.primary.onColor.alpha50,
-                )
-                Spacer(Modifier.size(EchoTheme.spacing.gap.small))
-            }
             Text(
-                "Sign in",
+                "Sign In",
                 style = EchoTheme.typography.bodyLarge,
-                color = EchoTheme.colorScheme.primary.onColor.copy(alpha = if (state.isLoading) 0.5f else 1f),
-                fontWeight = FontWeight.Bold
+                color = EchoTheme.colorScheme.primary.onColor,
+            )
+            Icon(
+                imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
+                contentDescription = "Sign In",
+                tint = EchoTheme.colorScheme.primary.onColor,
+                modifier = Modifier.size(EchoTheme.dimen.icon.small),
             )
         }
+        Spacer(modifier = modifier.size(EchoTheme.spacing.gap.medium))
         Box(
             modifier = modifier.fillMaxWidth(),
             contentAlignment = Alignment.Center,
@@ -287,68 +364,31 @@ private fun LoginForm(
                     .padding(vertical = EchoTheme.spacing.padding.large),
             )
             Text(
-                "or continue with",
-                style = EchoTheme.typography.bodyLarge,
+                "OR CONTINUE WITH",
+                style = EchoTheme.typography.labelSmall,
                 color = EchoTheme.colorScheme.surface.onColor.alpha50,
+                letterSpacing = 1.25.sp,
                 modifier = Modifier
                     .background(EchoTheme.colorScheme.background.color)
                     .padding(horizontal = EchoTheme.spacing.padding.medium),
             )
         }
-        Row(
+        Column(
             modifier = modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(EchoTheme.spacing.gap.medium),
+            verticalArrangement = Arrangement.spacedBy(EchoTheme.spacing.gap.medium),
         ) {
             OtherLoginOptions(
-                modifier = modifier.weight(1f),
-                text = "Phone",
+                text = "Continue with Phone",
                 onClick = onNavigateToPhoneAuthScreen,
-                icon = Icons.Default.Phone,
-                isActive = true,
+                icon = Icons.Outlined.Phone,
             )
             OtherLoginOptions(
-                modifier = modifier.weight(1f),
-                text = "Google",
+                text = "Continue with Google",
                 onClick = {},
                 icon = ImageVector.vectorResource(R.drawable.ic_google),
+                isActive = true,
             )
         }
-    }
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.BottomCenter,
-    ) {
-        Text(
-            buildAnnotatedString {
-                append("New here? ")
-                addStyle(
-                    style = EchoTheme.typography.bodyLarge.toSpanStyle().copy(
-                        color = EchoTheme.colorScheme.surface.onColor.alpha50,
-                    ),
-                    start = 0,
-                    end = length,
-                )
-                val signUpText = "Create an account"
-                append(signUpText)
-                addStyle(
-                    style = EchoTheme.typography.bodyLarge.toSpanStyle().copy(
-                        color = EchoTheme.colorScheme.surface.onColor.alpha90,
-                    ),
-                    start = length - signUpText.length,
-                    end = length,
-                )
-            },
-            style = EchoTheme.typography.bodyLarge,
-            color = EchoTheme.colorScheme.inverse.surface,
-            modifier = modifier
-                .clip(EchoTheme.shapes.snackbar)
-                .clickable { onNavigateToRegisterScreen() }
-                .padding(
-                    vertical = EchoTheme.spacing.padding.extraSmall,
-                    horizontal = EchoTheme.spacing.padding.small,
-                )
-        )
     }
 }
 
@@ -362,10 +402,16 @@ private fun OtherLoginOptions(
 ) {
     Box(
         modifier = modifier
+            .fillMaxWidth()
             .clip(EchoTheme.shapes.input)
             .background(
                 if (isActive) EchoTheme.colorScheme.background.onColor.alpha90
                 else EchoTheme.colorScheme.background.onColor.alpha10
+            )
+            .border(
+                width = 1.dp,
+                color = EchoTheme.colorScheme.surface.onColor.alpha10,
+                shape = EchoTheme.shapes.input,
             )
             .clickable { onClick() }
             .padding(EchoTheme.spacing.padding.medium),
@@ -379,15 +425,13 @@ private fun OtherLoginOptions(
                 imageVector = icon,
                 contentDescription = text,
                 modifier = Modifier.size(EchoTheme.dimen.icon.medium),
-                colorFilter = ColorFilter.tint(
-                    if (isActive) EchoTheme.colorScheme.surface.color
-                    else EchoTheme.colorScheme.surface.onColor.alpha50
-                ),
+                colorFilter = if (isActive) null else ColorFilter.tint(EchoTheme.colorScheme.surface.onColor),
             )
             Text(
                 text,
-                style = EchoTheme.typography.bodyLarge,
-                color = if (isActive) EchoTheme.colorScheme.surface.color else EchoTheme.colorScheme.surface.onColor.alpha50,
+                style = EchoTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = if (isActive) EchoTheme.colorScheme.surface.color else EchoTheme.colorScheme.surface.onColor,
                 modifier = Modifier.padding(start = EchoTheme.spacing.padding.small),
             )
         }

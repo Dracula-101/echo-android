@@ -26,6 +26,14 @@ data class CreateProfileRequest(
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 /**
+ * Response `data` for `GET /users/username-exists`.
+ */
+data class CheckUsernameResponse(
+    @SerializedName("exists")
+    val exists: Boolean,
+)
+
+/**
  * Response `data` for `GET /users/profile/{user_id}` and `POST /users/profile`.
  */
 data class GetProfileResponse(

@@ -35,6 +35,8 @@ interface AuthApiRepository {
     suspend fun register(
         email: String,
         password: String,
+        phoneNumber: String,
+        countryCode: String,
         acceptTerms: Boolean,
     ): ApiResult<RegisterResponse>
 

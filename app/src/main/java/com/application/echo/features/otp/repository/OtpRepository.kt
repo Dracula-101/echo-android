@@ -12,6 +12,7 @@ interface OtpRepository {
     val otpStateFlow: StateFlow<OtpState>
     val authEventFlow: SharedFlow<OtpAuthEvent>
 
+    val cachedPhoneInfo: PhoneInfo?
     suspend fun sendOtp(phoneInfo: PhoneInfo, context: Activity): AuthResult<Unit>
     suspend fun resendOtp(context: Activity): AuthResult<Unit>
     suspend fun verifyOtp(otp: String): AuthResult<Unit>

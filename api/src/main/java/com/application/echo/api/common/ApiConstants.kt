@@ -18,6 +18,7 @@ internal object ApiConstants {
     const val AUTH_HEALTH = "$API_PREFIX/auth/health"
 
     // ── Users ──
+    const val USERS_CHECK_USERNAME = "$API_PREFIX/users/username-exists"
     const val USERS_PROFILE = "$API_PREFIX/users/profile"
     const val USERS_PROFILE_BY_ID = "$API_PREFIX/users/profile/{user_id}"
     const val USERS_SEARCH = "$API_PREFIX/users/search"

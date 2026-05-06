@@ -64,6 +64,9 @@ class OtpRepositoryImpl @Inject constructor(
     private val _authEventFlow = MutableSharedFlow<OtpAuthEvent>(extraBufferCapacity = 1)
     override val authEventFlow: SharedFlow<OtpAuthEvent> = _authEventFlow.asSharedFlow()
 
+    override val cachedPhoneInfo: PhoneInfo?
+        get() = otpDiskSource.cachedPhoneInfo
+
     private var resendToken: PhoneAuthProvider.ForceResendingToken? = null
     private var cooldownJob: Job? = null
 

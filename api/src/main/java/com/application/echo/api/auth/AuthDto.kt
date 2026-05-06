@@ -30,6 +30,10 @@ data class RegisterRequest(
     val email: String,
     @SerializedName("password")
     val password: String,
+    @SerializedName("phone_number")
+    val phoneNumber: String,
+    @SerializedName("phone_country_code")
+    val countryCode: String? = null,
     @SerializedName("accept_terms")
     val acceptTerms: Boolean,
 )
@@ -62,20 +66,22 @@ data class LoginResponse(
  * Response `data` for `POST /auth/register`.
  */
 data class RegisterResponse(
+    @SerializedName("account_status")
+    val accountStatus: String,
     @SerializedName("email")
     val email: String,
-    @SerializedName("email_verification_sent")
-    val emailVerificationSent: Boolean,
-    @SerializedName("requires_email_verification")
-    val requiresEmailVerification: Boolean,
+    @SerializedName("email_verified")
+    val emailVerified: Boolean,
+    @SerializedName("message")
+    val message: String,
+    @SerializedName("next_step")
+    val nextStep: String,
+    @SerializedName("phone_verified")
+    val phoneVerified: Boolean,
     @SerializedName("user_id")
     val userId: String,
-    @SerializedName("access_token")
-    val accessToken: String,
-    @SerializedName("refresh_token")
-    val refreshToken: String,
-    @SerializedName("expires_at")
-    val expiresAt: String,
+    @SerializedName("verification_email_sent_to")
+    val verificationEmailSentTo: String,
 )
 
 /**

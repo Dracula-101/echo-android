@@ -2,13 +2,11 @@ package com.application.echo.features.profile.model
 
 sealed class CreatingProfileState {
 
-    data object None : CreatingProfileState()
+    data object Started : CreatingProfileState()
 
     data class Creating(
-        val userId: String,
-        val displayName: String? = null,
-        val firstName: String? = null,
-        val lastName: String? = null
+        val preRegistrationInfo: PreRegistrationInfo,
+        val state: ProfileState,
     ) : CreatingProfileState()
 
     data object Completed : CreatingProfileState()

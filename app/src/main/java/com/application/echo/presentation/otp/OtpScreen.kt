@@ -19,7 +19,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ArrowBackIos
 import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.outlined.ArrowBackIos
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -38,9 +40,12 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.application.echo.ui.components.icon.EchoIconButton
+import com.application.echo.ui.components.icon.EchoIconButtonSize
 import com.application.echo.ui.components.scaffold.EchoScaffold
 import com.application.echo.ui.components.snackbar.EchoFlatSnackbarHost
 import com.application.echo.ui.components.snackbar.rememberEchoSnackbarState
+import com.application.echo.ui.components.util.IconResource
 import com.application.echo.ui.design.R
 import com.application.echo.ui.design.theme.EchoTheme
 
@@ -74,9 +79,9 @@ fun OtpScreen(
     EchoScaffold(
         snackbarHost = {
             EchoFlatSnackbarHost(state = snackbarHostState)
-        }
+        },
     ) {
-        OtpContent(state = state, onAction = viewModel::trySendAction)
+        OtpContent(state = state, onAction = viewModel::trySendAction, onNavigateBack = onNavigateBack)
     }
 }
 
@@ -84,6 +89,7 @@ fun OtpScreen(
 private fun OtpContent(
     state: OtpScreenState,
     onAction: (OtpAction) -> Unit,
+    onNavigateBack: () -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -94,9 +100,17 @@ private fun OtpContent(
             .padding(EchoTheme.spacing.padding.medium),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Spacer(modifier = Modifier.padding(EchoTheme.spacing.gap.extraLarge))
-        AppHeader()
-        Spacer(modifier = Modifier.padding(EchoTheme.spacing.gap.extraLarge))
+        Spacer(modifier = Modifier.padding(EchoTheme.spacing.gap.medium))
+        EchoIconButton(
+            onClick = {
+                onNavigateBack()
+            },
+            circle = true,
+            icon = IconResource.Vector(Icons.AutoMirrored.Outlined.ArrowBackIos),
+            size = EchoIconButtonSize.Small,
+            modifier = Modifier.align(Alignment.Start),
+        )
+        Spacer(modifier = Modifier.padding(EchoTheme.spacing.gap.medium))
         OtpForm(state = state, onAction = onAction)
     }
 }
@@ -127,11 +141,20 @@ private fun OtpForm(
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
-            "Enter the code",
+            buildAnnotatedString {
+                append("Tap in the ")
+                withStyle(
+                    EchoTheme.typography.headlineMedium
+                        .toSpanStyle()
+                        .copy(color = EchoTheme.colorScheme.primary.color)
+                ) {
+                    append("code")
+                }
+            },
             style = EchoTheme.typography.headlineMedium,
             color = EchoTheme.colorScheme.background.onColor,
         )
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(EchoTheme.spacing.gap.extraSmall))
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 text = "Sent to ${state.phoneInfo?.toDisplayString()}  ",
@@ -151,8 +174,7 @@ private fun OtpForm(
                 style = EchoTheme.typography.bodyMedium,
             )
         }
-        Spacer(modifier = Modifier.height(EchoTheme.spacing.gap.large))
-
+        Spacer(modifier = Modifier.height(EchoTheme.spacing.gap.extraLarge))
         OtpInputField(
             digits = state.otpDigits,
             isError = state.otpError != null,
@@ -177,9 +199,7 @@ private fun OtpForm(
                 )
             }
         }
-
-        Spacer(modifier = Modifier.height(EchoTheme.spacing.gap.large))
-
+        Spacer(modifier = Modifier.height(EchoTheme.spacing.gap.extraLarge))
         ResendButton(state = state, onAction = onAction)
     }
 }
@@ -191,7 +211,7 @@ private fun ResendButton(
 ) {
     Row(
         modifier = Modifier
-            .clip(EchoTheme.shapes.chip)
+            .clip(EchoTheme.shapes.input)
             .background(EchoTheme.colorScheme.primary.container)
             .clickable(enabled = state.canResend) { onAction(OtpAction.OnResendClicked) }
             .padding(
@@ -212,7 +232,7 @@ private fun ResendButton(
             text = if (state.canResend) "Resend code"
             else "Resend in ${state.resendCooldownSeconds}s",
             style = EchoTheme.typography.bodyMedium,
-            color = if (state.canResend) EchoTheme.colorScheme.primary.onColor
+            color = if (state.canResend) EchoTheme.colorScheme.primary.onContainer
             else EchoTheme.colorScheme.primary.dim,
         )
     }

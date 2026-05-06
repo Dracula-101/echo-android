@@ -7,8 +7,9 @@ enum class EchoIconButtonSize(
     val buttonSize: Dp,
     val iconSize: Dp,
 ) {
-    Small(32.dp, 16.dp),
-    Medium(40.dp, 20.dp),
-    Large(48.dp, 24.dp),
-    XL(56.dp, 28.dp),
+    XS(38.dp, 12.dp),
+    Small(38.dp, 16.dp),
+    Medium(38.dp, 20.dp),
+    Large(38.dp, 24.dp),
+    XL(38.dp, 28.dp),
 }
