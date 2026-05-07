@@ -34,14 +34,24 @@ internal class ProfileApiRepositoryImpl @Inject constructor(
     override suspend fun createProfile(
         userId: String,
         displayName: String,
+        userName: String,
         firstName: String,
         lastName: String,
+        bio: String,
+        profileVisibility: String,
+        searchable: Boolean,
+        pushEnabled: Boolean,
     ): ApiResult<CreateProfileResponse> = api.createProfile(
         request = CreateProfileRequest(
             userId = userId,
             displayName = displayName,
+            username = userName,
             firstName = firstName,
             lastName = lastName,
-        ),
+            bio = bio,
+            profileVisibility = profileVisibility,
+            searchable = searchable,
+            pushEnabled = pushEnabled,
+        )
     ).toApiResult()
 }

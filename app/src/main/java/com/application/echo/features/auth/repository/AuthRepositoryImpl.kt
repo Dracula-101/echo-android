@@ -11,6 +11,7 @@ import com.application.echo.features.auth.datasource.disk.AuthDiskSource
 import com.application.echo.features.auth.datasource.network.AuthNetworkSource
 import com.application.echo.features.auth.model.AuthResult
 import com.application.echo.features.auth.model.AuthState
+import com.application.echo.features.auth.model.PhoneInfo
 import com.application.echo.features.auth.model.UserState
 import com.application.echo.features.auth.model.fold
 import com.application.echo.features.auth.model.onSuccess
@@ -19,6 +20,7 @@ import com.application.echo.features.otp.model.OtpAuthEvent
 import com.application.echo.features.otp.model.OtpVerificationState
 import com.application.echo.features.otp.repository.OtpRepository
 import com.application.echo.features.profile.datasource.disk.ProfileDiskSource
+import com.application.echo.features.profile.model.CreatingProfileState
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
@@ -53,6 +55,7 @@ class AuthRepositoryImpl @Inject constructor(
 
     init {
         scope.launch { restoreSession() }
+        scope.launch { observeProfileStateChanges() }
         scope.launch { observeOtpAuthEvents() }
         scope.launch { observeOtpStateChanges() }
     }
@@ -62,16 +65,30 @@ class AuthRepositoryImpl @Inject constructor(
         otpRepository.authEventFlow.collect { event ->
             when (event) {
                 is OtpAuthEvent.Authenticated -> sessionMutex.withLock {
-                    persistSession(event.response.session, event.response.user.id, event.response.user.email)
+                    persistSession(
+                        event.response.session,
+                        event.response.user.id,
+                        event.response.user.email
+                    )
                     otpRepository.clearOtpSession()
                     emitAuthenticated()
                 }
-                is OtpAuthEvent.CreateAccount -> {
-                    // This case should be hit when the user has successfully verified their phone number
-                    // but does not have an account yet. We transition them to the CreateProfile state,
-                    // which will prompt them to create a profile and complete registration.
-                    _authStateFlow.value = AuthState.CreateProfile(event.phoneInfo)
+
+                is OtpAuthEvent.RegisterUser -> {
+                    _authStateFlow.value = AuthState.RegisteringWithPhone(event.phoneInfo)
+                    startRegistration(event.phoneInfo)
                 }
+            }
+        }
+    }
+
+    private suspend fun observeProfileStateChanges() {
+        profileDiskSource.profileStateFlow.collect { event ->
+            when(event) {
+                CreatingProfileState.Completed -> {
+
+                }
+                else -> {}
             }
         }
     }
@@ -100,26 +117,39 @@ class AuthRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun loginWithToken(token: String): AuthResult<LoginResponse> = sessionMutex.withLock {
-        networkSource.loginWithToken(token).also { result ->
-            result.onSuccess { response ->
-                persistSession(response.session, response.user.id, response.user.email)
-                emitAuthenticated()
+    override suspend fun loginWithToken(token: String): AuthResult<LoginResponse> =
+        sessionMutex.withLock {
+            networkSource.loginWithToken(token).also { result ->
+                result.onSuccess { response ->
+                    persistSession(response.session, response.user.id, response.user.email)
+                    emitAuthenticated()
+                }
             }
         }
-    }
 
-    override suspend fun autoLogin() {
+    override suspend fun silentLogin() {
         val email = authDiskSource.registerEmail
         val password = authDiskSource.registerPassword
         if (email != null && password != null) {
-            login(email, password).onSuccess {
-                authDiskSource.registerEmail = null
-                authDiskSource.registerPassword = null
-            }
+            networkSource.login(
+                email = email,
+                password = password,
+            ).fold(
+                onSuccess = { response ->
+                    persistSession(response.session, response.user.id, response.user.email)
+                },
+                onError = { error ->
+                    Timber.e("Auto-login failed: %s", error.code)
+                },
+            )
         } else {
             Timber.w("Auto-login skipped: no stored credentials")
         }
+    }
+
+    fun startRegistration(phoneInfo: PhoneInfo) {
+        authDiskSource.isRegistering = true
+        authDiskSource.registerPhoneInfo = phoneInfo
     }
 
     override suspend fun register(
@@ -131,7 +161,13 @@ class AuthRepositoryImpl @Inject constructor(
     ): AuthResult<RegisterResponse> = sessionMutex.withLock {
         networkSource.register(email, password, phoneNumber, phoneCountryCode, acceptTerms).fold(
             onSuccess = { response ->
-                // TODO: handle registration response properly (e.g. if next step is to verify OTP, transition to OTP screen instead of treating as success)
+                authDiskSource.clearRegistrationState()
+                if(response.nextStep == "verify_email") {
+                    Timber.d("Registration successful, but email verification required")
+                } else {
+                    // create a profile immediately for a smoother onboarding experience, even if email verification is still pending. The backend will handle restricting access until verification is complete.
+                    _authStateFlow.value = AuthState.CreateProfile(userId = response.userId)
+                }
                 AuthResult.Success(response)
             },
             onError = { error ->
@@ -144,12 +180,9 @@ class AuthRepositoryImpl @Inject constructor(
     override fun setPreRegistrationInfo(
         email: String?,
         password: String?,
-        phoneNumber: String?
-    ): AuthResult<Unit> {
+    ) {
         email?.let { authDiskSource.registerEmail = it }
         password?.let { authDiskSource.registerPassword = it }
-        phoneNumber?.let { authDiskSource.registerPhoneNumber = it }
-        return AuthResult.Success(Unit)
     }
 
     override fun logout() {
@@ -160,15 +193,32 @@ class AuthRepositoryImpl @Inject constructor(
     // ── Session Restoration ──────────────────────────────────────────
 
     private suspend fun restoreSession() = sessionMutex.withLock {
-        if (profileDiskSource.creatingProfileState) {
-            val phoneInfo = otpRepository.cachedPhoneInfo
+
+        // ── 1. Registration in progress ──────────────────────────────────────────
+        if (authDiskSource.isRegistering) {
+            val phoneInfo = authDiskSource.registerPhoneInfo
             if (phoneInfo != null) {
-                Timber.d("Resuming profile creation for user %s", phoneInfo)
-                _authStateFlow.value = AuthState.CreateProfile(phoneInfo)
+                Timber.d("Resuming registration with phone %s", phoneInfo.phoneNumber)
+                _authStateFlow.value = AuthState.RegisteringWithPhone(phoneInfo = phoneInfo)
+                return
+            }
+            // Flag set but data missing — stale write or crash mid-save. Clear it
+            // and fall through so the rest of the checks can find a valid state.
+            Timber.w("Stale registration state — clearing")
+            authDiskSource.clearRegistrationState()
+        }
+
+        // ── 2. Profile creation in progress ──────────────────────────────────────
+        if (profileDiskSource.creatingProfileState) {
+            val userId = profileDiskSource.creatingProfileUserId
+            if (userId != null) {
+                Timber.d("Resuming profile creation for user %s", userId)
+                _authStateFlow.value = AuthState.CreateProfile(userId = userId)
                 return
             }
         }
 
+        // ── 3. Known user ─────────────────────────────────────────────────────────
         if (authDiskSource.userState != UserState.Empty) {
             if (tokenManager.isTokenValid) {
                 Timber.d("Valid token found — authenticated")
@@ -181,7 +231,8 @@ class AuthRepositoryImpl @Inject constructor(
             if (tokenData == null) {
                 Timber.w("Stored user but no token data — clearing stale session")
                 clearSession()
-                _authStateFlow.value = AuthState.Unauthenticated(AuthState.Unauthenticated.Reason.SessionExpired)
+                _authStateFlow.value =
+                    AuthState.Unauthenticated(AuthState.Unauthenticated.Reason.SessionExpired)
                 return
             }
 
@@ -192,12 +243,14 @@ class AuthRepositoryImpl @Inject constructor(
             return
         }
 
-        if (otpDiskSource.cachedPhoneInfo != null) {
+        // ── 4. OTP verification in progress ──────────────────────────────────────
+        otpRepository.cachedPhoneInfo?.let { phoneInfo ->
             Timber.d("OTP flow in progress — resuming")
-            _authStateFlow.value = AuthState.OtpVerification(otpDiskSource.cachedPhoneInfo!!)
+            _authStateFlow.value = AuthState.OtpVerification(phoneInfo)
             return
         }
 
+        // ── 5. No recoverable state ───────────────────────────────────────────────
         Timber.d("No session found — unauthenticated")
         _authStateFlow.value = AuthState.Unauthenticated()
     }
@@ -219,13 +272,20 @@ class AuthRepositoryImpl @Inject constructor(
                             || error is AuthError.AccountLocked
                             || error is AuthError.AccountDisabled
                     if (isTerminal) {
-                        Timber.e("Background token refresh failed terminally (%s) — logging out", error.code)
+                        Timber.e(
+                            "Background token refresh failed terminally (%s) — logging out",
+                            error.code
+                        )
                         sessionMutex.withLock {
                             clearSession()
-                            _authStateFlow.value = AuthState.Unauthenticated(AuthState.Unauthenticated.Reason.SessionExpired)
+                            _authStateFlow.value =
+                                AuthState.Unauthenticated(AuthState.Unauthenticated.Reason.SessionExpired)
                         }
                     } else {
-                        Timber.w("Background token refresh failed transiently (%s) — keeping session", error.code)
+                        Timber.w(
+                            "Background token refresh failed transiently (%s) — keeping session",
+                            error.code
+                        )
                     }
                 },
             )

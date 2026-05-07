@@ -265,7 +265,7 @@ class OtpRepositoryImpl @Inject constructor(
                 when (error) {
                     is AuthError.UserNotFound -> {
                         Timber.i("User not found — routing to account creation for %s", phoneInfo.phoneNumber)
-                        _authEventFlow.emit(OtpAuthEvent.CreateAccount(phoneInfo))
+                        _authEventFlow.emit(OtpAuthEvent.RegisterUser(phoneInfo = phoneInfo))
                     }
                     else -> {
                         Timber.e("Backend token exchange failed: %s", error.code)

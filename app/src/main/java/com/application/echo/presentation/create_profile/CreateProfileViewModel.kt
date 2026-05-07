@@ -7,21 +7,19 @@ import android.os.Parcelable
 import android.util.Patterns
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.SavedStateHandle
-import com.application.echo.api.manager.AuthTokenManager
+import androidx.navigation.toRoute
 import com.application.echo.core.common.platform.base.BaseViewModel
-import com.application.echo.features.auth.datasource.disk.AuthDiskSource
 import com.application.echo.features.auth.model.AuthState
 import com.application.echo.features.auth.model.PhoneInfo
 import com.application.echo.features.auth.model.fold
 import com.application.echo.features.auth.repository.AuthRepository
-import com.application.echo.features.notification.token.FcmTokenManager
-import com.application.echo.features.otp.datasource.disk.OtpDiskSource
-import com.application.echo.features.otp.model.OtpAuthEvent
-import com.application.echo.features.otp.repository.OtpRepository
 import com.application.echo.features.profile.model.CreatingProfileState
+import com.application.echo.features.profile.model.ProfileVisibility
 import com.application.echo.features.profile.model.fold
 import com.application.echo.features.profile.repository.ProfileRepository
-import com.application.echo.ui.components.picker.EchoDate
+import com.application.echo.presentation.register.PasswordStrength
+import com.application.echo.presentation.register.passwordStrength
+import com.application.echo.presentation.rootnav.CreateProfileScreenRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,7 +31,6 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.parcelize.Parcelize
 import timber.log.Timber
 import javax.inject.Inject
-
 @OptIn(FlowPreview::class)
 @HiltViewModel
 class CreateProfileViewModel @Inject constructor(
@@ -41,23 +38,14 @@ class CreateProfileViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val profileRepository: ProfileRepository,
 ) : BaseViewModel<CreateProfileState, CreateProfileEvent, CreateProfileAction>(
-    initialState = savedStateHandle[KEY_STATE] ?: CreateProfileState(),
+    initialState = savedStateHandle[KEY_STATE] ?: CreateProfileState(
+        userId = savedStateHandle.toRoute<CreateProfileScreenRoute>().userId
+    ),
 ) {
 
     private val usernameQueryFlow = MutableStateFlow<String?>(null)
 
     init {
-        authRepository.authStateFlow
-            .onEach { authState ->
-                if (authState is AuthState.CreateProfile) {
-                    setState {
-                        state.copy(
-                            phoneInfo = authState.phoneInfo,
-                        )
-                    }
-                }
-            }
-            .launchIn(viewModelScope)
         profileRepository.creatingProfileStateFlow
             .onEach { profileState ->
                 Timber.i("Received profile state: $profileState")
@@ -65,38 +53,13 @@ class CreateProfileViewModel @Inject constructor(
                     setState {
                         state.copy(
                             displayName = profileState.state.displayName,
-                            gender = profileState.state.gender?.let { UserGender.parse(it) },
                             dateOfBirth = profileState.state.dateOfBirth,
-                            email = profileState.preRegistrationInfo.email,
-                            password = profileState.preRegistrationInfo.password,
                         )
-                    }
-                    // Trigger username validation if we already have a username (e.g. user is returning to the app during profile creation)
-                    if (state.email != null) {
-                        val isValidEmail = Patterns.EMAIL_ADDRESS.matcher(state.email!!).matches()
-                        setState {
-                            state.copy(
-                                isValidEmail = isValidEmail,
-                                emailError = if (!isValidEmail) "Invalid email address" else null
-                            )
-                        }
-                    }
-                    if (state.password != null) {
-                        val passwordStrength = state.password!!.passwordStrength()
-                        setState {
-                            state.copy(
-                                passwordStrength = passwordStrength,
-                                passwordError = when (passwordStrength) {
-                                    PasswordStrength.Empty -> "Password cannot be empty"
-                                    PasswordStrength.Weak -> "Password is too weak"
-                                    else -> null
-                                }
-                            )
-                        }
                     }
                 }
             }
             .launchIn(viewModelScope)
+
         usernameQueryFlow
             .filterNotNull()
             .debounce(500L)
@@ -119,24 +82,8 @@ class CreateProfileViewModel @Inject constructor(
         }
     }
 
-
     override fun handleAction(action: CreateProfileAction) {
         when (action) {
-            is CreateProfileAction.OnEmailChanged -> setState {
-                state.copy(
-                    email = action.value,
-                    isValidEmail = Patterns.EMAIL_ADDRESS.matcher(action.value).matches()
-                )
-            }
-            is CreateProfileAction.OnPasswordChanged -> setState {
-                state.copy(
-                    password = action.value,
-                    passwordStrength = action.value.passwordStrength(),
-                )
-            }
-            is CreateProfileAction.OnChangePasswordVisibility -> setState {
-                state.copy(isPasswordVisible = !state.isPasswordVisible)
-            }
             is CreateProfileAction.OnDisplayNameChanged -> setState {
                 state.copy(displayName = action.value)
             }
@@ -166,14 +113,11 @@ class CreateProfileViewModel @Inject constructor(
             is CreateProfileAction.OnDateOfBirthChanged -> setState {
                 state.copy(dateOfBirth = action.value)
             }
-            is CreateProfileAction.OnGenderChanged -> setState {
-                state.copy(gender = action.value)
-            }
             is CreateProfileAction.OnAvatarSelected -> setState {
                 state.copy(avatarUri = action.uri)
             }
             is CreateProfileAction.UpdateCurrentPage -> setState {
-                state.copy(currentPage = action.page)
+                state.copy(currentPage = ProfileScreen.fromIndex(action.page))
             }
             is CreateProfileAction.OnGradientSelected -> setState {
                 state.copy(selectedGradientIndex = action.index)
@@ -182,100 +126,77 @@ class CreateProfileViewModel @Inject constructor(
                 state.copy(selectedEmojiIndex = action.index)
             }
             is CreateProfileAction.OnPrevious -> setState {
-                state.copy(currentPage = (state.currentPage - 1).coerceAtLeast(0))
+                when (state.currentPage) {
+                    ProfileScreen.INFO -> state
+                    ProfileScreen.CUSTOMIZATION -> state.copy(currentPage = ProfileScreen.INFO)
+                }
             }
             is CreateProfileAction.OnNext -> setState {
-                state.copy(currentPage = (state.currentPage + 1).coerceAtMost(2))
+                when (state.currentPage) {
+                    ProfileScreen.INFO -> state.copy(currentPage = ProfileScreen.CUSTOMIZATION)
+                    ProfileScreen.CUSTOMIZATION -> state
+                }
             }
             CreateProfileAction.OnContinueClick -> {
-                when(state.currentPage) {
-                    1 -> {
-                        if (!state.isValidEmail || state.password == null || state.passwordStrength == PasswordStrength.Weak) {
-                            setState {
-                                state.copy(
-                                    emailError = if (!state.isValidEmail) "Invalid email address" else null,
-                                    passwordError = when {
-                                        state.password == null -> "Password cannot be empty"
-                                        state.passwordStrength == PasswordStrength.Weak -> "Password is too weak"
-                                        else -> null
-                                    },
-                                    currentPage = 1
-                                )
-                            }
-                        } else {
-                            setState {
-                                state.copy(
-                                    emailError = null,
-                                    passwordError = null,
-                                    currentPage = 2
-                                )
-                            }
-                            savePreRegistrationInfo()
-                        }
-                    }
-                    2 -> {
-                        if (state.displayName.isNullOrBlank() || state.displayName!!.length < 3 || state.bio.isNullOrBlank()) {
-                            setState {
-                                state.copy(
-                                    displayNameError = when {
-                                        state.displayName.isNullOrBlank() -> "Display name cannot be empty"
-                                        state.displayName!!.length < 3 -> "Display name must be at least 3 characters"
-                                        else -> null
-                                    },
-                                    bioError = if (state.bio.isNullOrBlank()) "Bio cannot be empty" else null,
-                                    currentPage = 2
-                                )
-                            }
-                        } else {
-                            setState {
-                                state.copy(
-                                    displayNameError = null,
-                                    bioError = null,
-                                    currentPage = 3
-                                )
-                            }
-                            saveUserInfo()
-                        }
-                    }
-                    3 -> {
-                        if (state.userName.isNullOrBlank() || !state.isValidUserName) {
-                            setState {
-                                state.copy(
-                                    userNameError = when {
-                                        state.userName.isNullOrBlank() -> "Username cannot be empty"
-                                        !state.isValidUserName -> "Username is not available"
-                                        else -> null
-                                    },
-                                    currentPage = 3
-                                )
-                            }
-                        } else {
-                            registerProfile()
-                        }
-                    }
+                when (state.currentPage) {
+                    ProfileScreen.INFO -> handleInfoContinue()
+                    ProfileScreen.CUSTOMIZATION -> handleCustomizationContinue()
                 }
             }
         }
         savedStateHandle[KEY_STATE] = state
     }
 
-    private fun savePreRegistrationInfo() {
-        authRepository.setPreRegistrationInfo(
-            email = state.email!!,
-            password = state.password!!,
-            phoneNumber = state.phoneInfo!!.phoneNumber,
-        )
+    private fun handleInfoContinue() {
+        val displayNameError = when {
+            state.displayName.isNullOrBlank() -> "Display name cannot be empty"
+            state.displayName!!.length < 3 -> "Display name must be at least 3 characters"
+            else -> null
+        }
+        val bioError = if (state.bio.isNullOrBlank()) "Bio cannot be empty" else null
+
+        if (displayNameError != null || bioError != null) {
+            setState {
+                state.copy(
+                    displayNameError = displayNameError,
+                    bioError = bioError,
+                )
+            }
+            return
+        }
+
+        saveUserInfo()
+        setState {
+            state.copy(
+                displayNameError = null,
+                bioError = null,
+                currentPage = ProfileScreen.CUSTOMIZATION,
+            )
+        }
+    }
+
+    private fun handleCustomizationContinue() {
+        when {
+            state.userName.isNullOrBlank() -> {
+                setState { state.copy(userNameError = "Username cannot be empty") }
+            }
+            // Still waiting on the debounced check — don't block, just wait.
+            state.isValidatingUserName -> {
+                setState { state.copy(userNameError = "Checking username availability…") }
+            }
+            !state.isValidUserName -> {
+                setState { state.copy(userNameError = "Username is not available") }
+            }
+            else -> registerProfile()
+        }
     }
 
     private fun saveUserInfo() {
         val parts = state.displayName.orEmpty().trim().split(" ", limit = 2)
-        val firstName = parts.getOrElse(0) { "" }
-        val lastName = parts.getOrElse(1) { "" }
         profileRepository.saveProfile(
             displayName = state.displayName,
-            firstName = firstName,
-            lastName = lastName,
-            gender = state.gender.toString(),
+            firstName = parts.getOrElse(0) { "" },
+            lastName = parts.getOrElse(1) { "" },
             dateOfBirth = state.dateOfBirth,
         )
     }
@@ -283,23 +204,32 @@ class CreateProfileViewModel @Inject constructor(
     private fun registerProfile() {
         viewModelScope.launch {
             setState { state.copy(isLoading = true) }
-            val registerResult = authRepository.register(
-                email = state.email!!,
-                password = state.password!!,
-                phoneNumber = state.phoneInfo!!.phoneNumber,
-                phoneCountryCode = state.phoneInfo!!.country.isoCode,
-                acceptTerms = true,
+            // silent login to get access tokens
+            authRepository.silentLogin()
+            val firstName = state.displayName.orEmpty().trim().split(" ", limit = 2).getOrElse(0) { "" }
+            val lastName = state.displayName.orEmpty().trim().split(" ", limit = 2).getOrElse(1) { "" }
+            val result = profileRepository.createProfile(
+                userName = state.userName!!,
+                userId = state.userId,
+                displayName = state.displayName!!,
+                firstName = firstName,
+                lastName = lastName,
+                bio = state.bio.orEmpty(),
+                profileVisibility = ProfileVisibility.PUBLIC,
+                searchable = true,
+                pushEnabled = true,
             )
-            registerResult.fold(
-                onSuccess = { user ->
+            result.fold(
+                onSuccess = {
+                    setState { state.copy(isLoading = false) }
                 },
                 onError = { error ->
                     setState { state.copy(isLoading = false) }
                     sendEvent(
                         CreateProfileEvent.ShowSnackbar(
-                            message = "Registration failed",
+                            message = "Profile creation failed",
                             detail = error.message,
-                            code = error.code
+                            code = error.code,
                         )
                     )
                 }
@@ -307,41 +237,8 @@ class CreateProfileViewModel @Inject constructor(
         }
     }
 
-
-
     companion object {
         private const val KEY_STATE = "create_profile_state"
-    }
-}
-
-enum class UserGender {
-    WOMAN,
-    MAN,
-    NON_BINARY,
-    OTHER,
-    PREFER_NOT_TO_SAY;
-
-    override fun toString(): String {
-        return when (this) {
-            WOMAN -> "Woman"
-            MAN -> "Man"
-            NON_BINARY -> "Non-binary"
-            OTHER -> "Other"
-            PREFER_NOT_TO_SAY -> "Prefer not to say"
-        }
-    }
-
-    companion object {
-        fun parse(value: String): UserGender {
-            return when (value) {
-                "Man" -> MAN
-                "Woman" -> WOMAN
-                "Non-binary" -> NON_BINARY
-                "Other" -> OTHER
-                "Prefer not to say" -> PREFER_NOT_TO_SAY
-                else -> OTHER
-            }
-        }
     }
 }
 
@@ -356,17 +253,21 @@ val avatarGradientStops: List<Pair<Color, Color>> = listOf(
     Color(0xFFFF7878) to Color(0xFFE94F8E),  // Pink
 )
 
+enum class ProfileScreen(val index: Int) {
+    INFO(1),
+    CUSTOMIZATION(2);
+
+    companion object {
+        fun fromIndex(index: Int): ProfileScreen {
+            return entries.firstOrNull { it.index == index } ?: INFO
+        }
+    }
+}
+
 @Parcelize
 data class CreateProfileState(
-    val currentPage: Int = 1,
-    val phoneInfo: PhoneInfo? = null,
-    val email: String? = null,
-    val emailError: String? = null,
-    val isValidEmail: Boolean = false,
-    val password: String? = null,
-    val passwordError: String? = null,
-    val isPasswordVisible: Boolean = false,
-    val passwordStrength: PasswordStrength = PasswordStrength.Empty,
+    val userId: String,
+    val currentPage: ProfileScreen = ProfileScreen.INFO,
     val dateOfBirth: Long? = null,
     val displayName: String? = null,
     val displayNameError: String? = null,
@@ -374,7 +275,6 @@ data class CreateProfileState(
     val userNameError: String? = null,
     val isValidatingUserName: Boolean = false,
     val isValidUserName: Boolean = false,
-    val gender: UserGender? = null,
     val avatarUri: Uri? = null,
     val avatarUrl: String? = null,
     val bio: String? = null,
@@ -389,12 +289,8 @@ sealed interface CreateProfileEvent {
 }
 
 sealed interface CreateProfileAction {
-    data class OnEmailChanged(val value: String) : CreateProfileAction
-    data class OnPasswordChanged(val value: String) : CreateProfileAction
-    data object OnChangePasswordVisibility : CreateProfileAction
     data class OnDisplayNameChanged(val value: String) : CreateProfileAction
     data class OnDateOfBirthChanged(val value: Long) : CreateProfileAction
-    data class OnGenderChanged(val value: UserGender) : CreateProfileAction
     data class OnUserNameChanged(val value: String) : CreateProfileAction
     data class OnBioChanged(val value: String) : CreateProfileAction
     data class OnAvatarSelected(val uri: Uri) : CreateProfileAction

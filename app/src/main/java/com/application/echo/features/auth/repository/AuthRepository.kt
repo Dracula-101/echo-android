@@ -26,7 +26,7 @@ interface AuthRepository {
 
     suspend fun loginWithToken(token: String): AuthResult<LoginResponse>
 
-    suspend fun autoLogin()
+    suspend fun silentLogin()
 
     suspend fun register(
         email: String,
@@ -39,8 +39,7 @@ interface AuthRepository {
     fun setPreRegistrationInfo(
         email: String? = null,
         password: String? = null,
-        phoneNumber: String? = null,
-    ): AuthResult<Unit>
+    )
 
     fun logout()
 }

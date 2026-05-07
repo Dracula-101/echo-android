@@ -14,10 +14,20 @@ data class CreateProfileRequest(
     val userId: String,
     @SerializedName("display_name")
     val displayName: String,
+    @SerializedName("username")
+    val username: String,
     @SerializedName("first_name")
     val firstName: String,
     @SerializedName("last_name")
     val lastName: String,
+    @SerializedName("bio")
+    val bio: String,
+    @SerializedName("profile_visibility")
+    val profileVisibility: String,
+    @SerializedName("searchable")
+    val searchable: Boolean,
+    @SerializedName("push_enabled")
+    val pushEnabled: Boolean,
 )
 
 

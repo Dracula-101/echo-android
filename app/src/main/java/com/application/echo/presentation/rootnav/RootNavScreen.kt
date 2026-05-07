@@ -1,13 +1,8 @@
 package com.application.echo.presentation.rootnav
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.application.echo.core.navigation.EchoNavHost
@@ -22,6 +17,7 @@ import com.application.echo.presentation.conversation.ConversationScreen
 import com.application.echo.presentation.login.LoginScreen
 import com.application.echo.presentation.otp.OtpScreen
 import com.application.echo.presentation.phone.PhoneAuthScreen
+import com.application.echo.presentation.register.RegisterScreen
 import com.application.echo.presentation.search_user.SearchUserScreen
 import com.application.echo.presentation.verify_email.VerifyEmail
 import kotlinx.coroutines.flow.collectLatest
@@ -38,7 +34,8 @@ fun RootNavScreen(
             when (event) {
                 is RootNavEvent.OnAuthStateChanged -> when (event.authState) {
                     is AuthState.Authenticated -> navigator.navigateToRoot(ConversationScreenRoute)
-                    is AuthState.CreateProfile -> navigator.navigateToRoot(CreateProfileRoute)
+                    is AuthState.RegisteringWithPhone -> navigator.navigateToRoot(RegisterScreenRoute)
+                    is AuthState.CreateProfile -> navigator.navigateToRoot(CreateProfileScreenRoute(userId = event.authState.userId))
                     is AuthState.OtpVerification -> navigator.navigateTo(OtpScreenRoute)
                     is AuthState.Unauthenticated -> navigator.navigateToRoot(LoginScreenRoute)
                     is AuthState.Initializing -> Unit
@@ -59,6 +56,11 @@ fun RootNavScreen(
                 onNavigateToPhoneAuthScreen = { navigator.navigateTo(PhoneAuthScreenRoute) },
             )
         }
+        echoComposable<RegisterScreenRoute> {
+            RegisterScreen(
+                onNavigateToLoginScreen = { navigator.navigateBack() },
+            )
+        }
         echoComposable<PhoneAuthScreenRoute> {
             PhoneAuthScreen(
                 onNavigateToEmailAuth = { navigator.navigateBackTo(LoginScreenRoute) },
@@ -69,7 +71,7 @@ fun RootNavScreen(
                 onNavigateBack = { navigator.navigateBack() },
             )
         }
-        echoComposable<CreateProfileRoute>(
+        echoComposable<CreateProfileScreenRoute>(
             transition = EchoTransitionPreset.SlideHorizontal,
         ) {
             CreateProfileScreen()

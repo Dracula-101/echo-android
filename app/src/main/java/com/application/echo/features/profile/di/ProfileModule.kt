@@ -68,13 +68,11 @@ object ProfileModule {
     fun provideProfileRepository(
         networkSource: ProfileNetworkSource,
         diskSource: ProfileDiskSource,
-        authDiskSource: AuthDiskSource,
         authRepository: AuthRepository,
         @AppDispatcher(AppDispatchers.Default) defaultDispatcher: CoroutineDispatcher,
     ): ProfileRepository = ProfileRepositoryImpl(
         diskSource = diskSource,
         networkSource = networkSource,
-        authDiskSource = authDiskSource,
         authRepository = authRepository,
         defaultDispatcher = defaultDispatcher,
     )

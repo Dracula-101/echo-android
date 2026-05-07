@@ -5,6 +5,7 @@ import com.application.echo.core.common.annotations.EncryptedPreferences
 import com.application.echo.core.common.annotations.UnencryptedPreferences
 import com.application.echo.core.common.platform.base.BaseEncryptedDiskSource
 import com.application.echo.core.common.repository.bufferedMutableSharedFlow
+import com.application.echo.features.auth.model.PhoneInfo
 import com.application.echo.features.auth.model.UserState
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.onSubscription
@@ -15,6 +16,7 @@ import javax.inject.Inject
 private const val KEY_USER_STATE = "user_state"
 private const val KEY_SESSION_ID = "session_id"
 private const val KEY_SESSION_TOKEN = "session_token"
+private const val KEY_IS_REGISTERING = "is_registering_key"
 private const val KEY_REGISTER_EMAIL = "register_email_key"
 private const val KEY_REGISTER_PASSWORD = "register_password_key"
 private const val KEY_REGISTER_PHONE_NUMBER = "register_phone_number_key"
@@ -50,6 +52,18 @@ class AuthDiskSourceImpl @Inject constructor(
         get() = getString(KEY_SESSION_TOKEN)
         set(value) { putString(KEY_SESSION_TOKEN, value) }
 
+    private val _isRegisteringStateFlow = bufferedMutableSharedFlow<Boolean>()
+
+    override var isRegistering: Boolean
+        get() = getBoolean(KEY_IS_REGISTERING) ?: false
+        set(value) {
+            putBoolean(KEY_IS_REGISTERING, value)
+            _isRegisteringStateFlow.tryEmit(value)
+        }
+
+    override val isRegisteringStateFlow: Flow<Boolean>
+        get() = _isRegisteringStateFlow.onSubscription { emit(isRegistering) }
+
     private val _registerEmailStateFlow = bufferedMutableSharedFlow<String?>()
 
     override var registerEmail: String?
@@ -74,15 +88,20 @@ class AuthDiskSourceImpl @Inject constructor(
     override val registerPasswordStateFlow: Flow<String?>
         get() = _registerPasswordStateFlow.onSubscription { emit(registerPassword) }
 
-    private val _registerPhoneNumberStateFlow = bufferedMutableSharedFlow<String?>()
+    private val _registerPhoneNumberStateFlow = bufferedMutableSharedFlow<PhoneInfo?>()
 
-    override var registerPhoneNumber: String?
-        get() = getEncryptedString(KEY_REGISTER_PHONE_NUMBER)
+    override var registerPhoneInfo: PhoneInfo?
+        get() = getEncryptedString(KEY_REGISTER_PHONE_NUMBER)?.let { runCatching { json.decodeFromString<PhoneInfo>(it) }.getOrNull() }
         set(value) {
-            putEncryptedString(KEY_REGISTER_PHONE_NUMBER, value)
+            putEncryptedString(KEY_REGISTER_PHONE_NUMBER, value?.let { json.encodeToString(it) })
             _registerPhoneNumberStateFlow.tryEmit(value)
         }
 
-    override val registerPhoneNumberStateFlow: Flow<String?>
-        get() = _registerPhoneNumberStateFlow.onSubscription { emit(registerPhoneNumber) }
+    override val registerPhoneInfoStateFlow: Flow<PhoneInfo?>
+        get() = _registerPhoneNumberStateFlow.onSubscription { emit(registerPhoneInfo) }
+
+    override fun clearRegistrationState() {
+        registerPhoneInfo = null
+        isRegistering = false
+    }
 }

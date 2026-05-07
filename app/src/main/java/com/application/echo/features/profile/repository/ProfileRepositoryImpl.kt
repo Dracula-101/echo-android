@@ -9,6 +9,7 @@ import com.application.echo.features.profile.model.CreatingProfileState
 import com.application.echo.features.profile.model.PreRegistrationInfo
 import com.application.echo.features.profile.model.ProfileResult
 import com.application.echo.features.profile.model.ProfileState
+import com.application.echo.features.profile.model.ProfileVisibility
 import com.application.echo.features.profile.model.fold
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -25,7 +26,6 @@ import javax.inject.Inject
 class ProfileRepositoryImpl @Inject constructor(
     private val diskSource: ProfileDiskSource,
     private val networkSource: ProfileNetworkSource,
-    private val authDiskSource: AuthDiskSource,
     private val authRepository: AuthRepository,
     defaultDispatcher: CoroutineDispatcher,
 ) : ProfileRepository {
@@ -36,7 +36,7 @@ class ProfileRepositoryImpl @Inject constructor(
         authRepository.authStateFlow
             .onEach { authState ->
                 when(authState) {
-                    is AuthState.CreateProfile -> diskSource.startCreatingProfile(authState.phoneInfo.phoneNumber)
+                    is AuthState.CreateProfile -> diskSource.startCreatingProfile(authState.userId)
                     else -> {}
                 }
             }
@@ -49,9 +49,6 @@ class ProfileRepositoryImpl @Inject constructor(
             diskSource.creatingProfileLastNameStateFlow,
             diskSource.creatingProfileDateOfBirthStateFlow,
             diskSource.creatingProfileGenderStateFlow,
-            authDiskSource.registerEmailStateFlow,
-            authDiskSource.registerPasswordStateFlow,
-            authDiskSource.registerPhoneNumberStateFlow,
         ) { values ->
             Timber.i("Combining creating profile state with values: $values")
             val isCreatingProfile = values[0] as Boolean
@@ -60,9 +57,6 @@ class ProfileRepositoryImpl @Inject constructor(
             val lastName = values[3] as String?
             val dateOfBirth = values[4] as Long?
             val gender = values[5] as String?
-            val email = values[6] as String?
-            val password = values[7] as String?
-            val phoneNumber = values[8] as String?
             when {
                 isCreatingProfile -> {
                     CreatingProfileState.Creating(
@@ -72,11 +66,6 @@ class ProfileRepositoryImpl @Inject constructor(
                             lastName = lastName,
                             gender = gender,
                             dateOfBirth = dateOfBirth,
-                        ),
-                        preRegistrationInfo = PreRegistrationInfo(
-                            email = email,
-                            password = password,
-                            phoneNumber = phoneNumber,
                         ),
                     )
                 }
@@ -120,6 +109,41 @@ class ProfileRepositoryImpl @Inject constructor(
         dateOfBirth?.let { diskSource.creatingProfileDateOfBirth = it }
         gender?.let { diskSource.creatingProfileGender = it }
         return ProfileResult.Success(Unit)
+    }
+
+    override suspend fun createProfile(
+        userId: String,
+        displayName: String,
+        firstName: String,
+        lastName: String,
+        bio: String,
+        userName: String,
+        profileVisibility: ProfileVisibility,
+        searchable: Boolean,
+        pushEnabled: Boolean,
+    ): ProfileResult<Unit> {
+        val result = networkSource.createProfile(
+            userId = userId,
+            displayName = displayName,
+            firstName = firstName,
+            lastName = lastName,
+            bio = bio,
+            profileVisibility = profileVisibility,
+            searchable = searchable,
+            pushEnabled = pushEnabled,
+            userName = userName,
+        )
+        return result.fold(
+            onSuccess = {
+                diskSource.finishCreatingProfile()
+                _creatingProfileStateFlow.value = CreatingProfileState.Completed
+                ProfileResult.Success(Unit)
+            },
+            onError = { error ->
+                Timber.e("Error creating profile: $error")
+                ProfileResult.Error(error)
+            }
+        )
     }
 
 }

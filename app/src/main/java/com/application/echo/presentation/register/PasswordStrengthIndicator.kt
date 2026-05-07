@@ -1,4 +1,4 @@
-package com.application.echo.presentation.create_profile
+package com.application.echo.presentation.register
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween

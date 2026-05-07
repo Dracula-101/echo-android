@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -27,6 +28,7 @@ import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -51,9 +53,14 @@ import com.application.echo.ui.design.utils.alpha90
 @Composable
 internal fun AvatarInfo(
     state: CreateProfileState,
-    listState: LazyListState,
     onAction: (CreateProfileAction) -> Unit,
 ) {
+    val listState = rememberLazyListState()
+    LaunchedEffect(state.bioError) {
+        if (state.bioError != null) {
+            listState.animateScrollToItem(listState.layoutInfo.totalItemsCount - 1)
+        }
+    }
     LazyColumn(
         state = listState,
         modifier = Modifier.fillMaxSize()
@@ -183,22 +190,6 @@ internal fun AvatarInfo(
                     fontWeight = FontWeight.Medium,
                     color = EchoTheme.colorScheme.surface.onColor.alpha50,
                 )
-            }
-            Spacer(modifier = Modifier.height(EchoTheme.spacing.gap.extraSmall))
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                UserGender.entries.forEach { gender ->
-                    EchoPill(
-                        text = gender.toString(),
-                        selected = state.gender?.equals(gender) == true,
-                        onClick = {
-                            onAction(CreateProfileAction.OnGenderChanged(gender))
-                        },
-                        textStyle = EchoTheme.typography.bodySmall
-                    )
-                }
             }
             Spacer(modifier = Modifier.height(EchoTheme.spacing.gap.large))
         }

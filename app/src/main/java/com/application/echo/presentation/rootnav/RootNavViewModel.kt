@@ -53,7 +53,8 @@ data class RootNavState(
 
 private fun AuthState.toStartRoute(): Any = when (this) {
     is AuthState.Authenticated   -> ConversationScreenRoute
-    is AuthState.CreateProfile   -> CreateProfileRoute
+    is AuthState.RegisteringWithPhone -> RegisterScreenRoute
+    is AuthState.CreateProfile   -> CreateProfileScreenRoute(userId = this.userId)
     is AuthState.OtpVerification -> OtpScreenRoute
     is AuthState.Unauthenticated -> LoginScreenRoute
     is AuthState.Initializing    -> error("Initializing is filtered out before reaching toStartRoute")

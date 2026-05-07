@@ -31,8 +31,10 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBackIos
 import androidx.compose.material.icons.filled.Check
@@ -88,7 +90,6 @@ import kotlinx.coroutines.launch
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import kotlinx.coroutines.delay
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateProfileScreen(
@@ -97,11 +98,11 @@ fun CreateProfileScreen(
     val state by viewModel.stateFlow.collectAsStateWithLifecycle()
     val snackbarState = rememberEchoSnackbarState()
     val keyboard = LocalSoftwareKeyboardController.current
-    val lazyListState = rememberLazyListState()
     val scope = rememberCoroutineScope()
+
     LaunchedEffect(Unit) {
         viewModel.eventFlow.collectLatest {
-            when(it) {
+            when (it) {
                 is CreateProfileEvent.ShowSnackbar -> {
                     snackbarState.show(
                         message = it.message,
@@ -116,13 +117,9 @@ fun CreateProfileScreen(
     EchoScaffold(
         topBar = {
             EchoProfileHeader(
-                onPrevious = {
-                    viewModel.trySendAction(CreateProfileAction.OnPrevious)
-                },
-                onNext = {
-                    viewModel.trySendAction(CreateProfileAction.OnNext)
-                },
-                currentPage = state.currentPage,
+                onPrevious = { viewModel.trySendAction(CreateProfileAction.OnPrevious) },
+                currentPage = state.currentPage.index,
+                totalPages = ProfileScreen.entries.size,
             )
         },
         snackbarHost = {
@@ -137,7 +134,6 @@ fun CreateProfileScreen(
                     scope.launch {
                         keyboard?.hide()
                         delay(100)
-                        lazyListState.scrollToItem(lazyListState.layoutInfo.totalItemsCount, 0)
                         viewModel.trySendAction(CreateProfileAction.OnContinueClick)
                     }
                 },
@@ -146,9 +142,14 @@ fun CreateProfileScreen(
                     .padding(horizontal = EchoTheme.spacing.padding.medium)
                     .padding(bottom = EchoTheme.spacing.padding.medium),
                 size = ButtonSize.Medium,
+                isLoading = state.isLoading,
+                enabled = !state.isLoading
             ) {
                 Text(
-                    "Continue",
+                    when (state.currentPage) {
+                        ProfileScreen.INFO -> "Next"
+                        ProfileScreen.CUSTOMIZATION -> "Finish"
+                    },
                     style = EchoTheme.typography.titleMedium,
                     color = EchoTheme.colorScheme.primary.onColor,
                     fontWeight = FontWeight.SemiBold,
@@ -162,53 +163,26 @@ fun CreateProfileScreen(
                 .fillMaxWidth()
                 .padding(EchoTheme.spacing.padding.medium),
         ) {
-            if (state.phoneInfo != null) {
-                PhoneInfoChip(phoneInfo = state.phoneInfo!!)
-            }
             AnimatedContent(
                 targetState = state.currentPage,
                 transitionSpec = {
                     if (targetState > initialState) {
-                        slideInVertically(
-                            animationSpec = tween(700),
-                            initialOffsetY = { it }
-                        ) + fadeIn(tween(700)) togetherWith
-                                slideOutVertically(
-                                    animationSpec = tween(300),
-                                    targetOffsetY = { -it }
-                                ) + fadeOut(tween(300))
+                        slideInVertically(tween(700)) { it } + fadeIn(tween(700)) togetherWith
+                                slideOutVertically(tween(300)) { -it } + fadeOut(tween(300))
                     } else {
-                        slideInVertically(
-                            animationSpec = tween(700),
-                            initialOffsetY = { -it }
-                        ) + fadeIn(tween(700)) togetherWith
-                                slideOutVertically(
-                                    animationSpec = tween(300),
-                                    targetOffsetY = { it }
-                                ) + fadeOut(tween(300))
-                    }.using(
-                        SizeTransform(clip = false)
-                    )
+                        slideInVertically(tween(700)) { -it } + fadeIn(tween(700)) togetherWith
+                                slideOutVertically(tween(300)) { it } + fadeOut(tween(300))
+                    }.using(SizeTransform(clip = false))
                 },
                 label = "OnboardingAnimatedContent"
             ) { page ->
-
                 when (page) {
-                    1 -> SigninInfo(
+                    ProfileScreen.INFO -> AvatarInfo(
                         state = state,
-                        listState = lazyListState,
-                        onAction = { viewModel.trySendAction(it) }
+                        onAction = { viewModel.trySendAction(it) },
                     )
-
-                    2 -> AvatarInfo(
+                    ProfileScreen.CUSTOMIZATION -> HandleInfo(
                         state = state,
-                        listState = lazyListState,
-                        onAction = { viewModel.trySendAction(it) }
-                    )
-
-                    3 -> HandleInfo(
-                        state = state,
-                        listState = lazyListState,
                         onAction = { viewModel.trySendAction(it) }
                     )
                 }
@@ -218,58 +192,20 @@ fun CreateProfileScreen(
 }
 
 @Composable
-internal fun PhoneInfoChip(
-    phoneInfo: PhoneInfo,
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = EchoTheme.spacing.padding.small)
-    ) {
-        Row(
-            modifier = Modifier
-                .clip(RoundedCornerShape(50))
-                .background(EchoTheme.colorScheme.success.container.alpha70)
-                .padding(
-                    horizontal = EchoTheme.spacing.padding.small,
-                    vertical = EchoTheme.spacing.padding.extraSmall
-                ),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center,
-        ) {
-            Icon(
-                imageVector = Icons.Default.Check,
-                contentDescription = null,
-                tint = EchoTheme.colorScheme.success.onContainer,
-                modifier = Modifier.size(EchoTheme.dimen.icon.extraSmall)
-            )
-            Spacer(modifier = Modifier.width(EchoTheme.spacing.gap.extraSmall))
-            Text(
-                text = "${phoneInfo.toDisplayString()} verified",
-                style = EchoTheme.typography.labelMedium,
-                color = EchoTheme.colorScheme.success.onContainer,
-            )
-            Spacer(modifier = Modifier.width(EchoTheme.spacing.gap.extraSmall))
-        }
-    }
-}
-
-@Composable
 internal fun EchoProfileHeader(
     onPrevious: () -> Unit,
-    onNext: () -> Unit,
     currentPage: Int,
-    totalPages: Int = 3,
+    totalPages: Int,
 ) {
-    val scope = rememberCoroutineScope()
     Column(
         modifier = Modifier.statusBarsPadding()
     ) {
         Box (
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = EchoTheme.spacing.padding.small)
                 .padding(
+                    top = EchoTheme.spacing.padding.large,
+                    bottom = EchoTheme.spacing.padding.medium,
                     start = EchoTheme.spacing.padding.medium,
                     end = EchoTheme.spacing.padding.small
                 ),

@@ -1,5 +1,6 @@
 package com.application.echo.api.profile
 
+import android.opengl.Visibility
 import com.application.echo.core.network.result.ApiResult
 
 /**
@@ -32,7 +33,12 @@ interface ProfileApiRepository {
     suspend fun createProfile(
         userId: String,
         displayName: String,
+        userName: String,
         firstName: String,
         lastName: String,
+        bio: String,
+        profileVisibility: String,
+        searchable: Boolean,
+        pushEnabled: Boolean,
     ): ApiResult<CreateProfileResponse>
 }

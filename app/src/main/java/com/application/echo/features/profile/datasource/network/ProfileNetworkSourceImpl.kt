@@ -13,6 +13,7 @@ import com.application.echo.api.profile.ProfileApiRepository
 import com.application.echo.core.common.platform.util.MimeTypeResolver
 import com.application.echo.core.common.platform.util.toFile
 import com.application.echo.features.profile.model.ProfileResult
+import com.application.echo.features.profile.model.ProfileVisibility
 import com.application.echo.features.profile.model.map
 import com.application.echo.features.profile.model.onSuccess
 import com.application.echo.features.profile.model.toProfileResult
@@ -42,18 +43,24 @@ class ProfileNetworkSourceImpl @Inject constructor(
     override suspend fun createProfile(
         userId: String,
         displayName: String,
+        userName: String,
         firstName: String,
         lastName: String,
-    ): ProfileResult<CreateProfileResponse> {
-        return profileApi
-            .createProfile(
-                userId = userId,
-                displayName = displayName,
-                firstName = firstName,
-                lastName = lastName,
-            )
-            .toProfileResult()
-    }
+        bio: String,
+        profileVisibility: ProfileVisibility,
+        searchable: Boolean,
+        pushEnabled: Boolean
+    ): ProfileResult<CreateProfileResponse> = profileApi.createProfile(
+        userId = userId,
+        displayName = displayName,
+        userName = userName,
+        firstName = firstName,
+        lastName = lastName,
+        bio = bio,
+        profileVisibility = profileVisibility.toString(),
+        searchable = searchable,
+        pushEnabled = pushEnabled,
+     ).toProfileResult()
 
     override suspend fun uploadAvatar(uri: Uri): ProfileResult<String> {
         val profilePhotoFile = uri.toFile(context = context)

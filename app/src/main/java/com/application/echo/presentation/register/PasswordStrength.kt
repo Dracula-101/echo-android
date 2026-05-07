@@ -1,4 +1,4 @@
-package com.application.echo.presentation.create_profile
+package com.application.echo.presentation.register
 
 enum class PasswordStrength {
     Empty,

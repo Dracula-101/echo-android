@@ -5,5 +5,5 @@ import com.application.echo.features.auth.model.PhoneInfo
 
 sealed class OtpAuthEvent {
     data class Authenticated(val response: LoginResponse) : OtpAuthEvent()
-    data class CreateAccount(val phoneInfo: PhoneInfo) : OtpAuthEvent()
+    data class RegisterUser(val phoneInfo: PhoneInfo) : OtpAuthEvent()
 }

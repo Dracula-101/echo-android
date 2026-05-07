@@ -22,8 +22,11 @@ sealed interface AuthState {
     /** App just launched — checking persisted session / refreshing token. */
     data object Initializing : AuthState
 
+    /** User is registering their account */
+    data class RegisteringWithPhone(val phoneInfo: PhoneInfo?) : AuthState
+
     /** User is creating a profile. */
-    data class CreateProfile(val phoneInfo: PhoneInfo) : AuthState
+    data class CreateProfile(val userId: String) : AuthState
 
     /** User is requested OTP verification. */
     data class OtpVerification(val phoneInfo: PhoneInfo) : AuthState

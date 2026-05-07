@@ -1,5 +1,6 @@
 package com.application.echo.features.auth.datasource.disk
 
+import com.application.echo.features.auth.model.PhoneInfo
 import com.application.echo.features.auth.model.UserState
 import kotlinx.coroutines.flow.Flow
 
@@ -10,12 +11,17 @@ interface AuthDiskSource {
     var sessionId: String?
     var sessionToken: String?
 
+    var isRegistering: Boolean
+    val isRegisteringStateFlow: Flow<Boolean>
+
     var registerEmail: String?
     val registerEmailStateFlow: Flow<String?>
 
     var registerPassword: String?
     val registerPasswordStateFlow: Flow<String?>
 
-    var registerPhoneNumber: String?
-    val registerPhoneNumberStateFlow: Flow<String?>
+    var registerPhoneInfo: PhoneInfo?
+    val registerPhoneInfoStateFlow: Flow<PhoneInfo?>
+
+    fun clearRegistrationState()
 }

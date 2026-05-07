@@ -14,8 +14,8 @@ interface ProfileDiskSource {
     val creatingProfileStateFlow: Flow<Boolean>
 
     /** Creating profile user id */
-    var creatingProfilePhoneNumber: String?
-    val creatingProfilePhoneNumberStateFlow: Flow<String?>
+    var creatingProfileUserId: String?
+    val creatingProfileUserIdStateFlow: Flow<String?>
 
     /** Creating profile display name */
     var creatingProfileDisplayName: String?
@@ -37,6 +37,6 @@ interface ProfileDiskSource {
     var creatingProfileGender: String?
     val creatingProfileGenderStateFlow: Flow<String?>
 
-    fun startCreatingProfile(phoneNumber: String)
+    fun startCreatingProfile(userId: String)
     fun finishCreatingProfile()
 }

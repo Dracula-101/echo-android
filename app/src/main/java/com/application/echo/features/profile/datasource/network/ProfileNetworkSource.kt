@@ -6,6 +6,7 @@ import com.application.echo.api.profile.CreateProfileRequest
 import com.application.echo.api.profile.CreateProfileResponse
 import com.application.echo.api.profile.GetProfileResponse
 import com.application.echo.features.profile.model.ProfileResult
+import com.application.echo.features.profile.model.ProfileVisibility
 
 interface ProfileNetworkSource {
 
@@ -16,8 +17,13 @@ interface ProfileNetworkSource {
     suspend fun createProfile(
         userId: String,
         displayName: String,
+        userName: String,
         firstName: String,
         lastName: String,
+        bio: String,
+        profileVisibility: ProfileVisibility,
+        searchable: Boolean,
+        pushEnabled: Boolean,
     ): ProfileResult<CreateProfileResponse>
 
     suspend fun uploadAvatar(uri: Uri): ProfileResult<String>
