@@ -175,25 +175,6 @@ internal fun AvatarInfo(
             Spacer(modifier = Modifier.height(EchoTheme.spacing.gap.large))
         }
         item {
-            Row {
-                Text(
-                    "GENDER",
-                    style = EchoTheme.typography.labelSmall,
-                    letterSpacing = 1.25.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = EchoTheme.colorScheme.surface.onColor.alpha90,
-                )
-                Text(
-                    "· optional",
-                    style = EchoTheme.typography.labelSmall,
-                    letterSpacing = 1.25.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = EchoTheme.colorScheme.surface.onColor.alpha50,
-                )
-            }
-            Spacer(modifier = Modifier.height(EchoTheme.spacing.gap.large))
-        }
-        item {
             Text(
                 "PICK A LOOK",
                 style = EchoTheme.typography.labelSmall,

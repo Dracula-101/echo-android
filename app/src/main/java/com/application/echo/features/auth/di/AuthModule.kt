@@ -53,15 +53,13 @@ object AuthModule {
     fun provideAuthRepository(
         networkSource: AuthNetworkSource,
         authDiskSource: AuthDiskSource,
-        otpDiskSource: OtpDiskSource,
         profileDiskSource: ProfileDiskSource,
         tokenManager: AuthTokenManager,
         otpRepository: OtpRepository,
         @AppDispatcher(AppDispatchers.IO) ioDispatcher: CoroutineDispatcher,
     ): AuthRepository = AuthRepositoryImpl(
-        networkSource = networkSource,
+        authNetworkSource = networkSource,
         authDiskSource = authDiskSource,
-        otpDiskSource = otpDiskSource,
         profileDiskSource = profileDiskSource,
         tokenManager = tokenManager,
         otpRepository = otpRepository,

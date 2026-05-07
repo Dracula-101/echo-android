@@ -7,6 +7,7 @@ import com.application.echo.features.profile.datasource.disk.ProfileDiskSource
 import com.application.echo.features.profile.datasource.network.ProfileNetworkSource
 import com.application.echo.features.profile.model.CreatingProfileState
 import com.application.echo.features.profile.model.PreRegistrationInfo
+import com.application.echo.features.profile.model.ProfileCreationState
 import com.application.echo.features.profile.model.ProfileResult
 import com.application.echo.features.profile.model.ProfileState
 import com.application.echo.features.profile.model.ProfileVisibility
@@ -51,14 +52,14 @@ class ProfileRepositoryImpl @Inject constructor(
             diskSource.creatingProfileGenderStateFlow,
         ) { values ->
             Timber.i("Combining creating profile state with values: $values")
-            val isCreatingProfile = values[0] as Boolean
+            val state = values[0] as ProfileCreationState
             val displayName = values[1] as String?
             val firstName = values[2] as String?
             val lastName = values[3] as String?
             val dateOfBirth = values[4] as Long?
             val gender = values[5] as String?
-            when {
-                isCreatingProfile -> {
+            when(state) {
+                 ProfileCreationState.IN_PROGRESS -> {
                     CreatingProfileState.Creating(
                         state = ProfileState(
                             displayName = displayName,
@@ -69,7 +70,8 @@ class ProfileRepositoryImpl @Inject constructor(
                         ),
                     )
                 }
-                else -> CreatingProfileState.Started
+                ProfileCreationState.COMPLETED -> CreatingProfileState.Completed
+                ProfileCreationState.NOT_STARTED -> CreatingProfileState.Started
             }
         }.distinctUntilChanged().onEach { state ->
             Timber.i("Creating Profile State: $state")

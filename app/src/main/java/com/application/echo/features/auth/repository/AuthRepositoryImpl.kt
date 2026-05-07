@@ -15,12 +15,13 @@ import com.application.echo.features.auth.model.PhoneInfo
 import com.application.echo.features.auth.model.UserState
 import com.application.echo.features.auth.model.fold
 import com.application.echo.features.auth.model.onSuccess
-import com.application.echo.features.otp.datasource.disk.OtpDiskSource
 import com.application.echo.features.otp.model.OtpAuthEvent
 import com.application.echo.features.otp.model.OtpVerificationState
 import com.application.echo.features.otp.repository.OtpRepository
 import com.application.echo.features.profile.datasource.disk.ProfileDiskSource
 import com.application.echo.features.profile.model.CreatingProfileState
+import com.application.echo.features.profile.model.ProfileCreationState
+import com.application.echo.features.profile.repository.ProfileRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
@@ -35,9 +36,8 @@ import timber.log.Timber
 import javax.inject.Inject
 
 class AuthRepositoryImpl @Inject constructor(
-    private val networkSource: AuthNetworkSource,
+    private val authNetworkSource: AuthNetworkSource,
     private val authDiskSource: AuthDiskSource,
-    private val otpDiskSource: OtpDiskSource,
     private val profileDiskSource: ProfileDiskSource,
     private val tokenManager: AuthTokenManager,
     private val otpRepository: OtpRepository,
@@ -55,7 +55,7 @@ class AuthRepositoryImpl @Inject constructor(
 
     init {
         scope.launch { restoreSession() }
-        scope.launch { observeProfileStateChanges() }
+        scope.launch { observeProfileCreationEvents() }
         scope.launch { observeOtpAuthEvents() }
         scope.launch { observeOtpStateChanges() }
     }
@@ -73,7 +73,6 @@ class AuthRepositoryImpl @Inject constructor(
                     otpRepository.clearOtpSession()
                     emitAuthenticated()
                 }
-
                 is OtpAuthEvent.RegisterUser -> {
                     _authStateFlow.value = AuthState.RegisteringWithPhone(event.phoneInfo)
                     startRegistration(event.phoneInfo)
@@ -82,15 +81,18 @@ class AuthRepositoryImpl @Inject constructor(
         }
     }
 
-    private suspend fun observeProfileStateChanges() {
-        profileDiskSource.profileStateFlow.collect { event ->
-            when(event) {
-                CreatingProfileState.Completed -> {
-
+    private suspend fun observeProfileCreationEvents() {
+        profileDiskSource.creatingProfileStateFlow
+            .distinctUntilChanged()
+            .collect { state ->
+                when (state) {
+                    ProfileCreationState.COMPLETED -> {
+                        Timber.d("Profile creation completed — authenticated")
+                        emitAuthenticated()
+                    }
+                    else -> {}
                 }
-                else -> {}
             }
-        }
     }
 
     private suspend fun observeOtpStateChanges() {
@@ -109,7 +111,7 @@ class AuthRepositoryImpl @Inject constructor(
         email: String,
         password: String,
     ): AuthResult<LoginResponse> = sessionMutex.withLock {
-        networkSource.login(email, password).also { result ->
+        authNetworkSource.login(email, password).also { result ->
             result.onSuccess { response ->
                 persistSession(response.session, response.user.id, response.user.email)
                 emitAuthenticated()
@@ -119,7 +121,7 @@ class AuthRepositoryImpl @Inject constructor(
 
     override suspend fun loginWithToken(token: String): AuthResult<LoginResponse> =
         sessionMutex.withLock {
-            networkSource.loginWithToken(token).also { result ->
+            authNetworkSource.loginWithToken(token).also { result ->
                 result.onSuccess { response ->
                     persistSession(response.session, response.user.id, response.user.email)
                     emitAuthenticated()
@@ -131,7 +133,7 @@ class AuthRepositoryImpl @Inject constructor(
         val email = authDiskSource.registerEmail
         val password = authDiskSource.registerPassword
         if (email != null && password != null) {
-            networkSource.login(
+            authNetworkSource.login(
                 email = email,
                 password = password,
             ).fold(
@@ -159,7 +161,7 @@ class AuthRepositoryImpl @Inject constructor(
         phoneCountryCode: String,
         acceptTerms: Boolean,
     ): AuthResult<RegisterResponse> = sessionMutex.withLock {
-        networkSource.register(email, password, phoneNumber, phoneCountryCode, acceptTerms).fold(
+        authNetworkSource.register(email, password, phoneNumber, phoneCountryCode, acceptTerms).fold(
             onSuccess = { response ->
                 authDiskSource.clearRegistrationState()
                 if(response.nextStep == "verify_email") {
@@ -209,7 +211,7 @@ class AuthRepositoryImpl @Inject constructor(
         }
 
         // ── 2. Profile creation in progress ──────────────────────────────────────
-        if (profileDiskSource.creatingProfileState) {
+        if (profileDiskSource.creatingProfileState == ProfileCreationState.IN_PROGRESS) {
             val userId = profileDiskSource.creatingProfileUserId
             if (userId != null) {
                 Timber.d("Resuming profile creation for user %s", userId)
@@ -259,7 +261,7 @@ class AuthRepositoryImpl @Inject constructor(
 
     private fun refreshTokenInBackground(refreshToken: String) {
         scope.launch {
-            networkSource.refreshToken(refreshToken).fold(
+            authNetworkSource.refreshToken(refreshToken).fold(
                 onSuccess = { response ->
                     storeTokens(response.accessToken, response.refreshToken, response.expiresAt)
                     Timber.d("Background token refresh succeeded")

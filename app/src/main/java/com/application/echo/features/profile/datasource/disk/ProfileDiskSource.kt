@@ -1,5 +1,6 @@
 package com.application.echo.features.profile.datasource.disk
 
+import com.application.echo.features.profile.model.ProfileCreationState
 import com.application.echo.features.profile.model.ProfileState
 import kotlinx.coroutines.flow.Flow
 
@@ -10,8 +11,8 @@ interface ProfileDiskSource {
     val profileStateFlow: Flow<ProfileState>
 
     /** Creating profile state */
-    var creatingProfileState: Boolean
-    val creatingProfileStateFlow: Flow<Boolean>
+    var creatingProfileState: ProfileCreationState
+    val creatingProfileStateFlow: Flow<ProfileCreationState>
 
     /** Creating profile user id */
     var creatingProfileUserId: String?

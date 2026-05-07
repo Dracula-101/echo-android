@@ -9,6 +9,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
 import com.application.echo.core.common.repository.bufferedMutableSharedFlow
+import com.application.echo.features.profile.model.ProfileCreationState
 
 private const val PROFILE_STATE_KEY = "profile_state_key"
 private const val REGISTERING_PROFILE_KEY = "registering_profile_key"
@@ -43,16 +44,16 @@ class ProfileDiskSourceImpl @Inject constructor(
         get() = _profileStateFlow.onSubscription { emit(profileState) }
 
     /** Creating profile state */
-    private val _creatingProfileStateFlow = bufferedMutableSharedFlow<Boolean>()
+    private val _creatingProfileStateFlow = bufferedMutableSharedFlow<ProfileCreationState>()
 
-    override var creatingProfileState: Boolean
-        get() = getBoolean(CREATING_PROFILE_STATE_KEY) ?: false
+    override var creatingProfileState: ProfileCreationState
+        get() = ProfileCreationState.parse(getString(CREATING_PROFILE_STATE_KEY))
         set(value) {
-            putBoolean(CREATING_PROFILE_STATE_KEY, value)
+            putString(CREATING_PROFILE_STATE_KEY, value.name)
             _creatingProfileStateFlow.tryEmit(value)
         }
 
-    override val creatingProfileStateFlow: Flow<Boolean>
+    override val creatingProfileStateFlow: Flow<ProfileCreationState>
         get() = _creatingProfileStateFlow.onSubscription { emit(creatingProfileState) }
 
     private val _creatingProfileUserIdStateFlow = bufferedMutableSharedFlow<String?>()
@@ -154,14 +155,17 @@ class ProfileDiskSourceImpl @Inject constructor(
 
     override fun startCreatingProfile(userId: String) {
         creatingProfileUserId = userId
-        creatingProfileState = true
+        creatingProfileState = ProfileCreationState.IN_PROGRESS
     }
 
     override fun finishCreatingProfile() {
         creatingProfileUserId = null
-        creatingProfileState = false
+        creatingProfileDisplayName = null
         creatingProfileFirstName = null
         creatingProfileLastName = null
+        creatingProfileDateOfBirth = null
+        creatingProfileGender = null
+        creatingProfileState = ProfileCreationState.COMPLETED
     }
 
 }
