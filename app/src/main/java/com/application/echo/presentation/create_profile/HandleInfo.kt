@@ -1,6 +1,8 @@
 package com.application.echo.presentation.create_profile
 
 import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -25,8 +27,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CameraAlt
+import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableIntStateOf
@@ -48,8 +54,11 @@ import com.application.echo.ui.components.avatar.EchoAvatar
 import com.application.echo.ui.components.card.EchoCard
 import com.application.echo.ui.components.common.EchoPill
 import com.application.echo.ui.components.progress.EchoCircularProgressIndicator
+import com.application.echo.ui.components.switch.EchoSwitch
 import com.application.echo.ui.components.textfield.EchoTextField
 import com.application.echo.ui.design.theme.EchoTheme
+import com.application.echo.ui.design.utils.alpha10
+import com.application.echo.ui.design.utils.alpha20
 import com.application.echo.ui.design.utils.alpha50
 import com.application.echo.ui.design.utils.alpha90
 
@@ -59,6 +68,12 @@ internal fun HandleInfo(
     onAction: (CreateProfileAction) -> Unit,
 ) {
     val listState = rememberLazyListState()
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+        onResult = { isGranted ->
+            onAction(CreateProfileAction.OnNotificationChanged(isGranted))
+        }
+    )
     LazyColumn(
         state = listState,
         modifier = Modifier.fillMaxSize()
@@ -194,7 +209,8 @@ internal fun HandleInfo(
                                     .background(
                                         EchoTheme.colorScheme.success.color,
                                         shape = RoundedCornerShape(50)
-                                    ).padding(2.dp),
+                                    )
+                                    .padding(2.dp),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
@@ -208,6 +224,104 @@ internal fun HandleInfo(
                     }
                 }
             )
+            if (state.isValidUserName) {
+                Text(
+                    "✓ @${state.userName} is yours!",
+                    style = EchoTheme.typography.labelSmall,
+                    color = EchoTheme.colorScheme.success.color,
+                    modifier = Modifier.padding(top = EchoTheme.spacing.gap.small)
+                )
+            }
+            Spacer(modifier = Modifier.height(EchoTheme.spacing.gap.extraLarge))
+        }
+        item {
+            Text(
+                "PREFERENCES",
+                style = EchoTheme.typography.labelSmall,
+                letterSpacing = 1.25.sp,
+                fontWeight = FontWeight.Medium,
+                color = EchoTheme.colorScheme.surface.onColor.alpha90,
+            )
+            Spacer(modifier = Modifier.height(EchoTheme.spacing.gap.medium))
+            EchoCard (
+                modifier = Modifier.fillMaxWidth()
+            ){
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(EchoTheme.spacing.gap.medium),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Search,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .background(EchoTheme.colorScheme.secondary.color.alpha20, CircleShape)
+                            .padding(8.dp)
+                            .size(EchoTheme.dimen.icon.small),
+                        tint = EchoTheme.colorScheme.secondary.color
+                    )
+                    Column(
+                        horizontalAlignment = Alignment.Start,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(
+                            "Let friends find me by handle",
+                            style = EchoTheme.typography.bodyMedium,
+                        )
+                        Text(
+                            "You can change this in Settings",
+                            style = EchoTheme.typography.labelSmall,
+                            color = EchoTheme.colorScheme.surface.onColor.alpha50,
+                        )
+                    }
+                    EchoSwitch(
+                        checked = { state.isSearchable },
+                        onCheckedChange = {
+                            onAction(CreateProfileAction.OnToggleSearchable)
+                         },
+                    )
+                }
+                HorizontalDivider(
+                    modifier = Modifier.padding(vertical = EchoTheme.spacing.gap.medium),
+                    color = EchoTheme.colorScheme.surface.onColor.alpha10
+                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(EchoTheme.spacing.gap.medium),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Notifications,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .background(EchoTheme.colorScheme.success.color.alpha20, CircleShape)
+                            .padding(8.dp)
+                            .size(EchoTheme.dimen.icon.small),
+                        tint = EchoTheme.colorScheme.success.color
+                    )
+                    Column(
+                        horizontalAlignment = Alignment.Start,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(
+                            "Allow notifications",
+                            style = EchoTheme.typography.bodyMedium,
+                        )
+                        Text(
+                            "Enable to stay updated with mentions and messages",
+                            style = EchoTheme.typography.labelSmall,
+                            color = EchoTheme.colorScheme.surface.onColor.alpha50,
+                        )
+                    }
+                    EchoSwitch(
+                        checked = { state.allowNotifications },
+                        onCheckedChange = {
+                            permissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                        },
+                        enabled = !state.allowNotifications
+                    )
+                }
+            }
         }
     }
 }

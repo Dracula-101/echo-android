@@ -13,6 +13,7 @@ import com.application.echo.features.auth.model.AuthState
 import com.application.echo.features.auth.model.PhoneInfo
 import com.application.echo.features.auth.model.fold
 import com.application.echo.features.auth.repository.AuthRepository
+import com.application.echo.features.notification.permission.NotificationPermissionHelper
 import com.application.echo.features.profile.model.CreatingProfileState
 import com.application.echo.features.profile.model.ProfileVisibility
 import com.application.echo.features.profile.model.fold
@@ -37,6 +38,7 @@ class CreateProfileViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val authRepository: AuthRepository,
     private val profileRepository: ProfileRepository,
+    private val notificationHelper: NotificationPermissionHelper
 ) : BaseViewModel<CreateProfileState, CreateProfileEvent, CreateProfileAction>(
     initialState = savedStateHandle[KEY_STATE] ?: CreateProfileState(
         userId = savedStateHandle.toRoute<CreateProfileScreenRoute>().userId
@@ -66,6 +68,10 @@ class CreateProfileViewModel @Inject constructor(
             .distinctUntilChanged()
             .onEach { username -> validateUsername(username) }
             .launchIn(viewModelScope)
+
+        viewModelScope.launch {
+            setState { state.copy(allowNotifications = notificationHelper.isGranted) }
+        }
     }
 
     private fun validateUsername(username: String) {
@@ -124,6 +130,12 @@ class CreateProfileViewModel @Inject constructor(
             }
             is CreateProfileAction.OnEmojiSelected -> setState {
                 state.copy(selectedEmojiIndex = action.index)
+            }
+            is CreateProfileAction.OnToggleSearchable -> setState {
+                state.copy(isSearchable = !state.isSearchable)
+            }
+            is CreateProfileAction.OnNotificationChanged -> setState {
+                state.copy(allowNotifications = action.allow)
             }
             is CreateProfileAction.OnPrevious -> setState {
                 when (state.currentPage) {
@@ -216,8 +228,8 @@ class CreateProfileViewModel @Inject constructor(
                 lastName = lastName,
                 bio = state.bio.orEmpty(),
                 profileVisibility = ProfileVisibility.PUBLIC,
-                searchable = true,
-                pushEnabled = true,
+                searchable = state.isSearchable,
+                pushEnabled = state.allowNotifications && !state.skipNotification,
             )
             result.fold(
                 onSuccess = {
@@ -281,6 +293,9 @@ data class CreateProfileState(
     val bioError: String? = null,
     val selectedGradientIndex: Int = 0,
     val selectedEmojiIndex: Int = 0,
+    val isSearchable: Boolean = true,
+    val allowNotifications: Boolean = false,
+    val skipNotification: Boolean = false,
     val isLoading: Boolean = false,
 ) : Parcelable
 
@@ -297,6 +312,8 @@ sealed interface CreateProfileAction {
     data class UpdateCurrentPage(val page: Int) : CreateProfileAction
     data class OnGradientSelected(val index: Int) : CreateProfileAction
     data class OnEmojiSelected(val index: Int) : CreateProfileAction
+    data object OnToggleSearchable : CreateProfileAction
+    data class OnNotificationChanged(val allow: Boolean) : CreateProfileAction
     data object OnPrevious: CreateProfileAction
     data object OnNext: CreateProfileAction
     data object OnContinueClick : CreateProfileAction

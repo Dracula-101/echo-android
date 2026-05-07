@@ -130,6 +130,10 @@ class AuthRepositoryImpl @Inject constructor(
         }
 
     override suspend fun silentLogin() {
+        if (tokenManager.isTokenValid) {
+            Timber.d("Silent login: valid token found, emitting authenticated")
+            return
+        }
         val email = authDiskSource.registerEmail
         val password = authDiskSource.registerPassword
         if (email != null && password != null) {
